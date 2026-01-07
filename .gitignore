@@ -125,6 +125,7 @@ fastlane/README.md
 *.keystore
 firebase-service-account.json
 .env
+.keys/
 
 # Google Services (stored as secrets in CI)
 # ios/Runner/GoogleService-Info.plist
