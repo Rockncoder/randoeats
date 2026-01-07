@@ -18,7 +18,7 @@ platform :ios do
 
     # Build Flutter app
     Dir.chdir("..") do
-      sh("flutter build ios --release --no-codesign")
+      sh("flutter build ios --release --no-codesign -t lib/main_production.dart")
     end
 
     # Build and sign IPA
@@ -59,7 +59,7 @@ platform :android do
   lane :distribute do
     # Build Flutter app
     Dir.chdir("..") do
-      sh("flutter build apk --release")
+      sh("flutter build apk --release -t lib/main_production.dart")
     end
 
     # Upload to Firebase App Distribution
