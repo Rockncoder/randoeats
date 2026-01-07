@@ -36,7 +36,6 @@ jobs:
         run: |
           flutter build web \
             --release \
-            --web-renderer html \
             -t lib/main_production.dart
 
       - name: Deploy to Cloudflare Pages
