@@ -113,3 +113,19 @@ app.*.map.json
 
 # Generated l10n files
 lib/l10n/gen/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/README.md
+
+# Signing
+*.keystore
+firebase-service-account.json
+.env
+
+# Google Services (stored as secrets in CI)
+# ios/Runner/GoogleService-Info.plist
+# android/app/google-services.json

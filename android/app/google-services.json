@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "904849070289",
+    "project_id": "randoeats-production",
+    "storage_bucket": "randoeats-production.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904849070289:android:4f92885f1ec4a9b7894df0",
+        "android_client_info": {
+          "package_name": "com.tekadept.randoeats"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5I7h0vLI6SXXJCt84vsQ05yITWPl7uXQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

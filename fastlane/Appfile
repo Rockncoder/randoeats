@@ -1,0 +1,8 @@
+# iOS
+app_identifier("com.tekadept.randoeats")
+apple_id("rockncoder@gmail.com")
+team_id("S2NBGK85WD")
+
+# Android
+json_key_file(ENV["GOOGLE_SERVICE_ACCOUNT_KEY_PATH"])
+package_name("com.tekadept.randoeats")

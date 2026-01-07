@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyDrVqtBmRpY6XZiZqxx-Vx4uXvQC1Pu9AI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>904849070289</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.tekadept.randoeats</string>
+	<key>PROJECT_ID</key>
+	<string>randoeats-production</string>
+	<key>STORAGE_BUCKET</key>
+	<string>randoeats-production.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:904849070289:ios:5295a6693a9b0346894df0</string>
+</dict>
+</plist>

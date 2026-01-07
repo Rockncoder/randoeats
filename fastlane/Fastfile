@@ -1,0 +1,84 @@
+default_platform(:ios)
+
+# ============================================
+# iOS
+# ============================================
+platform :ios do
+  desc "Build and upload iOS to Firebase App Distribution"
+  lane :distribute do
+    # Setup CI environment
+    setup_ci if is_ci
+
+    # Fetch certificates using Match
+    match(
+      type: "adhoc",
+      readonly: is_ci,
+      git_basic_authorization: Base64.strict_encode64(ENV["MATCH_GIT_BASIC_AUTH"])
+    )
+
+    # Build Flutter app
+    Dir.chdir("..") do
+      sh("flutter build ios --release --no-codesign")
+    end
+
+    # Build and sign IPA
+    build_app(
+      workspace: "ios/Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "ad-hoc",
+      output_directory: "build/ios",
+      output_name: "RandoEats.ipa",
+      export_options: {
+        provisioningProfiles: {
+          "com.tekadept.randoeats" => "match AdHoc com.tekadept.randoeats"
+        }
+      }
+    )
+
+    # Upload to Firebase App Distribution
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"],
+      groups: "internal-testers",
+      release_notes: changelog_from_git_commits(commits_count: 5, merge_commit_filtering: "exclude_merges"),
+      service_credentials_file: ENV["GOOGLE_SERVICE_ACCOUNT_KEY_PATH"]
+    )
+  end
+
+  desc "Sync certificates (run locally first time)"
+  lane :sync_certs do
+    match(type: "adhoc")
+  end
+end
+
+# ============================================
+# Android
+# ============================================
+platform :android do
+  desc "Build and upload Android to Firebase App Distribution"
+  lane :distribute do
+    # Build Flutter app
+    Dir.chdir("..") do
+      sh("flutter build apk --release")
+    end
+
+    # Upload to Firebase App Distribution
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_ANDROID"],
+      groups: "internal-testers",
+      release_notes: changelog_from_git_commits(commits_count: 5, merge_commit_filtering: "exclude_merges"),
+      android_artifact_type: "APK",
+      android_artifact_path: "build/app/outputs/flutter-apk/app-release.apk",
+      service_credentials_file: ENV["GOOGLE_SERVICE_ACCOUNT_KEY_PATH"]
+    )
+  end
+end
+
+# ============================================
+# Both Platforms
+# ============================================
+desc "Build and distribute both platforms"
+lane :distribute_all do
+  Fastlane::LaneManager.cruise_lane("ios", "distribute")
+  Fastlane::LaneManager.cruise_lane("android", "distribute")
+end

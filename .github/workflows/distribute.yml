@@ -1,0 +1,124 @@
+name: Build and Distribute
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'fastlane/**'
+      - '.github/workflows/distribute.yml'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - ios
+          - android
+          - both
+
+env:
+  FLUTTER_VERSION: '3.35.0'
+
+jobs:
+  # ============================================
+  # Android Build
+  # ============================================
+  android:
+    if: github.event.inputs.platform != 'ios'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create Google Services JSON
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > android/app/google-services.json
+
+      - name: Create keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/randoeats-release.keystore
+
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=randoeats
+          storeFile=randoeats-release.keystore
+          EOF
+
+      - name: Create service account file
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > firebase-service-account.json
+
+      - name: Build and distribute
+        env:
+          FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          GOOGLE_SERVICE_ACCOUNT_KEY_PATH: firebase-service-account.json
+        run: bundle exec fastlane android distribute
+
+  # ============================================
+  # iOS Build
+  # ============================================
+  ios:
+    if: github.event.inputs.platform != 'android'
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create GoogleService-Info.plist
+        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 -d > ios/Runner/GoogleService-Info.plist
+
+      - name: Create service account file
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > firebase-service-account.json
+
+      - name: Build and distribute
+        env:
+          FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
+          GOOGLE_SERVICE_ACCOUNT_KEY_PATH: firebase-service-account.json
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTH: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+        run: bundle exec fastlane ios distribute

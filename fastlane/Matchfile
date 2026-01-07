@@ -1,0 +1,9 @@
+git_url("git@github.com:Rockncoder/randoeats-certificates.git")
+storage_mode("git")
+type("adhoc") # Use "adhoc" for Firebase App Distribution
+
+app_identifier("com.tekadept.randoeats")
+team_id("S2NBGK85WD")
+
+# For CI
+readonly(is_ci)
