@@ -1,0 +1,7 @@
+config:
+  randoeats-infrastructure:bucketLabel: www-randoeats-com
+  randoeats-infrastructure:linodeRegion: us-east
+  randoeats-infrastructure:zoneId: 921e424b4d0d9931055e0061d3a8133a
+  cloudflare:apiToken:
+    secure: AAABAJdbv5gvizuMBjrhrrY2veLJ0BWG5F4nosqVKw4Op1B5CLLOAmDwGzhOgZJnViJSnZ8K2jR7N9GoGWpqJYAeYddmoIfY
+  randoeats-infrastructure:accountId: bc2430ab86e42d27d4113959031b08f7

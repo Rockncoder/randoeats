@@ -1,0 +1,3 @@
+name: randoeats-infrastructure
+runtime: nodejs
+description: RandoEats infrastructure - Cloudflare Pages for web, Firebase for mobile distribution

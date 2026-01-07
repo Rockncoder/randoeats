@@ -1,0 +1,135 @@
+name: Deploy Mobile Apps to Firebase App Distribution
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/randoeats_app/**'
+      - '.github/workflows/deploy-mobile.yml'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - android
+          - ios
+
+env:
+  FLUTTER_VERSION: '3.24.0'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-android:
+    name: Build & Deploy Android
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.inputs.platform != 'ios'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Decode Keystore
+        working-directory: apps/randoeats_app/android
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
+
+      - name: Create key.properties
+        working-directory: apps/randoeats_app/android
+        run: |
+          cat > key.properties << EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=keystore.jks
+          EOF
+
+      - name: Install dependencies
+        working-directory: apps/randoeats_app
+        run: flutter pub get
+
+      - name: Build Android APK
+        working-directory: apps/randoeats_app
+        run: |
+          flutter build apk \
+            --release \
+            --flavor production \
+            -t lib/main_production.dart
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: testers
+          file: apps/randoeats_app/build/app/outputs/flutter-apk/app-production-release.apk
+
+  build-ios:
+    name: Build & Deploy iOS
+    runs-on: macos-latest
+    environment: production
+    if: github.event.inputs.platform != 'android'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install Apple Certificate
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.IOS_DISTRIBUTION_CERT_BASE64 }}
+          p12-password: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+
+      - name: Install Provisioning Profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
+
+      - name: Install dependencies
+        working-directory: apps/randoeats_app
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/randoeats_app/ios
+        run: pod install
+
+      - name: Build iOS IPA
+        working-directory: apps/randoeats_app
+        run: |
+          flutter build ipa \
+            --release \
+            --flavor production \
+            -t lib/main_production.dart \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_IOS_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          groups: testers
+          file: apps/randoeats_app/build/ios/ipa/randoeats_app.ipa
