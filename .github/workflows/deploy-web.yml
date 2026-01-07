@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/randoeats_app/**'
+      - 'lib/**'
+      - 'pubspec.yaml'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -29,11 +30,9 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        working-directory: apps/randoeats_app
         run: flutter pub get
 
       - name: Build Flutter Web
-        working-directory: apps/randoeats_app
         run: |
           flutter build web \
             --release \
@@ -45,4 +44,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy apps/randoeats_app/build/web --project-name=randoeats --commit-dirty=true
+          command: pages deploy build/web --project-name=randoeats --commit-dirty=true

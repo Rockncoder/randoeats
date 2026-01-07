@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/randoeats_app/**'
+      - 'lib/**'
+      - 'pubspec.yaml'
       - '.github/workflows/deploy-mobile.yml'
   workflow_dispatch:
     inputs:
@@ -47,12 +48,12 @@ jobs:
           cache: true
 
       - name: Decode Keystore
-        working-directory: apps/randoeats_app/android
+        working-directory: android
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
 
       - name: Create key.properties
-        working-directory: apps/randoeats_app/android
+        working-directory: android
         run: |
           cat > key.properties << EOF
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -62,11 +63,9 @@ jobs:
           EOF
 
       - name: Install dependencies
-        working-directory: apps/randoeats_app
         run: flutter pub get
 
       - name: Build Android APK
-        working-directory: apps/randoeats_app
         run: |
           flutter build apk \
             --release \
@@ -79,7 +78,7 @@ jobs:
           appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           groups: testers
-          file: apps/randoeats_app/build/app/outputs/flutter-apk/app-production-release.apk
+          file: build/app/outputs/flutter-apk/app-production-release.apk
 
   build-ios:
     name: Build & Deploy iOS
@@ -110,15 +109,13 @@ jobs:
           echo "${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/profile.mobileprovision
 
       - name: Install dependencies
-        working-directory: apps/randoeats_app
         run: flutter pub get
 
       - name: Install CocoaPods dependencies
-        working-directory: apps/randoeats_app/ios
+        working-directory: ios
         run: pod install
 
       - name: Build iOS IPA
-        working-directory: apps/randoeats_app
         run: |
           flutter build ipa \
             --release \
@@ -132,4 +129,4 @@ jobs:
           appId: ${{ secrets.FIREBASE_IOS_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           groups: testers
-          file: apps/randoeats_app/build/ios/ipa/randoeats_app.ipa
+          file: build/ios/ipa/randoeats.ipa
