@@ -57,9 +57,9 @@ end
 platform :android do
   desc "Build and upload Android to Firebase App Distribution"
   lane :distribute do
-    # Build Flutter app
+    # Build Flutter app with production flavor
     Dir.chdir("..") do
-      sh("flutter build apk --release -t lib/main_production.dart")
+      sh("flutter build apk --release --flavor production -t lib/main_production.dart")
     end
 
     # Upload to Firebase App Distribution
@@ -68,7 +68,7 @@ platform :android do
       groups: "internal-testers",
       release_notes: changelog_from_git_commits(commits_count: 5, merge_commit_filtering: "exclude_merges"),
       android_artifact_type: "APK",
-      android_artifact_path: "build/app/outputs/flutter-apk/app-release.apk",
+      android_artifact_path: "build/app/outputs/flutter-apk/app-production-release.apk",
       service_credentials_file: ENV["GOOGLE_SERVICE_ACCOUNT_KEY_PATH"]
     )
   end
