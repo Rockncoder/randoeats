@@ -19,7 +19,9 @@ platform :ios do
 
     # Build Flutter app with production flavor
     Dir.chdir("..") do
-      sh("flutter build ios --release --flavor production --no-codesign -t lib/main_production.dart")
+      dart_defines = ""
+      dart_defines += " --dart-define=GOOGLE_PLACES_API_KEY=#{ENV['GOOGLE_PLACES_API_KEY']}" if ENV['GOOGLE_PLACES_API_KEY']
+      sh("flutter build ios --release --flavor production --no-codesign -t lib/main_production.dart#{dart_defines}")
     end
 
     # Configure code signing for manual signing
@@ -69,7 +71,9 @@ platform :android do
   lane :distribute do
     # Build Flutter app with production flavor
     Dir.chdir("..") do
-      sh("flutter build apk --release --flavor production -t lib/main_production.dart")
+      dart_defines = ""
+      dart_defines += " --dart-define=GOOGLE_PLACES_API_KEY=#{ENV['GOOGLE_PLACES_API_KEY']}" if ENV['GOOGLE_PLACES_API_KEY']
+      sh("flutter build apk --release --flavor production -t lib/main_production.dart#{dart_defines}")
     end
 
     # Upload to Firebase App Distribution

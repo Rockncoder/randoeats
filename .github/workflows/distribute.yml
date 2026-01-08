@@ -127,6 +127,7 @@ jobs:
         env:
           FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
           GOOGLE_SERVICE_ACCOUNT_KEY_PATH: firebase-service-account.json
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
         run: bundle exec fastlane android distribute
 
   # ============================================
@@ -171,4 +172,5 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_KEY_PATH: firebase-service-account.json
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_BASIC_AUTH: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
         run: bundle exec fastlane ios distribute
