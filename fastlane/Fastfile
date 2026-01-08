@@ -13,7 +13,8 @@ platform :ios do
     match(
       type: "adhoc",
       readonly: is_ci,
-      git_basic_authorization: Base64.strict_encode64(ENV["MATCH_GIT_BASIC_AUTH"])
+      git_basic_authorization: Base64.strict_encode64(ENV["MATCH_GIT_BASIC_AUTH"]),
+      clone_branch_directly: true
     )
 
     # Build Flutter app with production flavor
