@@ -9,12 +9,18 @@ environment:
 
 dependencies:
   bloc: ^9.0.1
+  equatable: ^2.0.7
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
   flutter_localizations:
     sdk: flutter
+  geolocator: ^13.0.2
+  google_fonts: ^6.2.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   intl: ^0.20.2
+  permission_handler: ^11.4.0
 
 dev_dependencies:
   bloc_test: ^10.0.0
