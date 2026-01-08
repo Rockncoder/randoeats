@@ -34,9 +34,8 @@ class Restaurant extends Equatable {
       longitude: (location?['lng'] as num?)?.toDouble() ?? 0,
       rating: (json['rating'] as num?)?.toDouble(),
       priceLevel: _parsePriceLevel(json['price_level'] as int?),
-      types: (json['types'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
+      types:
+          (json['types'] as List<dynamic>?)?.map((e) => e as String).toList() ??
           [],
       photoReference: _extractPhotoReference(json['photos']),
       isOpen: _parseOpenStatus(json['opening_hours']),
@@ -106,16 +105,16 @@ class Restaurant extends Equatable {
 
   @override
   List<Object?> get props => [
-        placeId,
-        name,
-        address,
-        latitude,
-        longitude,
-        rating,
-        priceLevel,
-        types,
-        photoReference,
-        isOpen,
-        totalRatings,
-      ];
+    placeId,
+    name,
+    address,
+    latitude,
+    longitude,
+    rating,
+    priceLevel,
+    types,
+    photoReference,
+    isOpen,
+    totalRatings,
+  ];
 }

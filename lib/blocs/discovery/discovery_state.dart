@@ -67,19 +67,20 @@ class DiscoveryState extends Equatable {
           ? null
           : (selectedRestaurant ?? this.selectedRestaurant),
       mood: mood ?? this.mood,
-      errorMessage:
-          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
       shownPlaceIds: shownPlaceIds ?? this.shownPlaceIds,
     );
   }
 
   @override
   List<Object?> get props => [
-        status,
-        restaurants,
-        selectedRestaurant,
-        mood,
-        errorMessage,
-        shownPlaceIds,
-      ];
+    status,
+    restaurants,
+    selectedRestaurant,
+    mood,
+    errorMessage,
+    shownPlaceIds,
+  ];
 }

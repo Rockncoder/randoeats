@@ -18,10 +18,10 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     PlacesService? placesService,
     LocationService? locationService,
     StorageService? storageService,
-  })  : _placesService = placesService ?? PlacesService.instance,
-        _locationService = locationService ?? LocationService.instance,
-        _storageService = storageService ?? StorageService.instance,
-        super(const DiscoveryState()) {
+  }) : _placesService = placesService ?? PlacesService.instance,
+       _locationService = locationService ?? LocationService.instance,
+       _storageService = storageService ?? StorageService.instance,
+       super(const DiscoveryState()) {
     on<DiscoveryStarted>(_onStarted);
     on<DiscoveryRefreshed>(_onRefreshed);
     on<DiscoveryRestaurantSelected>(_onRestaurantSelected);
@@ -42,11 +42,13 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     DiscoveryStarted event,
     Emitter<DiscoveryState> emit,
   ) async {
-    emit(state.copyWith(
-      status: DiscoveryStatus.loading,
-      mood: event.mood,
-      clearErrorMessage: true,
-    ));
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.loading,
+        mood: event.mood,
+        clearErrorMessage: true,
+      ),
+    );
 
     // Get current location
     final locationResult = await _locationService.getCurrentLocation();
@@ -63,10 +65,12 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
         _ => 'Unable to determine location.',
       };
 
-      emit(state.copyWith(
-        status: DiscoveryStatus.failure,
-        errorMessage: message,
-      ));
+      emit(
+        state.copyWith(
+          status: DiscoveryStatus.failure,
+          errorMessage: message,
+        ),
+      );
       return;
     }
 
@@ -84,20 +88,24 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     );
 
     if (placesResult is PlacesError) {
-      emit(state.copyWith(
-        status: DiscoveryStatus.failure,
-        errorMessage: placesResult.message,
-      ));
+      emit(
+        state.copyWith(
+          status: DiscoveryStatus.failure,
+          errorMessage: placesResult.message,
+        ),
+      );
       return;
     }
 
     final restaurants = (placesResult as PlacesSuccess).restaurants;
 
     if (restaurants.isEmpty) {
-      emit(state.copyWith(
-        status: DiscoveryStatus.failure,
-        errorMessage: 'No restaurants found nearby. Try a different mood!',
-      ));
+      emit(
+        state.copyWith(
+          status: DiscoveryStatus.failure,
+          errorMessage: 'No restaurants found nearby. Try a different mood!',
+        ),
+      );
       return;
     }
 
@@ -107,12 +115,14 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
 
     final pageRestaurants = _getNextPage();
 
-    emit(state.copyWith(
-      status: DiscoveryStatus.success,
-      restaurants: pageRestaurants,
-      shownPlaceIds: pageRestaurants.map((r) => r.placeId).toSet(),
-      clearSelectedRestaurant: true,
-    ));
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.success,
+        restaurants: pageRestaurants,
+        shownPlaceIds: pageRestaurants.map((r) => r.placeId).toSet(),
+        clearSelectedRestaurant: true,
+      ),
+    );
   }
 
   Future<void> _onRefreshed(
@@ -127,10 +137,12 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       final locationResult = await _locationService.getCurrentLocation();
 
       if (locationResult is! LocationSuccess) {
-        emit(state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: 'Unable to determine location for refresh.',
-        ));
+        emit(
+          state.copyWith(
+            status: DiscoveryStatus.failure,
+            errorMessage: 'Unable to determine location for refresh.',
+          ),
+        );
         return;
       }
 
@@ -148,21 +160,24 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       );
 
       if (placesResult is PlacesError) {
-        emit(state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: placesResult.message,
-        ));
+        emit(
+          state.copyWith(
+            status: DiscoveryStatus.failure,
+            errorMessage: placesResult.message,
+          ),
+        );
         return;
       }
 
       final restaurants = (placesResult as PlacesSuccess).restaurants;
 
       if (restaurants.isEmpty) {
-        emit(state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage:
-              "No more restaurants found. That's all in your area!",
-        ));
+        emit(
+          state.copyWith(
+            status: DiscoveryStatus.failure,
+            errorMessage: "No more restaurants found. That's all in your area!",
+          ),
+        );
         return;
       }
 
@@ -176,22 +191,26 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       newShownIds.add(r.placeId);
     }
 
-    emit(state.copyWith(
-      status: DiscoveryStatus.success,
-      restaurants: pageRestaurants,
-      shownPlaceIds: newShownIds,
-      clearSelectedRestaurant: true,
-    ));
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.success,
+        restaurants: pageRestaurants,
+        shownPlaceIds: newShownIds,
+        clearSelectedRestaurant: true,
+      ),
+    );
   }
 
   void _onRestaurantSelected(
     DiscoveryRestaurantSelected event,
     Emitter<DiscoveryState> emit,
   ) {
-    emit(state.copyWith(
-      status: DiscoveryStatus.selected,
-      selectedRestaurant: event.restaurant,
-    ));
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.selected,
+        selectedRestaurant: event.restaurant,
+      ),
+    );
   }
 
   void _onReset(

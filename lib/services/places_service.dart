@@ -97,8 +97,9 @@ class PlacesService {
       if (keyword != null && keyword.isNotEmpty) 'keyword': keyword,
     };
 
-    final uri = Uri.parse('$_baseUrl/nearbysearch/json')
-        .replace(queryParameters: queryParams);
+    final uri = Uri.parse(
+      '$_baseUrl/nearbysearch/json',
+    ).replace(queryParameters: queryParams);
 
     final response = await _client.get(uri);
 

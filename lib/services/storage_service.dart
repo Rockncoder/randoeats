@@ -89,9 +89,9 @@ class StorageService {
   Future<void> saveRating(UserRating rating) async {
     // Remove any existing rating for this place
     final existingKey = _ratings.keys.cast<dynamic>().firstWhere(
-          (key) => _ratings.get(key)?.placeId == rating.placeId,
-          orElse: () => null,
-        );
+      (key) => _ratings.get(key)?.placeId == rating.placeId,
+      orElse: () => null,
+    );
 
     if (existingKey != null) {
       await _ratings.delete(existingKey);
@@ -103,9 +103,9 @@ class StorageService {
   /// Removes the rating for a place.
   Future<void> removeRating(String placeId) async {
     final key = _ratings.keys.cast<dynamic>().firstWhere(
-          (key) => _ratings.get(key)?.placeId == placeId,
-          orElse: () => null,
-        );
+      (key) => _ratings.get(key)?.placeId == placeId,
+      orElse: () => null,
+    );
 
     if (key != null) {
       await _ratings.delete(key);
@@ -149,9 +149,9 @@ class StorageService {
   Future<void> saveRecentPick(RecentPick pick) async {
     // Remove any existing pick for this place
     final existingKey = _recentPicks.keys.cast<dynamic>().firstWhere(
-          (key) => _recentPicks.get(key)?.placeId == pick.placeId,
-          orElse: () => null,
-        );
+      (key) => _recentPicks.get(key)?.placeId == pick.placeId,
+      orElse: () => null,
+    );
 
     if (existingKey != null) {
       await _recentPicks.delete(existingKey);

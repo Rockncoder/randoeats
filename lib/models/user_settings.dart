@@ -58,8 +58,8 @@ class UserSettings extends Equatable {
 
   @override
   List<Object?> get props => [
-        hideDaysAfterPick,
-        searchRadiusMeters,
-        includeOpenOnly,
-      ];
+    hideDaysAfterPick,
+    searchRadiusMeters,
+    includeOpenOnly,
+  ];
 }

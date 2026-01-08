@@ -74,12 +74,12 @@ class ResultsScreen extends StatelessWidget {
           child: state.status == DiscoveryStatus.loading
               ? _buildLoading(theme)
               : state.status == DiscoveryStatus.failure
-                  ? _buildError(
-                      context,
-                      theme,
-                      state.errorMessage ?? 'Unknown error',
-                    )
-                  : _buildList(context, state),
+              ? _buildError(
+                  context,
+                  theme,
+                  state.errorMessage ?? 'Unknown error',
+                )
+              : _buildList(context, state),
         ),
         // Refresh button
         if (state.status == DiscoveryStatus.success)
