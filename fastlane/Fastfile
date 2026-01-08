@@ -16,16 +16,16 @@ platform :ios do
       git_basic_authorization: Base64.strict_encode64(ENV["MATCH_GIT_BASIC_AUTH"])
     )
 
-    # Build Flutter app
+    # Build Flutter app with production flavor
     Dir.chdir("..") do
-      sh("flutter build ios --release --no-codesign -t lib/main_production.dart")
+      sh("flutter build ios --release --flavor production --no-codesign -t lib/main_production.dart")
     end
 
     # Build and sign IPA
     build_app(
       workspace: "ios/Runner.xcworkspace",
-      scheme: "Runner",
-      configuration: "Release",
+      scheme: "production",
+      configuration: "Release-production",
       export_method: "ad-hoc",
       output_directory: "build/ios",
       output_name: "RandoEats.ipa",
