@@ -26,7 +26,7 @@ class PlacesError extends PlacesResult {
   final String message;
 }
 
-/// Service for interacting with Google Places API.
+/// Service for interacting with Google Places API (New).
 class PlacesService {
   /// Creates a [PlacesService] with optional custom HTTP client.
   PlacesService({http.Client? client}) : _client = client ?? http.Client();
@@ -41,11 +41,24 @@ class PlacesService {
   /// Google Places API key from dart-define.
   static const _apiKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY');
 
-  /// Base URL for Places API.
-  static const _baseUrl = 'https://maps.googleapis.com/maps/api/place';
+  /// Base URL for Places API (New).
+  static const _baseUrl = 'https://places.googleapis.com/v1';
 
   /// Default search radius in meters (5km).
-  static const _defaultRadius = 5000;
+  static const _defaultRadius = 5000.0;
+
+  /// Field mask for restaurant search - Pro tier fields.
+  static const _fieldMask =
+      'places.id,'
+      'places.displayName,'
+      'places.formattedAddress,'
+      'places.location,'
+      'places.rating,'
+      'places.userRatingCount,'
+      'places.priceLevel,'
+      'places.photos,'
+      'places.primaryType,'
+      'places.currentOpeningHours';
 
   /// Fetches nearby restaurants based on location and optional mood.
   ///
@@ -66,11 +79,22 @@ class PlacesService {
     }
 
     try {
-      final restaurants = await _fetchNearbyRestaurants(
-        latitude: latitude,
-        longitude: longitude,
-        keyword: _extractKeyword(mood),
-      );
+      final keyword = _extractKeyword(mood);
+      final List<Restaurant> restaurants;
+
+      // Use text search if there's a keyword, otherwise use nearby search
+      if (keyword != null && keyword.isNotEmpty) {
+        restaurants = await _textSearchRestaurants(
+          latitude: latitude,
+          longitude: longitude,
+          query: keyword,
+        );
+      } else {
+        restaurants = await _nearbySearchRestaurants(
+          latitude: latitude,
+          longitude: longitude,
+        );
+      }
 
       // Filter out excluded places
       final filtered = restaurants
@@ -83,42 +107,90 @@ class PlacesService {
     }
   }
 
-  /// Fetches restaurants from the Places API.
-  Future<List<Restaurant>> _fetchNearbyRestaurants({
+  /// Searches for restaurants using text query via Places API (New).
+  Future<List<Restaurant>> _textSearchRestaurants({
     required double latitude,
     required double longitude,
-    String? keyword,
+    required String query,
   }) async {
-    final queryParams = {
-      'location': '$latitude,$longitude',
-      'radius': '$_defaultRadius',
-      'type': 'restaurant',
-      'key': _apiKey,
-      if (keyword != null && keyword.isNotEmpty) 'keyword': keyword,
-    };
+    final uri = Uri.parse('$_baseUrl/places:searchText');
 
-    final uri = Uri.parse(
-      '$_baseUrl/nearbysearch/json',
-    ).replace(queryParameters: queryParams);
+    final response = await _client.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': _apiKey,
+        'X-Goog-FieldMask': _fieldMask,
+      },
+      body: json.encode({
+        'textQuery': '$query restaurant',
+        'includedType': 'restaurant',
+        'locationBias': {
+          'circle': {
+            'center': {
+              'latitude': latitude,
+              'longitude': longitude,
+            },
+            'radius': _defaultRadius,
+          },
+        },
+        'pageSize': 10, // Fetch more to allow for filtering
+      }),
+    );
 
-    final response = await _client.get(uri);
+    return _parseResponse(response);
+  }
 
+  /// Searches for nearby restaurants via Places API (New).
+  Future<List<Restaurant>> _nearbySearchRestaurants({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/places:searchNearby');
+
+    final response = await _client.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': _apiKey,
+        'X-Goog-FieldMask': _fieldMask,
+      },
+      body: json.encode({
+        'includedTypes': ['restaurant'],
+        'locationRestriction': {
+          'circle': {
+            'center': {
+              'latitude': latitude,
+              'longitude': longitude,
+            },
+            'radius': _defaultRadius,
+          },
+        },
+        'maxResultCount': 10, // Fetch more to allow for filtering
+      }),
+    );
+
+    return _parseResponse(response);
+  }
+
+  /// Parses the API response and returns a list of restaurants.
+  List<Restaurant> _parseResponse(http.Response response) {
     if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
     }
 
     final data = json.decode(response.body) as Map<String, dynamic>;
-    final status = data['status'] as String?;
 
-    if (status != 'OK' && status != 'ZERO_RESULTS') {
-      final errorMessage = data['error_message'] as String? ?? status;
-      throw Exception('Places API error: $errorMessage');
+    // Check for API errors
+    if (data.containsKey('error')) {
+      final error = data['error'] as Map<String, dynamic>;
+      throw Exception('Places API error: ${error['message']}');
     }
 
-    final results = data['results'] as List<dynamic>? ?? [];
+    final places = data['places'] as List<dynamic>? ?? [];
 
-    return results
-        .map((r) => Restaurant.fromPlacesApi(r as Map<String, dynamic>))
+    return places
+        .map((p) => Restaurant.fromPlacesApiNew(p as Map<String, dynamic>))
         .toList();
   }
 
@@ -159,15 +231,17 @@ class PlacesService {
     return null;
   }
 
-  /// Builds a photo URL for a given photo reference.
+  /// Builds a photo URL for a given photo name (new API format).
   ///
-  /// Returns null if no API key or photo reference.
-  String? getPhotoUrl(String? photoReference, {int maxWidth = 400}) {
-    if (_apiKey.isEmpty || photoReference == null) return null;
+  /// [photoName] is the full resource name from the API response,
+  /// e.g., "places/ChIJ.../photos/AWU5..."
+  ///
+  /// Returns null if no API key or photo name.
+  String? getPhotoUrl(String? photoName, {int maxWidth = 400}) {
+    if (_apiKey.isEmpty || photoName == null) return null;
 
-    return '$_baseUrl/photo'
-        '?maxwidth=$maxWidth'
-        '&photo_reference=$photoReference'
+    return '$_baseUrl/$photoName/media'
+        '?maxWidthPx=$maxWidth'
         '&key=$_apiKey';
   }
 

@@ -21,25 +21,25 @@ class Restaurant extends Equatable {
     this.totalRatings,
   });
 
-  /// Creates a [Restaurant] from a Google Places API response.
-  factory Restaurant.fromPlacesApi(Map<String, dynamic> json) {
-    final geometry = json['geometry'] as Map<String, dynamic>?;
-    final location = geometry?['location'] as Map<String, dynamic>?;
+  /// Creates a [Restaurant] from Places API (New) response.
+  factory Restaurant.fromPlacesApiNew(Map<String, dynamic> json) {
+    final displayName = json['displayName'] as Map<String, dynamic>?;
+    final location = json['location'] as Map<String, dynamic>?;
+    final photos = json['photos'] as List<dynamic>?;
+    final openingHours = json['currentOpeningHours'] as Map<String, dynamic>?;
 
     return Restaurant(
-      placeId: json['place_id'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      address: json['vicinity'] as String? ?? '',
-      latitude: (location?['lat'] as num?)?.toDouble() ?? 0,
-      longitude: (location?['lng'] as num?)?.toDouble() ?? 0,
+      placeId: json['id'] as String? ?? '',
+      name: displayName?['text'] as String? ?? 'Unknown',
+      address: json['formattedAddress'] as String? ?? '',
+      latitude: (location?['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: (location?['longitude'] as num?)?.toDouble() ?? 0,
       rating: (json['rating'] as num?)?.toDouble(),
-      priceLevel: _parsePriceLevel(json['price_level'] as int?),
-      types:
-          (json['types'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-          [],
-      photoReference: _extractPhotoReference(json['photos']),
-      isOpen: _parseOpenStatus(json['opening_hours']),
-      totalRatings: json['user_ratings_total'] as int?,
+      priceLevel: _parsePriceLevelNew(json['priceLevel'] as String?),
+      types: _parseTypes(json),
+      photoReference: _extractPhotoName(photos),
+      isOpen: openingHours?['openNow'] as bool?,
+      totalRatings: json['userRatingCount'] as int?,
     );
   }
 
@@ -75,7 +75,7 @@ class Restaurant extends Equatable {
   @HiveField(7)
   final List<String> types;
 
-  /// Photo reference for fetching images from Places API.
+  /// Photo name for fetching images from Places API (New format).
   @HiveField(8)
   final String? photoReference;
 
@@ -87,20 +87,49 @@ class Restaurant extends Equatable {
   @HiveField(10)
   final int? totalRatings;
 
-  static String? _parsePriceLevel(int? level) {
+  /// Parses price level from new API enum string format.
+  static String? _parsePriceLevelNew(String? level) {
     if (level == null) return null;
-    return List.filled(level, r'$').join();
+
+    // New API returns: PRICE_LEVEL_FREE, PRICE_LEVEL_INEXPENSIVE,
+    // PRICE_LEVEL_MODERATE, PRICE_LEVEL_EXPENSIVE, PRICE_LEVEL_VERY_EXPENSIVE
+    return switch (level) {
+      'PRICE_LEVEL_FREE' => 'Free',
+      'PRICE_LEVEL_INEXPENSIVE' => r'$',
+      'PRICE_LEVEL_MODERATE' => r'$$',
+      'PRICE_LEVEL_EXPENSIVE' => r'$$$',
+      'PRICE_LEVEL_VERY_EXPENSIVE' => r'$$$$',
+      _ => null,
+    };
   }
 
-  static String? _extractPhotoReference(dynamic photos) {
-    if (photos == null || photos is! List || photos.isEmpty) return null;
+  /// Extracts photo name from new API photos array.
+  static String? _extractPhotoName(List<dynamic>? photos) {
+    if (photos == null || photos.isEmpty) return null;
     final firstPhoto = photos[0] as Map<String, dynamic>?;
-    return firstPhoto?['photo_reference'] as String?;
+    return firstPhoto?['name'] as String?;
   }
 
-  static bool? _parseOpenStatus(dynamic openingHours) {
-    if (openingHours == null || openingHours is! Map) return null;
-    return openingHours['open_now'] as bool?;
+  /// Parses types from new API response.
+  static List<String> _parseTypes(Map<String, dynamic> json) {
+    // New API has primaryType and types array
+    final types = <String>[];
+
+    final primaryType = json['primaryType'] as String?;
+    if (primaryType != null) {
+      types.add(primaryType);
+    }
+
+    final typesArray = json['types'] as List<dynamic>?;
+    if (typesArray != null) {
+      types.addAll(
+        typesArray
+            .map((e) => e as String)
+            .where((t) => t != primaryType), // Avoid duplicates
+      );
+    }
+
+    return types;
   }
 
   @override
