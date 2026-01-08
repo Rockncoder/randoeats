@@ -108,9 +108,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Install CocoaPods
-        run: sudo gem install cocoapods
-
       - name: Create GoogleService-Info.plist
         run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 -d > ios/Runner/GoogleService-Info.plist
 
