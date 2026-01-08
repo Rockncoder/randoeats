@@ -1,4 +1,4 @@
-git_url("git@github.com:Rockncoder/randoeats-certificates.git")
+git_url("https://github.com/Rockncoder/randoeats-certificates.git")
 storage_mode("git")
 type("adhoc") # Use "adhoc" for Firebase App Distribution
 
