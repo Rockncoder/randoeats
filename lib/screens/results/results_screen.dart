@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
+import 'package:randoeats/screens/screens.dart';
 import 'package:randoeats/widgets/widgets.dart';
 
 /// Screen displaying restaurant discovery results.
@@ -160,13 +161,17 @@ class ResultsScreen extends StatelessWidget {
           restaurant: restaurant,
           index: index,
           onTap: () async {
-            context.read<DiscoveryBloc>().add(
-                  DiscoveryRestaurantSelected(restaurant),
-                );
-            // Navigate to detail screen (will be implemented)
-            await Navigator.of(context).pushNamed(
-              '/detail',
-              arguments: restaurant,
+            final bloc = context.read<DiscoveryBloc>()
+              ..add(DiscoveryRestaurantSelected(restaurant));
+
+            // Navigate to detail screen
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => BlocProvider.value(
+                  value: bloc,
+                  child: DetailScreen(restaurant: restaurant),
+                ),
+              ),
             );
           },
         );
