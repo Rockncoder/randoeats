@@ -381,7 +381,92 @@ jobs:
 
 ## Step 6: GitHub Secrets Configuration
 
-### Required Secrets
+### Reusable vs App-Specific Secrets
+
+To minimize setup for multiple repos, categorize secrets as follows:
+
+#### Reusable Across All Apps (set once, use everywhere)
+
+| Secret | Description | Notes |
+|--------|-------------|-------|
+| `FIREBASE_SERVICE_ACCOUNT` | Base64 service account JSON | Same if all apps in one Firebase project |
+| `MATCH_GIT_BASIC_AUTH` | GitHub PAT for cert repo | Same PAT works for all repos |
+| `MATCH_PASSWORD` | Match encryption password | Same if using shared certificates repo |
+| `APPLE_TEAM_ID` | Apple Developer Team ID | Same for all apps under same account |
+| `ANDROID_KEYSTORE_BASE64` | Base64 keystore | Can use single keystore with multiple aliases |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password | Same if using shared keystore |
+
+#### App-Specific (must set per repo)
+
+| Secret | Description | Notes |
+|--------|-------------|-------|
+| `FIREBASE_APP_ID_IOS` | iOS Firebase App ID | Unique per app |
+| `FIREBASE_APP_ID_ANDROID` | Android Firebase App ID | Unique per app |
+| `GOOGLE_SERVICE_INFO_PLIST` | Base64 iOS config | Unique per app |
+| `GOOGLE_SERVICES_JSON` | Base64 Android config | Unique per app |
+| `APP_IDENTIFIER` | Bundle ID | Unique per app (e.g., `com.tekadept.appname`) |
+| `ANDROID_KEY_ALIAS` | Key alias in keystore | Unique per app |
+| `ANDROID_KEY_PASSWORD` | Key password | Can be same or different per alias |
+
+### Shared Keystore Strategy (Recommended)
+
+Use ONE keystore with multiple key aliases for all your apps:
+
+```bash
+# Create initial keystore with first app
+keytool -genkey -v -keystore tekadept-release.keystore \
+  -alias app1 -keyalg RSA -keysize 2048 -validity 10000
+
+# Add additional app aliases to same keystore
+keytool -genkey -v -keystore tekadept-release.keystore \
+  -alias app2 -keyalg RSA -keysize 2048 -validity 10000
+
+keytool -genkey -v -keystore tekadept-release.keystore \
+  -alias app3 -keyalg RSA -keysize 2048 -validity 10000
+```
+
+This way `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD` are the same across all repos.
+
+### Shared Certificates Repository (Recommended)
+
+Use ONE certificates repo for all iOS apps:
+
+1. Create single repo: `github.com/USERNAME/tekadept-certificates`
+2. Run `fastlane match adhoc` for each app's bundle ID
+3. All certs stored in same repo, encrypted with same `MATCH_PASSWORD`
+
+Each app's Matchfile just specifies its own `app_identifier`:
+```ruby
+git_url("https://github.com/USERNAME/tekadept-certificates.git")
+storage_mode("git")
+type("adhoc")
+app_identifier("com.tekadept.THIS_APP_NAME")  # Only this changes per app
+team_id("S2NBGK85WD")
+```
+
+### Quick Setup for New Repo
+
+For a new app repo, you only need to set these app-specific secrets:
+```bash
+# App-specific (6 secrets)
+gh secret set FIREBASE_APP_ID_IOS --body "1:xxx:ios:xxx"
+gh secret set FIREBASE_APP_ID_ANDROID --body "1:xxx:android:xxx"
+gh secret set GOOGLE_SERVICE_INFO_PLIST < ios-config.b64
+gh secret set GOOGLE_SERVICES_JSON < android-config.b64
+gh secret set APP_IDENTIFIER --body "com.tekadept.newapp"
+gh secret set ANDROID_KEY_ALIAS --body "newapp"
+gh secret set ANDROID_KEY_PASSWORD --body "password_for_this_alias"
+
+# Reusable (copy from existing repo or set once)
+gh secret set FIREBASE_SERVICE_ACCOUNT < service-account.b64
+gh secret set MATCH_GIT_BASIC_AUTH --body "username:ghp_token"
+gh secret set MATCH_PASSWORD --body "your_match_password"
+gh secret set APPLE_TEAM_ID --body "S2NBGK85WD"
+gh secret set ANDROID_KEYSTORE_BASE64 < keystore.b64
+gh secret set ANDROID_KEYSTORE_PASSWORD --body "keystore_password"
+```
+
+### All Secrets Reference
 
 | Secret | Description | How to Get |
 |--------|-------------|------------|
@@ -393,7 +478,7 @@ jobs:
 | `MATCH_PASSWORD` | Match encryption password | Set during `fastlane match init` |
 | `MATCH_GIT_BASIC_AUTH` | GitHub PAT for cert repo | `username:token` format |
 | `APPLE_TEAM_ID` | Apple Developer Team ID | Apple Developer Portal |
-| `APP_IDENTIFIER` | Bundle ID | e.g., `com.company.appname` |
+| `APP_IDENTIFIER` | Bundle ID | e.g., `com.tekadept.appname` |
 | `ANDROID_KEYSTORE_BASE64` | Base64 keystore | `base64 -i release.keystore` |
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore password | Set during keystore creation |
 | `ANDROID_KEY_PASSWORD` | Key password | Set during keystore creation |
