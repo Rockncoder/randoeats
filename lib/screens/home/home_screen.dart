@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
+import 'package:randoeats/screens/screens.dart';
 import 'package:randoeats/services/services.dart';
 
 /// The main home screen of rand-o-eats.
@@ -57,17 +60,18 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _onEngagePressed() {
-    // TODO(phase2): Implement discovery flow
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Scanning nearby quadrants for "${_moodController.text}"...',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: GoogieColors.cream,
-              ),
+  Future<void> _onEngagePressed() async {
+    final mood = _moodController.text.trim();
+    final bloc = context.read<DiscoveryBloc>()
+      ..add(DiscoveryStarted(mood: mood.isEmpty ? null : mood));
+
+    // Navigate to results with BLoC access
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BlocProvider.value(
+          value: bloc,
+          child: const ResultsScreen(),
         ),
-        backgroundColor: GoogieColors.turquoise,
       ),
     );
   }
