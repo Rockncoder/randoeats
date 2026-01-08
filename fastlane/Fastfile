@@ -29,6 +29,7 @@ platform :ios do
       export_method: "ad-hoc",
       output_directory: "build/ios",
       output_name: "RandoEats.ipa",
+      xcargs: "DEVELOPMENT_TEAM=S2NBGK85WD CODE_SIGN_STYLE=Manual",
       export_options: {
         provisioningProfiles: {
           "com.tekadept.randoeats" => "match AdHoc com.tekadept.randoeats"
