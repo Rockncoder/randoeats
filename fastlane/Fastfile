@@ -22,6 +22,16 @@ platform :ios do
       sh("flutter build ios --release --flavor production --no-codesign -t lib/main_production.dart")
     end
 
+    # Configure code signing for manual signing
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "ios/Runner.xcodeproj",
+      team_id: "S2NBGK85WD",
+      profile_name: "match AdHoc com.tekadept.randoeats",
+      code_sign_identity: "Apple Distribution",
+      targets: ["Runner"]
+    )
+
     # Build and sign IPA
     build_app(
       workspace: "ios/Runner.xcworkspace",
@@ -30,8 +40,6 @@ platform :ios do
       export_method: "ad-hoc",
       output_directory: "build/ios",
       output_name: "RandoEats.ipa",
-      codesigning_identity: "Apple Distribution",
-      xcargs: "DEVELOPMENT_TEAM=S2NBGK85WD CODE_SIGN_STYLE=Manual -allowProvisioningUpdates",
       export_options: {
         provisioningProfiles: {
           "com.tekadept.randoeats" => "match AdHoc com.tekadept.randoeats"
