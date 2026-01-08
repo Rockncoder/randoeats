@@ -25,14 +25,58 @@ env:
 
 jobs:
   # ============================================
+  # Increment Build Number
+  # ============================================
+  increment-build:
+    runs-on: ubuntu-latest
+    outputs:
+      build_number: ${{ steps.bump.outputs.build_number }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Increment build number
+        id: bump
+        run: |
+          # Get current version line
+          VERSION_LINE=$(grep "^version:" pubspec.yaml)
+          echo "Current: $VERSION_LINE"
+
+          # Extract version and build number
+          VERSION=$(echo $VERSION_LINE | sed 's/version: //' | cut -d'+' -f1)
+          CURRENT_BUILD=$(echo $VERSION_LINE | cut -d'+' -f2)
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+
+          echo "Version: $VERSION, Build: $CURRENT_BUILD -> $NEW_BUILD"
+
+          # Update pubspec.yaml
+          sed -i "s/^version: .*/version: ${VERSION}+${NEW_BUILD}/" pubspec.yaml
+
+          # Output for other jobs
+          echo "build_number=$NEW_BUILD" >> $GITHUB_OUTPUT
+
+      - name: Commit build number
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add pubspec.yaml
+          git diff --staged --quiet || git commit -m "chore: bump build to ${{ steps.bump.outputs.build_number }} [skip ci]"
+          git push
+
+  # ============================================
   # Android Build
   # ============================================
   android:
+    needs: increment-build
     if: github.event.inputs.platform != 'ios'
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -86,11 +130,14 @@ jobs:
   # iOS Build
   # ============================================
   ios:
+    needs: increment-build
     if: github.event.inputs.platform != 'android'
     runs-on: macos-14
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
