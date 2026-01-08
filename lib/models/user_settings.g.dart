@@ -17,19 +17,22 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       hideDaysAfterPick: fields[0] as int? ?? UserSettings.defaultHideDays,
       searchRadiusMeters: fields[1] as int? ?? UserSettings.defaultSearchRadius,
       includeOpenOnly: fields[2] as bool? ?? true,
+      maxResults: fields[3] as int? ?? UserSettings.defaultMaxResults,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserSettings obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.hideDaysAfterPick)
       ..writeByte(1)
       ..write(obj.searchRadiusMeters)
       ..writeByte(2)
-      ..write(obj.includeOpenOnly);
+      ..write(obj.includeOpenOnly)
+      ..writeByte(3)
+      ..write(obj.maxResults);
   }
 
   @override

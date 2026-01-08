@@ -18,11 +18,13 @@ class StorageService {
   static const String _ratingsBox = 'ratings';
   static const String _recentPicksBox = 'recent_picks';
   static const String _settingsBox = 'settings';
+  static const String _visitedPlacesBox = 'visited_places';
   static const String _settingsKey = 'user_settings';
 
   late Box<UserRating> _ratings;
   late Box<RecentPick> _recentPicks;
   late Box<UserSettings> _settings;
+  late Box<VisitedPlace> _visitedPlaces;
 
   bool _isInitialized = false;
 
@@ -43,12 +45,14 @@ class StorageService {
       ..registerAdapter(UserRatingAdapter())
       ..registerAdapter(RecentPickAdapter())
       ..registerAdapter(UserSettingsAdapter())
-      ..registerAdapter(RestaurantAdapter());
+      ..registerAdapter(RestaurantAdapter())
+      ..registerAdapter(VisitedPlaceAdapter());
 
     // Open boxes
     _ratings = await Hive.openBox<UserRating>(_ratingsBox);
     _recentPicks = await Hive.openBox<RecentPick>(_recentPicksBox);
     _settings = await Hive.openBox<UserSettings>(_settingsBox);
+    _visitedPlaces = await Hive.openBox<VisitedPlace>(_visitedPlacesBox);
 
     _isInitialized = true;
     debugPrint('StorageService initialized');
@@ -175,6 +179,61 @@ class StorageService {
   }
 
   // ============================================
+  // Visited Places
+  // ============================================
+
+  /// Gets all visited places.
+  List<VisitedPlace> getAllVisitedPlaces() {
+    return _visitedPlaces.values.toList();
+  }
+
+  /// Gets the visited place record for a specific placeId, if any.
+  VisitedPlace? getVisitedPlace(String placeId) {
+    for (final visited in _visitedPlaces.values) {
+      if (visited.placeId == placeId) return visited;
+    }
+    return null;
+  }
+
+  /// Gets the visit count for a place (0 if never visited).
+  int getVisitCount(String placeId) {
+    return getVisitedPlace(placeId)?.visitCount ?? 0;
+  }
+
+  /// Increments the visit count for a place (creates record if first visit).
+  Future<void> incrementVisitCount(String placeId) async {
+    final existing = getVisitedPlace(placeId);
+
+    if (existing != null) {
+      // Find and update existing record
+      final key = _visitedPlaces.keys.cast<dynamic>().firstWhere(
+        (key) => _visitedPlaces.get(key)?.placeId == placeId,
+        orElse: () => null,
+      );
+      if (key != null) {
+        await _visitedPlaces.put(key, existing.incrementVisit());
+      }
+    } else {
+      // First visit
+      await _visitedPlaces.add(VisitedPlace.firstVisit(placeId));
+    }
+  }
+
+  /// Gets a map of placeId -> visitCount for sorting.
+  Map<String, int> getVisitCountMap() {
+    final map = <String, int>{};
+    for (final visited in _visitedPlaces.values) {
+      map[visited.placeId] = visited.visitCount;
+    }
+    return map;
+  }
+
+  /// Clears all visited places.
+  Future<void> clearVisitedPlaces() async {
+    await _visitedPlaces.clear();
+  }
+
+  // ============================================
   // Utility Methods
   // ============================================
 
@@ -193,6 +252,7 @@ class StorageService {
       _ratings.clear(),
       _recentPicks.clear(),
       _settings.clear(),
+      _visitedPlaces.clear(),
     ]);
   }
 
@@ -202,6 +262,7 @@ class StorageService {
       _ratings.close(),
       _recentPicks.close(),
       _settings.close(),
+      _visitedPlaces.close(),
     ]);
   }
 }

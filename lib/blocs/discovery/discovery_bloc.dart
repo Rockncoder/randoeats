@@ -8,9 +8,6 @@ import 'package:randoeats/services/services.dart';
 part 'discovery_event.dart';
 part 'discovery_state.dart';
 
-/// Number of restaurants to show per discovery.
-const int _resultsPerPage = 5;
-
 /// BLoC for managing restaurant discovery.
 class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   /// Creates a [DiscoveryBloc].
@@ -31,12 +28,6 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
   final PlacesService _placesService;
   final LocationService _locationService;
   final StorageService _storageService;
-
-  /// All fetched restaurants from the current search.
-  List<Restaurant> _allRestaurants = [];
-
-  /// Index into _allRestaurants for pagination.
-  int _currentIndex = 0;
 
   Future<void> _onStarted(
     DiscoveryStarted event,
@@ -76,15 +67,20 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
 
     final position = locationResult.position;
 
+    // Get user settings
+    final settings = _storageService.getSettings();
+
     // Get excluded place IDs (thumbs down + recently picked)
     final excludedIds = _storageService.getExcludedPlaceIds();
 
-    // Fetch restaurants
+    // Fetch restaurants with user-configured radius and max results
     final placesResult = await _placesService.getNearbyRestaurants(
       latitude: position.latitude,
       longitude: position.longitude,
       mood: event.mood,
       excludePlaceIds: excludedIds,
+      radiusMeters: settings.searchRadiusMeters,
+      maxResultCount: settings.maxResults,
     );
 
     if (placesResult is PlacesError) {
@@ -97,29 +93,40 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       return;
     }
 
-    final restaurants = (placesResult as PlacesSuccess).restaurants;
+    var restaurants = (placesResult as PlacesSuccess).restaurants;
+
+    // Filter to only open restaurants (if setting enabled)
+    if (settings.includeOpenOnly) {
+      restaurants = restaurants.where((r) => r.isOpen ?? false).toList();
+    }
 
     if (restaurants.isEmpty) {
+      final message = settings.includeOpenOnly
+          ? 'No open restaurants found nearby. '
+                'Try disabling "Open Only" in settings.'
+          : 'No restaurants found nearby. Try a different mood!';
       emit(
         state.copyWith(
           status: DiscoveryStatus.failure,
-          errorMessage: 'No restaurants found nearby. Try a different mood!',
+          errorMessage: message,
         ),
       );
       return;
     }
 
-    // Store all results and show first page
-    _allRestaurants = restaurants;
-    _currentIndex = 0;
-
-    final pageRestaurants = _getNextPage();
+    // Sort by visit count (unvisited first, then by ascending visit count)
+    final visitCounts = _storageService.getVisitCountMap();
+    restaurants.sort((a, b) {
+      final countA = visitCounts[a.placeId] ?? 0;
+      final countB = visitCounts[b.placeId] ?? 0;
+      return countA.compareTo(countB);
+    });
 
     emit(
       state.copyWith(
         status: DiscoveryStatus.success,
-        restaurants: pageRestaurants,
-        shownPlaceIds: pageRestaurants.map((r) => r.placeId).toSet(),
+        restaurants: restaurants,
+        shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
         clearSelectedRestaurant: true,
       ),
     );
@@ -129,82 +136,94 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     DiscoveryRefreshed event,
     Emitter<DiscoveryState> emit,
   ) async {
-    // Check if we have more restaurants to show
-    if (_currentIndex >= _allRestaurants.length) {
-      // Need to fetch more - re-trigger search excluding shown restaurants
-      emit(state.copyWith(status: DiscoveryStatus.loading));
+    // Re-fetch restaurants with current settings
+    emit(state.copyWith(status: DiscoveryStatus.loading));
 
-      final locationResult = await _locationService.getCurrentLocation();
+    final locationResult = await _locationService.getCurrentLocation();
 
-      if (locationResult is! LocationSuccess) {
-        emit(
-          state.copyWith(
-            status: DiscoveryStatus.failure,
-            errorMessage: 'Unable to determine location for refresh.',
-          ),
-        );
-        return;
-      }
-
-      final position = locationResult.position;
-
-      // Get all excluded IDs (permanent + session-shown)
-      final permanentExcluded = _storageService.getExcludedPlaceIds();
-      final allExcluded = {...permanentExcluded, ...state.shownPlaceIds};
-
-      final placesResult = await _placesService.getNearbyRestaurants(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        mood: state.mood,
-        excludePlaceIds: allExcluded,
+    if (locationResult is! LocationSuccess) {
+      emit(
+        state.copyWith(
+          status: DiscoveryStatus.failure,
+          errorMessage: 'Unable to determine location for refresh.',
+        ),
       );
-
-      if (placesResult is PlacesError) {
-        emit(
-          state.copyWith(
-            status: DiscoveryStatus.failure,
-            errorMessage: placesResult.message,
-          ),
-        );
-        return;
-      }
-
-      final restaurants = (placesResult as PlacesSuccess).restaurants;
-
-      if (restaurants.isEmpty) {
-        emit(
-          state.copyWith(
-            status: DiscoveryStatus.failure,
-            errorMessage: "No more restaurants found. That's all in your area!",
-          ),
-        );
-        return;
-      }
-
-      _allRestaurants = restaurants;
-      _currentIndex = 0;
+      return;
     }
 
-    final pageRestaurants = _getNextPage();
-    final newShownIds = {...state.shownPlaceIds};
-    for (final r in pageRestaurants) {
-      newShownIds.add(r.placeId);
+    final position = locationResult.position;
+
+    // Get user settings
+    final settings = _storageService.getSettings();
+
+    // Get excluded place IDs (thumbs down + recently picked)
+    final excludedIds = _storageService.getExcludedPlaceIds();
+
+    final placesResult = await _placesService.getNearbyRestaurants(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      mood: state.mood,
+      excludePlaceIds: excludedIds,
+      radiusMeters: settings.searchRadiusMeters,
+      maxResultCount: settings.maxResults,
+    );
+
+    if (placesResult is PlacesError) {
+      emit(
+        state.copyWith(
+          status: DiscoveryStatus.failure,
+          errorMessage: placesResult.message,
+        ),
+      );
+      return;
     }
+
+    var restaurants = (placesResult as PlacesSuccess).restaurants;
+
+    // Filter to only open restaurants (if setting enabled)
+    if (settings.includeOpenOnly) {
+      restaurants = restaurants.where((r) => r.isOpen ?? false).toList();
+    }
+
+    if (restaurants.isEmpty) {
+      final message = settings.includeOpenOnly
+          ? 'No open restaurants found nearby. '
+                'Try disabling "Open Only" in settings.'
+          : "No restaurants found. That's all in your area!";
+      emit(
+        state.copyWith(
+          status: DiscoveryStatus.failure,
+          errorMessage: message,
+        ),
+      );
+      return;
+    }
+
+    // Sort by visit count (unvisited first, then by ascending visit count)
+    final visitCounts = _storageService.getVisitCountMap();
+    restaurants.sort((a, b) {
+      final countA = visitCounts[a.placeId] ?? 0;
+      final countB = visitCounts[b.placeId] ?? 0;
+      return countA.compareTo(countB);
+    });
 
     emit(
       state.copyWith(
         status: DiscoveryStatus.success,
-        restaurants: pageRestaurants,
-        shownPlaceIds: newShownIds,
+        restaurants: restaurants,
+        shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
         clearSelectedRestaurant: true,
       ),
     );
   }
 
-  void _onRestaurantSelected(
+  Future<void> _onRestaurantSelected(
     DiscoveryRestaurantSelected event,
     Emitter<DiscoveryState> emit,
-  ) {
+  ) async {
+    // Increment visit count for selected restaurant
+    await _storageService.incrementVisitCount(event.restaurant.placeId);
+
     emit(
       state.copyWith(
         status: DiscoveryStatus.selected,
@@ -217,19 +236,6 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     DiscoveryReset event,
     Emitter<DiscoveryState> emit,
   ) {
-    _allRestaurants = [];
-    _currentIndex = 0;
     emit(const DiscoveryState());
-  }
-
-  /// Gets the next page of restaurants from the cached results.
-  List<Restaurant> _getNextPage() {
-    final endIndex = (_currentIndex + _resultsPerPage).clamp(
-      0,
-      _allRestaurants.length,
-    );
-    final page = _allRestaurants.sublist(_currentIndex, endIndex);
-    _currentIndex = endIndex;
-    return page;
   }
 }

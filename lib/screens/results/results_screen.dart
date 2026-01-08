@@ -7,7 +7,7 @@ import 'package:randoeats/widgets/widgets.dart';
 
 /// Screen displaying restaurant discovery results.
 ///
-/// Shows 5 restaurant cards with option to refresh.
+/// Shows all restaurants sorted by visit count (unvisited first).
 class ResultsScreen extends StatelessWidget {
   /// Creates a [ResultsScreen].
   const ResultsScreen({super.key});
@@ -81,9 +81,6 @@ class ResultsScreen extends StatelessWidget {
                 )
               : _buildList(context, state),
         ),
-        // Refresh button
-        if (state.status == DiscoveryStatus.success)
-          _buildRefreshButton(context, theme),
       ],
     );
   }
@@ -152,54 +149,35 @@ class ResultsScreen extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context, DiscoveryState state) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: state.restaurants.length,
-      itemBuilder: (context, index) {
-        final restaurant = state.restaurants[index];
-        return RestaurantCard(
-          restaurant: restaurant,
-          index: index,
-          onTap: () async {
-            final bloc = context.read<DiscoveryBloc>()
-              ..add(DiscoveryRestaurantSelected(restaurant));
-
-            // Navigate to detail screen
-            await Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => BlocProvider.value(
-                  value: bloc,
-                  child: DetailScreen(restaurant: restaurant),
-                ),
-              ),
-            );
-          },
-        );
+    return RefreshIndicator(
+      color: GoogieColors.turquoise,
+      onRefresh: () async {
+        context.read<DiscoveryBloc>().add(const DiscoveryRefreshed());
       },
-    );
-  }
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: state.restaurants.length,
+        itemBuilder: (context, index) {
+          final restaurant = state.restaurants[index];
+          return RestaurantCard(
+            restaurant: restaurant,
+            index: index,
+            onTap: () async {
+              final bloc = context.read<DiscoveryBloc>()
+                ..add(DiscoveryRestaurantSelected(restaurant));
 
-  Widget _buildRefreshButton(BuildContext context, ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      child: OutlinedButton.icon(
-        onPressed: () {
-          context.read<DiscoveryBloc>().add(const DiscoveryRefreshed());
+              // Navigate to detail screen
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => BlocProvider.value(
+                    value: bloc,
+                    child: DetailScreen(restaurant: restaurant),
+                  ),
+                ),
+              );
+            },
+          );
         },
-        icon: const Icon(Icons.refresh),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: GoogieColors.coral,
-          side: const BorderSide(color: GoogieColors.coral, width: 2),
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        label: Text(
-          'These do not please me',
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: GoogieColors.coral,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }

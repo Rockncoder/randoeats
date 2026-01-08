@@ -81,29 +81,58 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const Spacer(),
-              // Logo/Title area
-              _buildHeader(theme),
-              const SizedBox(height: 48),
-              // Greeting
-              _buildGreeting(theme),
-              const SizedBox(height: 32),
-              // Mood input
-              _buildMoodInput(theme),
-              const SizedBox(height: 24),
-              // Engage button
-              _buildEngageButton(theme),
-              const Spacer(flex: 2),
-              // Location status
-              if (_locationError != null || _isLoading)
-                _buildLocationStatus(theme),
-            ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: GoogieColors.turquoise),
+            onPressed: () {
+              unawaited(
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
+              );
+            },
           ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 24),
+                      // Logo/Title area
+                      _buildHeader(theme),
+                      const SizedBox(height: 48),
+                      // Greeting
+                      _buildGreeting(theme),
+                      const SizedBox(height: 32),
+                      // Mood input
+                      _buildMoodInput(theme),
+                      const SizedBox(height: 24),
+                      // Engage button
+                      _buildEngageButton(theme),
+                      const SizedBox(height: 48),
+                      // Location status
+                      if (_locationError != null || _isLoading)
+                        _buildLocationStatus(theme),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

@@ -11,6 +11,7 @@ class UserSettings extends Equatable {
     this.hideDaysAfterPick = defaultHideDays,
     this.searchRadiusMeters = defaultSearchRadius,
     this.includeOpenOnly = true,
+    this.maxResults = defaultMaxResults,
   });
 
   /// Default number of days to hide a restaurant after picking.
@@ -31,6 +32,15 @@ class UserSettings extends Equatable {
   /// Maximum search radius in meters (10 km).
   static const int maxSearchRadius = 10000;
 
+  /// Default maximum results to show.
+  static const int defaultMaxResults = 20;
+
+  /// Minimum results to show.
+  static const int minMaxResults = 5;
+
+  /// Maximum results to show (API limit).
+  static const int maxMaxResults = 20;
+
   /// Number of days to hide a restaurant after picking it.
   @HiveField(0)
   final int hideDaysAfterPick;
@@ -43,16 +53,22 @@ class UserSettings extends Equatable {
   @HiveField(2)
   final bool includeOpenOnly;
 
+  /// Maximum number of results to display.
+  @HiveField(3)
+  final int maxResults;
+
   /// Creates a copy with the given fields replaced.
   UserSettings copyWith({
     int? hideDaysAfterPick,
     int? searchRadiusMeters,
     bool? includeOpenOnly,
+    int? maxResults,
   }) {
     return UserSettings(
       hideDaysAfterPick: hideDaysAfterPick ?? this.hideDaysAfterPick,
       searchRadiusMeters: searchRadiusMeters ?? this.searchRadiusMeters,
       includeOpenOnly: includeOpenOnly ?? this.includeOpenOnly,
+      maxResults: maxResults ?? this.maxResults,
     );
   }
 
@@ -61,5 +77,6 @@ class UserSettings extends Equatable {
     hideDaysAfterPick,
     searchRadiusMeters,
     includeOpenOnly,
+    maxResults,
   ];
 }

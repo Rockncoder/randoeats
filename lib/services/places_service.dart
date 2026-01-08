@@ -44,9 +44,6 @@ class PlacesService {
   /// Base URL for Places API (New).
   static const _baseUrl = 'https://places.googleapis.com/v1';
 
-  /// Default search radius in meters (5km).
-  static const _defaultRadius = 5000.0;
-
   /// Field mask for restaurant search - Pro tier fields.
   static const _fieldMask =
       'places.id,'
@@ -65,11 +62,15 @@ class PlacesService {
   /// [latitude] and [longitude] specify the search center.
   /// [mood] is optional natural language input for filtering.
   /// [excludePlaceIds] are places to exclude from results.
+  /// [radiusMeters] is the search radius in meters (default 5000).
+  /// [maxResultCount] is the maximum number of results to return (default 20).
   Future<PlacesResult> getNearbyRestaurants({
     required double latitude,
     required double longitude,
     String? mood,
     Set<String> excludePlaceIds = const {},
+    int radiusMeters = 5000,
+    int maxResultCount = 20,
   }) async {
     if (_apiKey.isEmpty) {
       return const PlacesError(
@@ -88,11 +89,15 @@ class PlacesService {
           latitude: latitude,
           longitude: longitude,
           query: keyword,
+          radiusMeters: radiusMeters,
+          maxResultCount: maxResultCount,
         );
       } else {
         restaurants = await _nearbySearchRestaurants(
           latitude: latitude,
           longitude: longitude,
+          radiusMeters: radiusMeters,
+          maxResultCount: maxResultCount,
         );
       }
 
@@ -112,6 +117,8 @@ class PlacesService {
     required double latitude,
     required double longitude,
     required String query,
+    required int radiusMeters,
+    required int maxResultCount,
   }) async {
     final uri = Uri.parse('$_baseUrl/places:searchText');
 
@@ -131,10 +138,10 @@ class PlacesService {
               'latitude': latitude,
               'longitude': longitude,
             },
-            'radius': _defaultRadius,
+            'radius': radiusMeters.toDouble(),
           },
         },
-        'pageSize': 10, // Fetch more to allow for filtering
+        'pageSize': maxResultCount,
       }),
     );
 
@@ -145,6 +152,8 @@ class PlacesService {
   Future<List<Restaurant>> _nearbySearchRestaurants({
     required double latitude,
     required double longitude,
+    required int radiusMeters,
+    required int maxResultCount,
   }) async {
     final uri = Uri.parse('$_baseUrl/places:searchNearby');
 
@@ -163,10 +172,10 @@ class PlacesService {
               'latitude': latitude,
               'longitude': longitude,
             },
-            'radius': _defaultRadius,
+            'radius': radiusMeters.toDouble(),
           },
         },
-        'maxResultCount': 10, // Fetch more to allow for filtering
+        'maxResultCount': maxResultCount,
       }),
     );
 
