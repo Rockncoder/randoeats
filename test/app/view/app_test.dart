@@ -3,13 +3,13 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:randoeats/app/app.dart';
-import 'package:randoeats/counter/counter.dart';
+import 'package:randoeats/screens/screens.dart';
 
 void main() {
   group('App', () {
-    testWidgets('renders CounterPage', (tester) async {
+    testWidgets('renders HomeScreen', (tester) async {
       await tester.pumpWidget(App());
-      expect(find.byType(CounterPage), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
     });
   });
 }

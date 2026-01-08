@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:randoeats/config/config.dart';
-import 'package:randoeats/counter/counter.dart';
 import 'package:randoeats/l10n/l10n.dart';
+import 'package:randoeats/screens/screens.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -13,7 +13,7 @@ class App extends StatelessWidget {
       darkTheme: GoogieTheme.dark,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const CounterPage(),
+      home: const HomeScreen(),
     );
   }
 }
