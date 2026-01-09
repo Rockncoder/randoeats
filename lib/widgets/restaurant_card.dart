@@ -27,18 +27,18 @@ class RestaurantCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 4,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      elevation: 3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         side: const BorderSide(
           color: GoogieColors.chrome,
-          width: 2,
+          width: 1.5,
         ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -46,14 +46,14 @@ class RestaurantCard extends StatelessWidget {
             _buildPhoto(theme),
             // Info section
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildTitle(theme),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   _buildSubtitle(theme),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   _buildMetadata(theme),
                 ],
               ),
@@ -70,9 +70,9 @@ class RestaurantCard extends StatelessWidget {
     );
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
       child: Container(
-        height: 120,
+        height: 80,
         decoration: BoxDecoration(
           color: GoogieColors.turquoise.withValues(alpha: 0.2),
         ),
@@ -101,7 +101,7 @@ class RestaurantCard extends StatelessWidget {
             )
           : const Icon(
               Icons.restaurant,
-              size: 48,
+              size: 36,
               color: GoogieColors.turquoise,
             ),
     );

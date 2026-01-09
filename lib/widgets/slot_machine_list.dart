@@ -46,8 +46,9 @@ class SlotMachineListState extends State<SlotMachineList>
   final _random = math.Random();
 
   // Card dimensions for calculating scroll positions
-  static const double _cardHeight = 250;
-  static const double _cardSpacing = 16;
+  // Card: 80px photo + 24px padding + ~72px content = ~176px + 8px margin
+  static const double _cardHeight = 176;
+  static const double _cardSpacing = 8;
   static const double _totalCardHeight = _cardHeight + _cardSpacing;
 
   @override
