@@ -44,6 +44,7 @@ class StorageService {
       ..registerAdapter(RatingTypeAdapter())
       ..registerAdapter(UserRatingAdapter())
       ..registerAdapter(RecentPickAdapter())
+      ..registerAdapter(DistanceUnitAdapter())
       ..registerAdapter(UserSettingsAdapter())
       ..registerAdapter(RestaurantAdapter())
       ..registerAdapter(VisitedPlaceAdapter());

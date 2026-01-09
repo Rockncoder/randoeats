@@ -103,11 +103,19 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       restaurants = restaurants.where((r) => r.isOpen ?? false).toList();
     }
 
+    // Filter out banned categories
+    if (settings.bannedCategories.isNotEmpty) {
+      restaurants = restaurants.where((r) {
+        // Keep restaurant if none of its types are in banned categories
+        return !r.types.any(settings.bannedCategories.contains);
+      }).toList();
+    }
+
     if (restaurants.isEmpty) {
       final message = settings.includeOpenOnly
           ? 'No open restaurants found nearby. '
                 'Try disabling "Open Only" in settings.'
-          : 'No restaurants found nearby. Try a different mood!';
+          : 'No restaurants found nearby. Try adjusting your settings!';
       emit(
         state.copyWith(
           status: DiscoveryStatus.failure,
@@ -188,11 +196,19 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       restaurants = restaurants.where((r) => r.isOpen ?? false).toList();
     }
 
+    // Filter out banned categories
+    if (settings.bannedCategories.isNotEmpty) {
+      restaurants = restaurants.where((r) {
+        // Keep restaurant if none of its types are in banned categories
+        return !r.types.any(settings.bannedCategories.contains);
+      }).toList();
+    }
+
     if (restaurants.isEmpty) {
       final message = settings.includeOpenOnly
           ? 'No open restaurants found nearby. '
                 'Try disabling "Open Only" in settings.'
-          : "No restaurants found. That's all in your area!";
+          : 'No restaurants found. Try adjusting your settings!';
       emit(
         state.copyWith(
           status: DiscoveryStatus.failure,

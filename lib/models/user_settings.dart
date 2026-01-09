@@ -3,6 +3,33 @@ import 'package:hive/hive.dart';
 
 part 'user_settings.g.dart';
 
+/// Distance unit for displaying distances.
+@HiveType(typeId: 5)
+enum DistanceUnit {
+  /// Distance in miles.
+  @HiveField(0)
+  miles,
+
+  /// Distance in kilometers.
+  @HiveField(1)
+  kilometers;
+
+  /// The abbreviation for this unit.
+  String get abbreviation => switch (this) {
+        DistanceUnit.miles => 'mi',
+        DistanceUnit.kilometers => 'km',
+      };
+
+  /// Formats a distance in meters to this unit.
+  String format(double meters) {
+    final value = switch (this) {
+      DistanceUnit.miles => meters / 1609.34,
+      DistanceUnit.kilometers => meters / 1000,
+    };
+    return '${value.toStringAsFixed(1)} $abbreviation';
+  }
+}
+
 /// User settings for the app.
 @HiveType(typeId: 4)
 class UserSettings extends Equatable {
@@ -12,6 +39,8 @@ class UserSettings extends Equatable {
     this.searchRadiusMeters = defaultSearchRadius,
     this.includeOpenOnly = true,
     this.maxResults = defaultMaxResults,
+    this.distanceUnit = DistanceUnit.miles,
+    this.bannedCategories = const {},
   });
 
   /// Default number of days to hide a restaurant after picking.
@@ -57,18 +86,30 @@ class UserSettings extends Equatable {
   @HiveField(3)
   final int maxResults;
 
+  /// The unit to display distances in.
+  @HiveField(4)
+  final DistanceUnit distanceUnit;
+
+  /// Set of banned restaurant category types (Google Places types).
+  @HiveField(5)
+  final Set<String> bannedCategories;
+
   /// Creates a copy with the given fields replaced.
   UserSettings copyWith({
     int? hideDaysAfterPick,
     int? searchRadiusMeters,
     bool? includeOpenOnly,
     int? maxResults,
+    DistanceUnit? distanceUnit,
+    Set<String>? bannedCategories,
   }) {
     return UserSettings(
       hideDaysAfterPick: hideDaysAfterPick ?? this.hideDaysAfterPick,
       searchRadiusMeters: searchRadiusMeters ?? this.searchRadiusMeters,
       includeOpenOnly: includeOpenOnly ?? this.includeOpenOnly,
       maxResults: maxResults ?? this.maxResults,
+      distanceUnit: distanceUnit ?? this.distanceUnit,
+      bannedCategories: bannedCategories ?? this.bannedCategories,
     );
   }
 
@@ -78,5 +119,7 @@ class UserSettings extends Equatable {
     searchRadiusMeters,
     includeOpenOnly,
     maxResults,
+    distanceUnit,
+    bannedCategories,
   ];
 }

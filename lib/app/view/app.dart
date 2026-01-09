@@ -17,7 +17,7 @@ class App extends StatelessWidget {
         darkTheme: GoogieTheme.dark,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const HomeScreen(),
+        home: const ResultsScreen(),
       ),
     );
   }

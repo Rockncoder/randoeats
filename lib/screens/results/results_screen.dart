@@ -10,8 +10,8 @@ import 'package:randoeats/widgets/widgets.dart';
 
 /// Screen displaying restaurant discovery results with slot machine selection.
 ///
-/// Shows restaurants sorted by visit count (unvisited first) with a slot
-/// machine-style random selection animation.
+/// This is the main entry point of the app. Shows restaurants sorted by
+/// visit count (unvisited first) with a slot machine-style selection.
 class ResultsScreen extends StatefulWidget {
   /// Creates a [ResultsScreen].
   const ResultsScreen({super.key});
@@ -23,6 +23,18 @@ class ResultsScreen extends StatefulWidget {
 class _ResultsScreenState extends State<ResultsScreen> {
   final GlobalKey<SlotMachineListState> _slotMachineKey = GlobalKey();
   bool _showCelebration = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-fetch restaurants on launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bloc = context.read<DiscoveryBloc>();
+      if (bloc.state.status == DiscoveryStatus.initial) {
+        bloc.add(const DiscoveryStarted());
+      }
+    });
+  }
 
   void _startSpin() {
     context.read<DiscoveryBloc>().add(const DiscoverySpinStarted());
@@ -73,6 +85,16 @@ class _ResultsScreenState extends State<ResultsScreen> {
     );
   }
 
+  void _navigateToSettings() {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const SettingsScreen(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DiscoveryBloc, DiscoveryState>(
@@ -80,31 +102,44 @@ class _ResultsScreenState extends State<ResultsScreen> {
         final isSpinning = state.status == DiscoveryStatus.spinning;
 
         return Scaffold(
-          appBar: _buildAppBar(context, isSpinning),
-          body: Stack(
-            children: [
-              _buildBody(context, state),
-              // Winner celebration overlay
-              if (_showCelebration)
-                WinnerCelebration(onComplete: _onCelebrationComplete),
-            ],
+          body: SafeArea(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    // Settings gear in top right
+                    _buildTopBar(isSpinning),
+                    // Main content
+                    Expanded(
+                      child: _buildBody(context, state),
+                    ),
+                  ],
+                ),
+                // Winner celebration overlay
+                if (_showCelebration)
+                  WinnerCelebration(onComplete: _onCelebrationComplete),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, bool isSpinning) {
-    return AppBar(
-      title: const Text('Mission Options'),
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: isSpinning
-            ? null
-            : () {
-                context.read<DiscoveryBloc>().add(const DiscoveryReset());
-                Navigator.of(context).pop();
-              },
+  Widget _buildTopBar(bool isSpinning) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            color: GoogieColors.turquoise,
+            iconSize: 28,
+            onPressed: isSpinning ? null : _navigateToSettings,
+            tooltip: 'Settings',
+          ),
+        ],
       ),
     );
   }
@@ -115,38 +150,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
     return Column(
       children: [
-        // Header
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          color: GoogieColors.turquoise.withValues(alpha: 0.1),
-          child: Column(
-            children: [
-              Text(
-                isSpinning
-                    ? 'Consulting the mainframe...'
-                    : 'Mission options identified!',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: GoogieColors.turquoise,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (state.mood != null && state.mood!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Searching for "${state.mood}"',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
         // Restaurant list
         Expanded(
-          child: state.status == DiscoveryStatus.loading
+          child: state.status == DiscoveryStatus.initial ||
+                  state.status == DiscoveryStatus.loading
               ? _buildLoading(theme)
               : state.status == DiscoveryStatus.failure
                   ? _buildError(
@@ -222,7 +229,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                context.read<DiscoveryBloc>().add(const DiscoveryRefreshed());
+                context.read<DiscoveryBloc>().add(const DiscoveryStarted());
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),

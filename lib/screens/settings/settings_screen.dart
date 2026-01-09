@@ -3,6 +3,36 @@ import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/services/services.dart';
 
+/// Available restaurant categories that can be banned.
+const restaurantCategories = <String, String>{
+  'mexican_restaurant': 'Mexican',
+  'chinese_restaurant': 'Chinese',
+  'italian_restaurant': 'Italian',
+  'japanese_restaurant': 'Japanese',
+  'thai_restaurant': 'Thai',
+  'indian_restaurant': 'Indian',
+  'vietnamese_restaurant': 'Vietnamese',
+  'korean_restaurant': 'Korean',
+  'american_restaurant': 'American',
+  'pizza_restaurant': 'Pizza',
+  'burger_restaurant': 'Burgers',
+  'seafood_restaurant': 'Seafood',
+  'steak_house': 'Steak',
+  'sushi_restaurant': 'Sushi',
+  'mediterranean_restaurant': 'Mediterranean',
+  'greek_restaurant': 'Greek',
+  'french_restaurant': 'French',
+  'barbecue_restaurant': 'BBQ',
+  'cafe': 'Cafe',
+  'fast_food_restaurant': 'Fast Food',
+  'fine_dining_restaurant': 'Fine Dining',
+  'breakfast_restaurant': 'Breakfast',
+  'brunch_restaurant': 'Brunch',
+  'sandwich_shop': 'Sandwiches',
+  'ice_cream_shop': 'Ice Cream',
+  'bakery': 'Bakery',
+};
+
 /// Screen for configuring app settings.
 class SettingsScreen extends StatefulWidget {
   /// Creates a [SettingsScreen].
@@ -44,7 +74,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  void _toggleCategory(String category) {
+    final bannedCategories = Set<String>.from(_settings.bannedCategories);
+    if (bannedCategories.contains(category)) {
+      bannedCategories.remove(category);
+    } else {
+      bannedCategories.add(category);
+    }
+    _updateSettings(_settings.copyWith(bannedCategories: bannedCategories));
+  }
+
   String _formatDistance(int meters) {
+    if (_settings.distanceUnit == DistanceUnit.miles) {
+      final miles = meters / 1609.34;
+      return '${miles.toStringAsFixed(1)} mi';
+    }
     if (meters >= 1000) {
       final km = meters / 1000;
       return '${km.toStringAsFixed(1)} km';
@@ -76,9 +120,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Distance Units Section
+          _buildSectionHeader(theme, 'Distance Units'),
+          const SizedBox(height: 12),
+          _buildDistanceUnitToggle(theme),
+
+          const SizedBox(height: 24),
+
           // Search Settings Section
           _buildSectionHeader(theme, 'Search Parameters'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Search Radius Slider
           _buildSettingCard(
@@ -139,11 +190,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+
+          // Banned Categories Section
+          _buildSectionHeader(theme, 'Banned Categories'),
+          const SizedBox(height: 4),
+          Text(
+            'Tap to ban, tap again to enable',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildCategoryChips(theme),
+
+          const SizedBox(height: 24),
 
           // History Settings Section
           _buildSectionHeader(theme, 'History Settings'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Hide Days Slider
           _buildSettingCard(
@@ -166,11 +231,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
           // Data Management Section
           _buildSectionHeader(theme, 'Data Management'),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           _buildActionButton(
             theme,
@@ -199,6 +264,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => _showClearAllDataDialog(theme),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDistanceUnitToggle(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildUnitOption(
+              theme,
+              label: 'Miles',
+              isSelected: _settings.distanceUnit == DistanceUnit.miles,
+              onTap: () => _updateSettings(
+                _settings.copyWith(distanceUnit: DistanceUnit.miles),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _buildUnitOption(
+              theme,
+              label: 'Kilometers',
+              isSelected: _settings.distanceUnit == DistanceUnit.kilometers,
+              onTap: () => _updateSettings(
+                _settings.copyWith(distanceUnit: DistanceUnit.kilometers),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnitOption(
+    ThemeData theme, {
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? GoogieColors.turquoise : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleSmall?.copyWith(
+            color: isSelected
+                ? Colors.white
+                : theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChips(ThemeData theme) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: restaurantCategories.entries.map((entry) {
+        final isBanned = _settings.bannedCategories.contains(entry.key);
+        return _buildCategoryChip(
+          theme,
+          label: entry.value,
+          isBanned: isBanned,
+          onTap: () => _toggleCategory(entry.key),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCategoryChip(
+    ThemeData theme, {
+    required String label,
+    required bool isBanned,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isBanned
+              ? theme.colorScheme.surface
+              : GoogieColors.turquoise.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isBanned
+                ? theme.colorScheme.outline.withValues(alpha: 0.3)
+                : GoogieColors.turquoise,
+          ),
+        ),
+        child: Text(
+          isBanned ? label : label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: isBanned
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.4)
+                : GoogieColors.turquoise,
+            decoration: isBanned ? TextDecoration.lineThrough : null,
+            fontWeight: isBanned ? FontWeight.normal : FontWeight.w500,
+          ),
+        ),
       ),
     );
   }

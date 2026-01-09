@@ -7,9 +7,9 @@ import 'package:randoeats/screens/screens.dart';
 
 void main() {
   group('App', () {
-    testWidgets('renders HomeScreen', (tester) async {
+    testWidgets('renders ResultsScreen', (tester) async {
       await tester.pumpWidget(App());
-      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byType(ResultsScreen), findsOneWidget);
     });
   });
 }
