@@ -346,8 +346,12 @@ class DetailScreen extends StatelessWidget {
             ),
           );
 
-          // Reset discovery and pop to home
-          context.read<DiscoveryBloc>().add(const DiscoveryReset());
+          // For thumbs down, remove from list; for thumbs up, just go back
+          if (ratingType == RatingType.thumbsDown) {
+            context.read<DiscoveryBloc>().add(
+                  DiscoveryRestaurantRemoved(restaurant.placeId),
+                );
+          }
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
       },

@@ -26,6 +26,7 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     on<DiscoverySpinStarted>(_onSpinStarted);
     on<DiscoveryWinnerSelected>(_onWinnerSelected);
     on<DiscoveryCelebrationComplete>(_onCelebrationComplete);
+    on<DiscoveryRestaurantRemoved>(_onRestaurantRemoved);
   }
 
   final PlacesService _placesService;
@@ -287,6 +288,24 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     emit(
       state.copyWith(
         status: DiscoveryStatus.selected,
+      ),
+    );
+  }
+
+  void _onRestaurantRemoved(
+    DiscoveryRestaurantRemoved event,
+    Emitter<DiscoveryState> emit,
+  ) {
+    // Remove the restaurant from the current list
+    final updatedRestaurants = state.restaurants
+        .where((r) => r.placeId != event.placeId)
+        .toList();
+
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.success,
+        restaurants: updatedRestaurants,
+        clearSelectedRestaurant: true,
       ),
     );
   }

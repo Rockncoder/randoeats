@@ -68,3 +68,15 @@ class DiscoveryWinnerSelected extends DiscoveryEvent {
 class DiscoveryCelebrationComplete extends DiscoveryEvent {
   const DiscoveryCelebrationComplete();
 }
+
+/// Event to remove a restaurant from the current list (after thumbs down).
+class DiscoveryRestaurantRemoved extends DiscoveryEvent {
+  /// Creates a restaurant removed event.
+  const DiscoveryRestaurantRemoved(this.placeId);
+
+  /// The place ID of the restaurant to remove.
+  final String placeId;
+
+  @override
+  List<Object?> get props => [placeId];
+}
