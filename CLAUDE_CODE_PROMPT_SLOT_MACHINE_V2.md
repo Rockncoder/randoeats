@@ -65,7 +65,7 @@ Remove the current entry/splash screen. The app should open directly to the rest
 │ ~~~ gradient fade to cream ~~~~~~   │
 │                                     │
 │   ╔═════════════════════════════╗   │
-│   ║   🎰  RAND-O-EATS!  🎰     ║   │
+│   ║   [rand-o-eats-no-motto]   ║   │  ← Logo image asset
 │   ╚═════════════════════════════╝   │
 │                                     │
 └─────────────────────────────────────┘
@@ -93,7 +93,7 @@ Remove the current entry/splash screen. The app should open directly to the rest
 - Fixed at bottom of screen
 - Large touch target (minimum 64px height)
 - Coral/salmon background matching existing design
-- Rocket icon + "RAND-O-EATS!" text
+- **Use logo image: `assets/images/rand-o-eats-no-motto.png`** (no text, just the logo)
 - List scrolls underneath with gradient fade
 
 **Settings Gear:**

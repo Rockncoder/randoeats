@@ -9,15 +9,16 @@ import '../helpers/helpers.dart';
 
 void main() {
   group('RandoEatsButton', () {
-    testWidgets('renders button with correct text when not spinning', (
+    testWidgets('renders button with logo image when not spinning', (
       tester,
     ) async {
       await tester.pumpApp(
         RandoEatsButton(onPressed: () {}),
       );
 
-      expect(find.text('RAND-O-EATS!'), findsOneWidget);
-      expect(find.text('🎰'), findsNWidgets(2));
+      // Now uses logo image instead of text
+      expect(find.byType(Image), findsOneWidget);
+      expect(find.text('RAND-O-EATS!'), findsNothing);
     });
 
     testWidgets('renders spinning state with progress indicator', (
@@ -29,7 +30,7 @@ void main() {
 
       expect(find.text('SPINNING...'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('RAND-O-EATS!'), findsNothing);
+      expect(find.byType(Image), findsNothing);
     });
 
     testWidgets('calls onPressed when tapped and not spinning', (
@@ -98,9 +99,9 @@ void main() {
         RandoEatsButton(onPressed: () {}, isSpinning: true),
       );
 
-      // When spinning, shows different text
+      // When spinning, shows different text and no logo
       expect(find.text('SPINNING...'), findsOneWidget);
-      expect(find.text('RAND-O-EATS!'), findsNothing);
+      expect(find.byType(Image), findsNothing);
     });
   });
 }

@@ -118,10 +118,10 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
                     ),
                   ],
                   // Button content
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (widget.isSpinning) ...[
+                  if (widget.isSpinning)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                         const SizedBox(
                           width: 24,
                           height: 24,
@@ -147,36 +147,20 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
                             ],
                           ),
                         ),
-                      ] else ...[
-                        const Text(
-                          '🎰',
-                          style: TextStyle(fontSize: 28),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'RAND-O-EATS!',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: GoogieColors.white,
-                            letterSpacing: 3,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                offset: const Offset(2, 2),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          '🎰',
-                          style: TextStyle(fontSize: 28),
-                        ),
                       ],
-                    ],
-                  ),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 8,
+                      ),
+                      child: Image.asset(
+                        'assets/images/rand-o-eats-no-motto.png',
+                        height: 56,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                 ],
               ),
             ),
