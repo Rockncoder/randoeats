@@ -21,16 +21,19 @@ void main() {
       expect(find.text('RAND-O-EATS!'), findsNothing);
     });
 
-    testWidgets('renders spinning state with progress indicator', (
+    testWidgets('renders spinning state with rotating circular button', (
       tester,
     ) async {
       await tester.pumpApp(
         RandoEatsButton(onPressed: () {}, isSpinning: true),
       );
 
-      expect(find.text('SPINNING...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.byType(Image), findsNothing);
+      // Spinning state shows a circular rotating button with image
+      expect(find.byType(RotationTransition), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+      // No longer shows text or progress indicator
+      expect(find.text('SPINNING...'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
     testWidgets('calls onPressed when tapped and not spinning', (
@@ -47,18 +50,16 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('does not call onPressed when tapped while spinning', (
+    testWidgets('spinning button is not tappable', (
       tester,
     ) async {
-      var tapped = false;
       await tester.pumpApp(
-        RandoEatsButton(onPressed: () => tapped = true, isSpinning: true),
+        RandoEatsButton(onPressed: () {}, isSpinning: true),
       );
 
-      await tester.tap(find.byType(InkWell));
-      await tester.pump();
-
-      expect(tapped, isFalse);
+      // Spinning state has no InkWell - button is not tappable
+      expect(find.byType(InkWell), findsNothing);
+      expect(find.byType(RotationTransition), findsOneWidget);
     });
 
     testWidgets('does not call onPressed when onPressed is null', (
@@ -99,9 +100,11 @@ void main() {
         RandoEatsButton(onPressed: () {}, isSpinning: true),
       );
 
-      // When spinning, shows different text and no logo
-      expect(find.text('SPINNING...'), findsOneWidget);
-      expect(find.byType(Image), findsNothing);
+      // When spinning, shows circular rotating button with logo
+      expect(find.byType(RotationTransition), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+      // No starburst decorations when spinning (different layout)
+      expect(find.byType(InkWell), findsNothing);
     });
   });
 }

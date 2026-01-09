@@ -187,7 +187,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
         // Rand-o-Eats button - allows re-spin after returning from details
         if (showSpinButton)
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(
+              top: 8,
+              bottom: 32,
+              left: 16,
+              right: 16,
+            ),
             child: RandoEatsButton(
               onPressed: _startSpin,
               isSpinning: isSpinning,

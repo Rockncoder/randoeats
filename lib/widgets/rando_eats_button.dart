@@ -26,9 +26,10 @@ class RandoEatsButton extends StatefulWidget {
 }
 
 class _RandoEatsButtonState extends State<RandoEatsButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  late AnimationController _spinController;
 
   @override
   void initState() {
@@ -41,21 +42,94 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     unawaited(_pulseController.repeat(reverse: true));
+
+    _spinController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+  }
+
+  @override
+  void didUpdateWidget(RandoEatsButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSpinning && !oldWidget.isSpinning) {
+      unawaited(_spinController.repeat());
+    } else if (!widget.isSpinning && oldWidget.isSpinning) {
+      _spinController
+        ..stop()
+        ..reset();
+    }
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _spinController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Circular spinning button when active, pill-shaped otherwise
+    if (widget.isSpinning) {
+      return _buildSpinningButton();
+    }
+    return _buildPillButton();
+  }
+
+  Widget _buildSpinningButton() {
+    const size = 80.0;
+    return RotationTransition(
+      turns: _spinController,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: GoogieColors.coral.withValues(alpha: 0.5),
+              blurRadius: 24,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: GoogieColors.mustard.withValues(alpha: 0.4),
+              blurRadius: 32,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              GoogieColors.coral,
+              Color(0xFFFF8A65),
+              GoogieColors.mustard,
+            ],
+          ),
+          border: Border.all(
+            color: GoogieColors.mustard.withValues(alpha: 0.6),
+            width: 3,
+          ),
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/images/rand-o-eats.png',
+            width: 56,
+            height: 56,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPillButton() {
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
         return Transform.scale(
-          scale: widget.isSpinning ? 1.0 : _pulseAnimation.value,
+          scale: _pulseAnimation.value,
           child: child,
         );
       },
@@ -79,23 +153,18 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: widget.isSpinning ? null : widget.onPressed,
+            onTap: widget.onPressed,
             borderRadius: BorderRadius.circular(40),
             child: Ink(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: widget.isSpinning
-                      ? [
-                          GoogieColors.chrome,
-                          GoogieColors.chrome.withValues(alpha: 0.8),
-                        ]
-                      : [
-                          GoogieColors.coral,
-                          GoogieColors.coral.withValues(alpha: 0.9),
-                          const Color(0xFFFF8A65),
-                        ],
+                  colors: [
+                    GoogieColors.coral,
+                    Color(0xFFFF8965),
+                    Color(0xFFFF8A65),
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(40),
                 border: Border.all(
@@ -107,60 +176,26 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
                 alignment: Alignment.center,
                 children: [
                   // Starburst decorations
-                  if (!widget.isSpinning) ...[
-                    Positioned(
-                      left: 20,
-                      child: _buildStarburst(size: 24),
+                  Positioned(
+                    left: 20,
+                    child: _buildStarburst(size: 24),
+                  ),
+                  Positioned(
+                    right: 20,
+                    child: _buildStarburst(size: 24),
+                  ),
+                  // Button content - logo
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 8,
                     ),
-                    Positioned(
-                      right: 20,
-                      child: _buildStarburst(size: 24),
+                    child: Image.asset(
+                      'assets/images/rand-o-eats-no-motto.png',
+                      height: 56,
+                      fit: BoxFit.contain,
                     ),
-                  ],
-                  // Button content
-                  if (widget.isSpinning)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: GoogieColors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'SPINNING...',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: GoogieColors.white,
-                            letterSpacing: 2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.3),
-                                offset: const Offset(2, 2),
-                                blurRadius: 4,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 8,
-                      ),
-                      child: Image.asset(
-                        'assets/images/rand-o-eats-no-motto.png',
-                        height: 56,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+                  ),
                 ],
               ),
             ),
