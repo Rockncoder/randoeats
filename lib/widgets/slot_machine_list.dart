@@ -61,6 +61,17 @@ class SlotMachineListState extends State<SlotMachineList>
 
     _spinController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
+        // Remove the listener to prevent issues on next spin
+        _spinAnimation.removeListener(_updateScroll);
+
+        // Ensure winner is at the top after animation
+        final winnerPosition = _winnerIndex * _totalCardHeight;
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(
+            winnerPosition.clamp(0, _scrollController.position.maxScrollExtent),
+          );
+        }
+
         setState(() {
           _isSpinning = false;
         });
