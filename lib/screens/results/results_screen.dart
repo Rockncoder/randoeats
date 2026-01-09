@@ -135,7 +135,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   Widget _buildTopBar(bool isSpinning, bool canRefresh) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
           // Refresh button (left side)
@@ -188,8 +188,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
         if (showSpinButton)
           Padding(
             padding: const EdgeInsets.only(
-              top: 8,
-              bottom: 32,
+              top: 4,
+              bottom: 12,
               left: 16,
               right: 16,
             ),

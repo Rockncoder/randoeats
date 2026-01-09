@@ -143,7 +143,7 @@ class SlotMachineListState extends State<SlotMachineList>
           controller: _scrollController,
           physics:
               _isSpinning ? const NeverScrollableScrollPhysics() : null,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
           itemCount: widget.restaurants.length,
           itemBuilder: (context, index) {
             final restaurant = widget.restaurants[index];
@@ -164,7 +164,7 @@ class SlotMachineListState extends State<SlotMachineList>
           left: 0,
           right: 0,
           bottom: 0,
-          height: 100,
+          height: 80,
           child: IgnorePointer(
             child: Container(
               decoration: BoxDecoration(
