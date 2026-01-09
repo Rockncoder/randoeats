@@ -5,7 +5,7 @@ part of 'user_settings.dart';
 /// Hive type adapter for [DistanceUnit].
 class DistanceUnitAdapter extends TypeAdapter<DistanceUnit> {
   @override
-  final int typeId = 5;
+  final int typeId = 6;
 
   @override
   DistanceUnit read(BinaryReader reader) {

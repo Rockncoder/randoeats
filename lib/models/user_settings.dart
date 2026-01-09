@@ -4,7 +4,7 @@ import 'package:hive/hive.dart';
 part 'user_settings.g.dart';
 
 /// Distance unit for displaying distances.
-@HiveType(typeId: 5)
+@HiveType(typeId: 6)
 enum DistanceUnit {
   /// Distance in miles.
   @HiveField(0)
