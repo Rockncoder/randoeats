@@ -100,6 +100,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return BlocBuilder<DiscoveryBloc, DiscoveryState>(
       builder: (context, state) {
         final isSpinning = state.status == DiscoveryStatus.spinning;
+        final canRefresh = state.status == DiscoveryStatus.success ||
+            state.status == DiscoveryStatus.selected ||
+            state.status == DiscoveryStatus.winner;
 
         return Scaffold(
           body: SafeArea(
@@ -107,8 +110,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
               children: [
                 Column(
                   children: [
-                    // Settings gear in top right
-                    _buildTopBar(isSpinning),
+                    // Top bar with refresh and settings
+                    _buildTopBar(isSpinning, canRefresh),
                     // Main content
                     Expanded(
                       child: _buildBody(context, state),
@@ -126,15 +129,29 @@ class _ResultsScreenState extends State<ResultsScreen> {
     );
   }
 
-  Widget _buildTopBar(bool isSpinning) {
+  void _refreshRestaurants() {
+    context.read<DiscoveryBloc>().add(const DiscoveryRefreshed());
+  }
+
+  Widget _buildTopBar(bool isSpinning, bool canRefresh) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          // Refresh button (left side)
+          if (canRefresh)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              color: GoogieColors.deepTeal,
+              iconSize: 28,
+              onPressed: isSpinning ? null : _refreshRestaurants,
+              tooltip: 'Find new restaurants',
+            ),
+          const Spacer(),
+          // Settings gear (right side)
           IconButton(
             icon: const Icon(Icons.settings),
-            color: GoogieColors.turquoise,
+            color: GoogieColors.deepTeal,
             iconSize: 28,
             onPressed: isSpinning ? null : _navigateToSettings,
             tooltip: 'Settings',
@@ -147,6 +164,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Widget _buildBody(BuildContext context, DiscoveryState state) {
     final theme = Theme.of(context);
     final isSpinning = state.status == DiscoveryStatus.spinning;
+    final showSpinButton = state.status == DiscoveryStatus.success ||
+        state.status == DiscoveryStatus.spinning ||
+        state.status == DiscoveryStatus.selected ||
+        state.status == DiscoveryStatus.winner;
 
     return Column(
       children: [
@@ -163,9 +184,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     )
                   : _buildSlotMachineList(context, state),
         ),
-        // Rand-o-Eats button
-        if (state.status == DiscoveryStatus.success ||
-            state.status == DiscoveryStatus.spinning)
+        // Rand-o-Eats button - allows re-spin after returning from details
+        if (showSpinButton)
           Padding(
             padding: const EdgeInsets.all(16),
             child: RandoEatsButton(

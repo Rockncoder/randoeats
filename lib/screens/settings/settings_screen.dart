@@ -364,22 +364,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           color: isBanned
               ? theme.colorScheme.surface
-              : GoogieColors.turquoise.withValues(alpha: 0.1),
+              : GoogieColors.deepTeal.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isBanned
                 ? theme.colorScheme.outline.withValues(alpha: 0.3)
-                : GoogieColors.turquoise,
+                : GoogieColors.deepTeal,
+            width: isBanned ? 1 : 1.5,
           ),
         ),
         child: Text(
-          isBanned ? label : label,
+          label,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: isBanned
                 ? theme.colorScheme.onSurface.withValues(alpha: 0.4)
-                : GoogieColors.turquoise,
+                : GoogieColors.deepTeal,
             decoration: isBanned ? TextDecoration.lineThrough : null,
-            fontWeight: isBanned ? FontWeight.normal : FontWeight.w500,
+            fontWeight: isBanned ? FontWeight.normal : FontWeight.w600,
           ),
         ),
       ),

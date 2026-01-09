@@ -8,6 +8,9 @@ abstract final class GoogieColors {
   /// Primary accent - used for headers, highlights
   static const turquoise = Color(0xFF40E0D0);
 
+  /// Deep teal - WCAG AA compliant for text on cream backgrounds (~5.5:1)
+  static const deepTeal = Color(0xFF0D7377);
+
   /// Secondary accent - used for CTAs, buttons
   static const coral = Color(0xFFFF6F61);
 
