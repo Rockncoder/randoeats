@@ -23,6 +23,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     on<DiscoveryRefreshed>(_onRefreshed);
     on<DiscoveryRestaurantSelected>(_onRestaurantSelected);
     on<DiscoveryReset>(_onReset);
+    on<DiscoverySpinStarted>(_onSpinStarted);
+    on<DiscoveryWinnerSelected>(_onWinnerSelected);
+    on<DiscoveryCelebrationComplete>(_onCelebrationComplete);
   }
 
   final PlacesService _placesService;
@@ -237,5 +240,38 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     Emitter<DiscoveryState> emit,
   ) {
     emit(const DiscoveryState());
+  }
+
+  void _onSpinStarted(
+    DiscoverySpinStarted event,
+    Emitter<DiscoveryState> emit,
+  ) {
+    emit(state.copyWith(status: DiscoveryStatus.spinning));
+  }
+
+  Future<void> _onWinnerSelected(
+    DiscoveryWinnerSelected event,
+    Emitter<DiscoveryState> emit,
+  ) async {
+    // Increment visit count for the winning restaurant
+    await _storageService.incrementVisitCount(event.restaurant.placeId);
+
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.winner,
+        selectedRestaurant: event.restaurant,
+      ),
+    );
+  }
+
+  void _onCelebrationComplete(
+    DiscoveryCelebrationComplete event,
+    Emitter<DiscoveryState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        status: DiscoveryStatus.selected,
+      ),
+    );
   }
 }

@@ -1,44 +1,117 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
+import 'package:randoeats/models/models.dart';
 import 'package:randoeats/screens/screens.dart';
 import 'package:randoeats/widgets/widgets.dart';
 
-/// Screen displaying restaurant discovery results.
+/// Screen displaying restaurant discovery results with slot machine selection.
 ///
-/// Shows all restaurants sorted by visit count (unvisited first).
-class ResultsScreen extends StatelessWidget {
+/// Shows restaurants sorted by visit count (unvisited first) with a slot
+/// machine-style random selection animation.
+class ResultsScreen extends StatefulWidget {
   /// Creates a [ResultsScreen].
   const ResultsScreen({super.key});
+
+  @override
+  State<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends State<ResultsScreen> {
+  final GlobalKey<SlotMachineListState> _slotMachineKey = GlobalKey();
+  bool _showCelebration = false;
+
+  void _startSpin() {
+    context.read<DiscoveryBloc>().add(const DiscoverySpinStarted());
+    _slotMachineKey.currentState?.spin();
+  }
+
+  void _onSpinComplete(Restaurant restaurant) {
+    context.read<DiscoveryBloc>().add(DiscoveryWinnerSelected(restaurant));
+    setState(() {
+      _showCelebration = true;
+    });
+  }
+
+  void _onCelebrationComplete() {
+    setState(() {
+      _showCelebration = false;
+    });
+    context.read<DiscoveryBloc>().add(const DiscoveryCelebrationComplete());
+
+    // Navigate to detail screen
+    final state = context.read<DiscoveryBloc>().state;
+    if (state.selectedRestaurant != null) {
+      unawaited(
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => BlocProvider.value(
+              value: context.read<DiscoveryBloc>(),
+              child: DetailScreen(restaurant: state.selectedRestaurant!),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _onDirectTap(Restaurant restaurant) {
+    context.read<DiscoveryBloc>().add(DiscoveryRestaurantSelected(restaurant));
+
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BlocProvider.value(
+            value: context.read<DiscoveryBloc>(),
+            child: DetailScreen(restaurant: restaurant),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DiscoveryBloc, DiscoveryState>(
       builder: (context, state) {
+        final isSpinning = state.status == DiscoveryStatus.spinning;
+
         return Scaffold(
-          appBar: _buildAppBar(context),
-          body: _buildBody(context, state),
+          appBar: _buildAppBar(context, isSpinning),
+          body: Stack(
+            children: [
+              _buildBody(context, state),
+              // Winner celebration overlay
+              if (_showCelebration)
+                WinnerCelebration(onComplete: _onCelebrationComplete),
+            ],
+          ),
         );
       },
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, bool isSpinning) {
     return AppBar(
       title: const Text('Mission Options'),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          context.read<DiscoveryBloc>().add(const DiscoveryReset());
-          Navigator.of(context).pop();
-        },
+        onPressed: isSpinning
+            ? null
+            : () {
+                context.read<DiscoveryBloc>().add(const DiscoveryReset());
+                Navigator.of(context).pop();
+              },
       ),
     );
   }
 
   Widget _buildBody(BuildContext context, DiscoveryState state) {
     final theme = Theme.of(context);
+    final isSpinning = state.status == DiscoveryStatus.spinning;
 
     return Column(
       children: [
@@ -50,7 +123,9 @@ class ResultsScreen extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'Mission options identified!',
+                isSpinning
+                    ? 'Consulting the mainframe...'
+                    : 'Mission options identified!',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: GoogieColors.turquoise,
                   fontWeight: FontWeight.bold,
@@ -74,13 +149,23 @@ class ResultsScreen extends StatelessWidget {
           child: state.status == DiscoveryStatus.loading
               ? _buildLoading(theme)
               : state.status == DiscoveryStatus.failure
-              ? _buildError(
-                  context,
-                  theme,
-                  state.errorMessage ?? 'Unknown error',
-                )
-              : _buildList(context, state),
+                  ? _buildError(
+                      context,
+                      theme,
+                      state.errorMessage ?? 'Unknown error',
+                    )
+                  : _buildSlotMachineList(context, state),
         ),
+        // Rand-o-Eats button
+        if (state.status == DiscoveryStatus.success ||
+            state.status == DiscoveryStatus.spinning)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: RandoEatsButton(
+              onPressed: _startSpin,
+              isSpinning: isSpinning,
+            ),
+          ),
       ],
     );
   }
@@ -148,37 +233,12 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildList(BuildContext context, DiscoveryState state) {
-    return RefreshIndicator(
-      color: GoogieColors.turquoise,
-      onRefresh: () async {
-        context.read<DiscoveryBloc>().add(const DiscoveryRefreshed());
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: state.restaurants.length,
-        itemBuilder: (context, index) {
-          final restaurant = state.restaurants[index];
-          return RestaurantCard(
-            restaurant: restaurant,
-            index: index,
-            onTap: () async {
-              final bloc = context.read<DiscoveryBloc>()
-                ..add(DiscoveryRestaurantSelected(restaurant));
-
-              // Navigate to detail screen
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider.value(
-                    value: bloc,
-                    child: DetailScreen(restaurant: restaurant),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+  Widget _buildSlotMachineList(BuildContext context, DiscoveryState state) {
+    return SlotMachineList(
+      key: _slotMachineKey,
+      restaurants: state.restaurants,
+      onRestaurantTap: _onDirectTap,
+      onSpinComplete: _onSpinComplete,
     );
   }
 }

@@ -46,3 +46,25 @@ class DiscoveryRestaurantSelected extends DiscoveryEvent {
 class DiscoveryReset extends DiscoveryEvent {
   const DiscoveryReset();
 }
+
+/// Event to start the slot machine spin animation.
+class DiscoverySpinStarted extends DiscoveryEvent {
+  const DiscoverySpinStarted();
+}
+
+/// Event when the slot machine spin completes with a winner.
+class DiscoveryWinnerSelected extends DiscoveryEvent {
+  /// Creates a winner selected event.
+  const DiscoveryWinnerSelected(this.restaurant);
+
+  /// The winning restaurant.
+  final Restaurant restaurant;
+
+  @override
+  List<Object?> get props => [restaurant];
+}
+
+/// Event when the winner celebration completes.
+class DiscoveryCelebrationComplete extends DiscoveryEvent {
+  const DiscoveryCelebrationComplete();
+}

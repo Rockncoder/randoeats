@@ -11,6 +11,12 @@ enum DiscoveryStatus {
   /// Restaurants found and displayed.
   success,
 
+  /// Slot machine is spinning.
+  spinning,
+
+  /// Winner selected, showing celebration.
+  winner,
+
   /// A restaurant has been selected.
   selected,
 
