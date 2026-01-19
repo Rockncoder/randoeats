@@ -46,7 +46,8 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       includeOpenOnly: fields[2] as bool? ?? true,
       maxResults: fields[3] as int? ?? UserSettings.defaultMaxResults,
       distanceUnit: fields[4] as DistanceUnit? ?? DistanceUnit.miles,
-      bannedCategories: (fields[5] as List<dynamic>?)?.cast<String>().toSet() ??
+      bannedCategories:
+          (fields[5] as List<dynamic>?)?.cast<String>().toSet() ??
           const <String>{},
     );
   }

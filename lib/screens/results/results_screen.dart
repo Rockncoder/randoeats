@@ -100,7 +100,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return BlocBuilder<DiscoveryBloc, DiscoveryState>(
       builder: (context, state) {
         final isSpinning = state.status == DiscoveryStatus.spinning;
-        final canRefresh = state.status == DiscoveryStatus.success ||
+        final canRefresh =
+            state.status == DiscoveryStatus.success ||
             state.status == DiscoveryStatus.selected ||
             state.status == DiscoveryStatus.winner;
 
@@ -164,7 +165,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Widget _buildBody(BuildContext context, DiscoveryState state) {
     final theme = Theme.of(context);
     final isSpinning = state.status == DiscoveryStatus.spinning;
-    final showSpinButton = state.status == DiscoveryStatus.success ||
+    final showSpinButton =
+        state.status == DiscoveryStatus.success ||
         state.status == DiscoveryStatus.spinning ||
         state.status == DiscoveryStatus.selected ||
         state.status == DiscoveryStatus.winner;
@@ -173,16 +175,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
       children: [
         // Restaurant list
         Expanded(
-          child: state.status == DiscoveryStatus.initial ||
+          child:
+              state.status == DiscoveryStatus.initial ||
                   state.status == DiscoveryStatus.loading
               ? _buildLoading(theme)
               : state.status == DiscoveryStatus.failure
-                  ? _buildError(
-                      context,
-                      theme,
-                      state.errorMessage ?? 'Unknown error',
-                    )
-                  : _buildSlotMachineList(context, state),
+              ? _buildError(
+                  context,
+                  theme,
+                  state.errorMessage ?? 'Unknown error',
+                )
+              : _buildSlotMachineList(context, state),
         ),
         // Rand-o-Eats button - allows re-spin after returning from details
         if (showSpinButton)

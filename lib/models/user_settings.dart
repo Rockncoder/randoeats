@@ -16,9 +16,9 @@ enum DistanceUnit {
 
   /// The abbreviation for this unit.
   String get abbreviation => switch (this) {
-        DistanceUnit.miles => 'mi',
-        DistanceUnit.kilometers => 'km',
-      };
+    DistanceUnit.miles => 'mi',
+    DistanceUnit.kilometers => 'km',
+  };
 
   /// Formats a distance in meters to this unit.
   String format(double meters) {

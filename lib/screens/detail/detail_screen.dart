@@ -349,8 +349,8 @@ class DetailScreen extends StatelessWidget {
           // For thumbs down, remove from list; for thumbs up, just go back
           if (ratingType == RatingType.thumbsDown) {
             context.read<DiscoveryBloc>().add(
-                  DiscoveryRestaurantRemoved(restaurant.placeId),
-                );
+              DiscoveryRestaurantRemoved(restaurant.placeId),
+            );
           }
           Navigator.of(context).popUntil((route) => route.isFirst);
         }

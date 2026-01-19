@@ -109,15 +109,16 @@ class SlotMachineListState extends State<SlotMachineList>
     _scrollController.jumpTo(0);
 
     // Create custom easing animation
-    _spinAnimation = Tween<double>(
-      begin: 0,
-      end: targetScroll,
-    ).animate(
-      CurvedAnimation(
-        parent: _spinController,
-        curve: _SlotMachineCurve(),
-      ),
-    );
+    _spinAnimation =
+        Tween<double>(
+          begin: 0,
+          end: targetScroll,
+        ).animate(
+          CurvedAnimation(
+            parent: _spinController,
+            curve: _SlotMachineCurve(),
+          ),
+        );
 
     _spinAnimation.addListener(_updateScroll);
     unawaited(_spinController.forward(from: 0));
@@ -141,8 +142,7 @@ class SlotMachineListState extends State<SlotMachineList>
         // Restaurant list
         ListView.builder(
           controller: _scrollController,
-          physics:
-              _isSpinning ? const NeverScrollableScrollPhysics() : null,
+          physics: _isSpinning ? const NeverScrollableScrollPhysics() : null,
           padding: const EdgeInsets.only(top: 4, bottom: 8),
           itemCount: widget.restaurants.length,
           itemBuilder: (context, index) {
@@ -205,7 +205,6 @@ class SlotMachineListState extends State<SlotMachineList>
       ],
     );
   }
-
 }
 
 /// Custom curve for slot machine animation.

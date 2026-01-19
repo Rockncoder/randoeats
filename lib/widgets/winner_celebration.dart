@@ -44,13 +44,17 @@ class _WinnerCelebrationState extends State<WinnerCelebration>
 
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 0, end: 1.2)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween<double>(
+          begin: 0,
+          end: 1.2,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 30,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.2, end: 1)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween<double>(
+          begin: 1.2,
+          end: 1,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 70,
       ),
     ]).animate(_mainController);
