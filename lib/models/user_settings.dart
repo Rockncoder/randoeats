@@ -67,8 +67,8 @@ class UserSettings extends Equatable {
   /// Minimum results to show.
   static const int minMaxResults = 5;
 
-  /// Maximum results to show (API limit).
-  static const int maxMaxResults = 20;
+  /// Maximum results to show.
+  static const int maxMaxResults = 50;
 
   /// Number of days to hide a restaurant after picking it.
   @HiveField(0)

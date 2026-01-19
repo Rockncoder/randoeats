@@ -63,14 +63,14 @@ class PlacesService {
   /// [mood] is optional natural language input for filtering.
   /// [excludePlaceIds] are places to exclude from results.
   /// [radiusMeters] is the search radius in meters (default 5000).
-  /// [maxResultCount] is the maximum number of results to return (default 20).
+  /// [maxResultCount] is the maximum number of results to return (default 50).
   Future<PlacesResult> getNearbyRestaurants({
     required double latitude,
     required double longitude,
     String? mood,
     Set<String> excludePlaceIds = const {},
     int radiusMeters = 5000,
-    int maxResultCount = 20,
+    int maxResultCount = 50,
   }) async {
     if (_apiKey.isEmpty) {
       return const PlacesError(
