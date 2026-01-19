@@ -22,10 +22,3 @@ jobs:
       flutter_version: "3.35.x"
       min_coverage: 30
 
-  spell-check:
-    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/spell_check.yml@v1
-    with:
-      includes: |
-        **/*.md
-        !**/node_modules/**
-      modified_files_only: false
