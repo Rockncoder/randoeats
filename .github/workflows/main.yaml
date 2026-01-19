@@ -27,4 +27,5 @@ jobs:
     with:
       includes: |
         **/*.md
+        !**/node_modules/**
       modified_files_only: false
