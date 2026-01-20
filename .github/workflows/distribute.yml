@@ -115,7 +115,7 @@ jobs:
           cat > android/key.properties << EOF
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=randoeats
+          keyAlias=upload
           storeFile=randoeats-release.keystore
           EOF
 
