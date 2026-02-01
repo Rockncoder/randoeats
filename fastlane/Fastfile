@@ -52,6 +52,7 @@ platform :ios do
     # Upload to Firebase App Distribution
     firebase_app_distribution(
       app: ENV["FIREBASE_APP_ID_IOS"],
+      groups: "testers",
       release_notes: changelog_from_git_commits(commits_count: 5, merge_commit_filtering: "exclude_merges"),
       service_credentials_file: ENV["GOOGLE_SERVICE_ACCOUNT_KEY_PATH"]
     )
@@ -79,6 +80,7 @@ platform :android do
     # Upload to Firebase App Distribution
     firebase_app_distribution(
       app: ENV["FIREBASE_APP_ID_ANDROID"],
+      groups: "testers",
       release_notes: changelog_from_git_commits(commits_count: 5, merge_commit_filtering: "exclude_merges"),
       android_artifact_type: "APK",
       android_artifact_path: "build/app/outputs/flutter-apk/app-production-release.apk",
