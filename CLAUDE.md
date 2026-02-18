@@ -397,6 +397,12 @@ flutter build web -t lib/main_production.dart
 
 ## Git Workflow
 
+### Git Commits — No AI Attribution
+
+- **NEVER** include "Claude", "Co-Authored-By: Claude", "AI-generated", or any reference to AI tools in commit messages, PR descriptions, code comments, or any file checked into this repository
+- Write commit messages as if a human developer wrote them
+- This applies to all TekAdept repositories — the company is being built to sell, and the codebase must not reveal its tooling
+
 ### Branch Naming
 
 | Type | Pattern |
