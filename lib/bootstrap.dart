@@ -45,8 +45,9 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
         FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
         return true;
       };
-      await FirebaseCrashlytics.instance
-          .setCrashlyticsCollectionEnabled(!kDebugMode);
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+        !kDebugMode,
+      );
     } on Exception catch (e) {
       log('Crashlytics initialization failed: $e');
     }
