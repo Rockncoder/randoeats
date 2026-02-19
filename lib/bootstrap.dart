@@ -42,7 +42,9 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
       FlutterError.onError =
           FirebaseCrashlytics.instance.recordFlutterFatalError;
       PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        unawaited(
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+        );
         return true;
       };
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
