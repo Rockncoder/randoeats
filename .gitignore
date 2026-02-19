@@ -16,16 +16,13 @@ migrate_working_dir/
 *.iml
 *.ipr
 *.iws
-.idea/*
+.idea/
 
 # Visual Studio Code related
 .classpath
 .project
 .settings/
-.vscode/*
-
-# packages file containing multi-root paths
-.packages.generated
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -34,6 +31,7 @@ migrate_working_dir/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
+.packages.generated
 .pub-cache/
 .pub/
 build/
@@ -45,18 +43,24 @@ unlinked_spec.ds
 
 # Android related
 **/android/**/gradle-wrapper.jar
-**/android/.gradle
+**/android/.gradle/
 **/android/captures/
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 **/android/.idea/
-**/android/app/debug
-**/android/app/profile
-**/android/app/release
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
 *.jks
+*.keystore
+
+# iOS signing
+*.p12
+*.mobileprovision
 
 # iOS/XCode related
+**/ios/Podfile.lock
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
 **/ios/**/*.moved-aside
@@ -70,8 +74,8 @@ unlinked_spec.ds
 **/ios/**/Icon?
 **/ios/**/Pods/
 **/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
+**/ios/**/profile/
+**/ios/**/xcuserdata/
 **/ios/.generated/
 **/ios/Flutter/App.framework
 **/ios/Flutter/Flutter.framework
@@ -85,13 +89,29 @@ unlinked_spec.ds
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
 
+# macOS related
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral/
+
+# Linux related
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/ephemeral/
+
+# Windows related
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/ephemeral/
+
+# Web related
+lib/generated_plugin_registrant.dart
+.dart_tool/chrome-device/
+
 # Coverage
 coverage/
 
 # Submodules
 packages/**/pubspec.lock
-
-# Web related
 
 # Symbolication related
 app.*.symbols
@@ -99,7 +119,30 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Exceptions to the above rules.
+# Generated l10n files
+lib/l10n/gen/
+
+# Environment and secrets
+.env
+.env.*
+firebase-service-account.json
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Firebase local cache
+.firebase/
+
+# Claude Code
+.claude/
+
+# Asset archives
+AppIcons.zip
+
+# Exceptions to above rules
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
@@ -108,26 +151,3 @@ app.*.map.json
 !/dev/ci/**/Gemfile.lock
 !.vscode/extensions.json
 !.vscode/launch.json
-!.idea/codeStyles/
-!.idea/dictionaries/
-!.idea/runConfigurations/
-
-# Generated l10n files
-lib/l10n/gen/
-
-# Fastlane
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots
-fastlane/test_output
-fastlane/README.md
-
-# Signing
-*.keystore
-firebase-service-account.json
-.env
-.keys/
-
-# Google Services (stored as secrets in CI)
-# ios/Runner/GoogleService-Info.plist
-# android/app/google-services.json
