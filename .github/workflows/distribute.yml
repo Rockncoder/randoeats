@@ -21,7 +21,7 @@ on:
           - both
 
 env:
-  FLUTTER_VERSION: '3.35.0'
+  FLUTTER_VERSION: '3.38.5'
 
 jobs:
   # ============================================
