@@ -136,7 +136,7 @@ jobs:
   ios:
     needs: increment-build
     if: github.event.inputs.platform != 'android'
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - uses: actions/checkout@v6
