@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:randoeats/services/services.dart';
 
 class AppBlocObserver extends BlocObserver {
@@ -60,6 +61,11 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   }
 
   Bloc.observer = const AppBlocObserver();
+
+  // Initialize Google Mobile Ads (mobile only)
+  if (!kIsWeb) {
+    await MobileAds.instance.initialize();
+  }
 
   // Initialize storage
   await StorageService.instance.initialize();
