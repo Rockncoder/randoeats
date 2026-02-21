@@ -15,8 +15,7 @@ void main() {
     setUp(() {
       bloc = _MockDiscoveryBloc();
       when(() => bloc.state).thenReturn(const DiscoveryState());
-      when(() => bloc.stream)
-          .thenAnswer((_) => const Stream.empty());
+      when(() => bloc.stream).thenAnswer((_) => const Stream.empty());
       when(() => bloc.isClosed).thenReturn(false);
     });
 
