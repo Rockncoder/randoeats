@@ -1,5 +1,6 @@
-git_url("https://github.com/Rockncoder/tekadept-certificates.git")
+git_url("git@github.com:Rockncoder/tekadept-certificates.git")
+git_branch("main")
 storage_mode("git")
-type("adhoc")
+type("appstore")
 app_identifier("com.tekadept.randoeats")
 team_id("S2NBGK85WD")
