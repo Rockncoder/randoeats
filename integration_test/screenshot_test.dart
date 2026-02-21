@@ -12,22 +12,23 @@ import 'package:randoeats/screens/screens.dart';
 
 import 'helpers/mock_blocs.dart';
 
-final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
 late Directory _screenshotDir;
 
 void main() {
   setUpAll(() {
-    _screenshotDir = Directory('/tmp/flutter_screenshots');
-    _screenshotDir.createSync(recursive: true);
+    IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+    _screenshotDir = Directory('/tmp/flutter_screenshots')
+      ..createSync(recursive: true);
   });
 
-  // ==================== Warm-up (pre-cache Google Fonts) ====================
+  // ==================== Warm-up ====================
   testWidgets('warm_up', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: GoogieTheme.light,
-        home: const Scaffold(body: Center(child: Text('Loading fonts...'))),
+        home: const Scaffold(
+          body: Center(child: Text('Loading fonts...')),
+        ),
       ),
     );
     await tester.pump(const Duration(seconds: 3));
@@ -87,7 +88,7 @@ void main() {
       tester,
       theme: GoogieTheme.light,
       bloc: bloc,
-      child: const DetailScreen(),
+      child: DetailScreen(restaurant: sampleRestaurants[2]),
     );
     await _saveScreenshot(tester, 'detail_light');
   });
@@ -98,7 +99,7 @@ void main() {
       tester,
       theme: GoogieTheme.dark,
       bloc: bloc,
-      child: const DetailScreen(),
+      child: DetailScreen(restaurant: sampleRestaurants[2]),
     );
     await _saveScreenshot(tester, 'detail_dark');
   });
@@ -125,16 +126,21 @@ void main() {
 
 // ==================== Screenshot Capture ====================
 
-Future<void> _saveScreenshot(WidgetTester tester, String name) async {
+Future<void> _saveScreenshot(
+  WidgetTester tester,
+  String name,
+) async {
   await tester.pump();
 
-  final renderObject = tester.binding.renderViewElement!.renderObject!;
+  final renderObject =
+      tester.binding.rootElement!.renderObject!;
   final layer = renderObject.debugLayer! as OffsetLayer;
   final image = await layer.toImage(renderObject.paintBounds);
-  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+  final byteData =
+      await image.toByteData(format: ui.ImageByteFormat.png);
 
-  final file = File('${_screenshotDir.path}/$name.png');
-  file.writeAsBytesSync(byteData!.buffer.asUint8List());
+  File('${_screenshotDir.path}/$name.png')
+      .writeAsBytesSync(byteData!.buffer.asUint8List());
 }
 
 // ==================== Pump Helper ====================

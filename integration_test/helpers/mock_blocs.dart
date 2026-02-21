@@ -1,4 +1,3 @@
-import 'package:bloc/bloc.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/models/models.dart';
@@ -24,7 +23,7 @@ class MockDiscoveryBloc extends Mock implements DiscoveryBloc {
 }
 
 /// Sample restaurants for screenshots.
-List<Restaurant> sampleRestaurants = const [
+const List<Restaurant> sampleRestaurants = [
   Restaurant(
     placeId: '1',
     name: "Rosie's Diner",
@@ -41,8 +40,8 @@ List<Restaurant> sampleRestaurants = const [
     placeId: '2',
     name: 'The Space Bar',
     address: '456 Orbit Blvd, Cosmopolis, CA',
-    latitude: 34.0530,
-    longitude: -118.2450,
+    latitude: 34.053,
+    longitude: -118.245,
     rating: 4.2,
     priceLevel: r'$$$',
     types: ['restaurant', 'bar'],
@@ -53,8 +52,8 @@ List<Restaurant> sampleRestaurants = const [
     placeId: '3',
     name: 'Taco Nebula',
     address: '789 Stardust Ln, Galaxytown, CA',
-    latitude: 34.0540,
-    longitude: -118.2460,
+    latitude: 34.054,
+    longitude: -118.246,
     rating: 4.8,
     priceLevel: r'$',
     types: ['restaurant', 'mexican_restaurant'],
@@ -65,9 +64,9 @@ List<Restaurant> sampleRestaurants = const [
     placeId: '4',
     name: 'Lunar Noodle House',
     address: '321 Crater Way, Moonbase, CA',
-    latitude: 34.0550,
-    longitude: -118.2470,
-    rating: 4.0,
+    latitude: 34.055,
+    longitude: -118.247,
+    rating: 4,
     priceLevel: r'$$',
     types: ['restaurant', 'chinese_restaurant'],
     isOpen: true,
@@ -77,8 +76,8 @@ List<Restaurant> sampleRestaurants = const [
     placeId: '5',
     name: 'Jet Age Pizza',
     address: '654 Rocket Rd, Futuretown, CA',
-    latitude: 34.0560,
-    longitude: -118.2480,
+    latitude: 34.056,
+    longitude: -118.248,
     rating: 4.6,
     priceLevel: r'$$',
     types: ['restaurant', 'pizza_restaurant'],
@@ -90,7 +89,7 @@ List<Restaurant> sampleRestaurants = const [
 /// Pre-built discovery states for screenshots.
 DiscoveryState homeState() => const DiscoveryState();
 
-DiscoveryState resultsState() => DiscoveryState(
+DiscoveryState resultsState() => const DiscoveryState(
       status: DiscoveryStatus.success,
       restaurants: sampleRestaurants,
     );
