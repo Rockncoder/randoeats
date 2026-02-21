@@ -1,4 +1,4 @@
-appId: com.tekadept.randoeats.stg
+appId: com.tekadept.randoeats
 ---
 - launchApp
 - assertVisible: ".*"
