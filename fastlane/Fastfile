@@ -13,7 +13,7 @@ platform :ios do
     match(
       type: "adhoc",
       readonly: is_ci,
-      git_basic_authorization: Base64.strict_encode64(ENV["MATCH_GIT_BASIC_AUTH"]),
+      git_private_key: ENV["MATCH_GIT_PRIVATE_KEY"],
       clone_branch_directly: true
     )
 
@@ -96,4 +96,49 @@ desc "Build and distribute both platforms"
 lane :distribute_all do
   Fastlane::LaneManager.cruise_lane("ios", "distribute")
   Fastlane::LaneManager.cruise_lane("android", "distribute")
+end
+
+# ============================================
+# Screenshots (Integration Tests on iOS Simulators)
+# ============================================
+desc "Generate App Store screenshots via integration tests on iOS simulators"
+lane :screenshots do
+  sh("mkdir -p fastlane/screenshots/en-US")
+
+  target = "integration_test/screenshot_test.dart"
+  tmp_dir = "/tmp/flutter_screenshots"
+
+  # --- iPhone ---
+  iphone_udid = `xcrun simctl list devices available | grep "iPhone 16 Pro Max" | head -1`.match(/\(([A-F0-9-]+)\)/)[1]
+  UI.message("Capturing iPhone screenshots on #{iphone_udid}...")
+
+  sh("xcrun simctl boot #{iphone_udid} 2>/dev/null || true")
+  sh("rm -rf #{tmp_dir}")
+  Dir.chdir("..") do
+    sh("flutter test #{target} --flavor production -d #{iphone_udid}")
+  end
+  sh("xcrun simctl shutdown #{iphone_udid} 2>/dev/null || true")
+
+  Dir.glob("#{tmp_dir}/*.png").each do |src|
+    name = File.basename(src, ".png")
+    FileUtils.cp(src, "../fastlane/screenshots/en-US/#{name}_iphone.png")
+  end
+
+  # --- iPad ---
+  ipad_udid = `xcrun simctl list devices available | grep "iPad Pro 13-inch (M4)" | head -1`.match(/\(([A-F0-9-]+)\)/)[1]
+  UI.message("Capturing iPad screenshots on #{ipad_udid}...")
+
+  sh("xcrun simctl boot #{ipad_udid} 2>/dev/null || true")
+  sh("rm -rf #{tmp_dir}")
+  Dir.chdir("..") do
+    sh("flutter test #{target} --flavor production -d #{ipad_udid}")
+  end
+  sh("xcrun simctl shutdown #{ipad_udid} 2>/dev/null || true")
+
+  Dir.glob("#{tmp_dir}/*.png").each do |src|
+    name = File.basename(src, ".png")
+    FileUtils.cp(src, "../fastlane/screenshots/en-US/#{name}_ipad.png")
+  end
+
+  UI.success("Screenshots generated in fastlane/screenshots/en-US/")
 end
