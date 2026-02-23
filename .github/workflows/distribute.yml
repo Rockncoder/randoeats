@@ -167,7 +167,7 @@ jobs:
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > firebase-service-account.json
 
       - name: Setup SSH for Match
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.MATCH_GIT_PRIVATE_KEY }}
 
