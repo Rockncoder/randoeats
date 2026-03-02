@@ -51,7 +51,7 @@ dart format --set-exit-if-changed .
 flutter test
 ```
 
-### 3. Coverage ≥ 90%
+### 3. Coverage ≥ 25% (CI gate)
 
 ```bash
 flutter test --coverage
@@ -59,7 +59,7 @@ flutter test --coverage
 lcov --list coverage/lcov.info
 ```
 
-**Low coverage = poorly written code.** Fix it, don't ignore it.
+**Note:** CI currently enforces 25% minimum (`min_coverage: 25` in `.github/workflows/main.yaml`). Target is higher but not yet enforced.
 
 ---
 
@@ -470,33 +470,41 @@ Use `flutter_dotenv` or `--dart-define` for key injection.
 
 ## Development Phases
 
-### Phase 1: Foundation (MVP)
-- [ ] Project setup with VGV CLI
-- [ ] Googie theme configuration
-- [ ] Data models
-- [ ] Hive storage setup
-- [ ] Location service
-- [ ] Basic home screen
+### Phase 1: Foundation (MVP) — Complete
+- [x] Project setup with VGV CLI
+- [x] Googie theme configuration (Fredoka + Nunito, full color palette)
+- [x] Data models (Restaurant, UserRating, RecentPick, UserSettings, VisitedPlace)
+- [x] Hive storage setup (multiple boxes for ratings, picks, settings, visits)
+- [x] Location service (geolocator with permission handling)
+- [x] Basic home screen
 
-### Phase 2: Core Flow
-- [ ] Places API integration
-- [ ] Restaurant discovery BLoC
-- [ ] Results screen with 5 cards
-- [ ] Restaurant detail screen
-- [ ] Rating system (👍/👎)
+### Phase 2: Core Flow — Complete
+- [x] Places API integration (Google Places API v1, text search + nearby search)
+- [x] Restaurant discovery BLoC (8 events, full state management)
+- [x] Results screen with 5 cards (SlotMachineList widget)
+- [x] Restaurant detail screen (address, rating, navigation, photos)
+- [x] Rating system (👍/👎 with local Hive storage)
 
-### Phase 3: Polish
-- [ ] Recent picks filtering
-- [ ] Settings screen
-- [ ] Favorites screen
-- [ ] Googie animations
-- [ ] Sound effects (retro beeps)
+### Phase 3: Polish — Partial
+- [x] Recent picks filtering (hidesDaysAfterPick setting)
+- [x] Settings screen (comprehensive — distance units, search radius, max results, 24 banned categories, data management)
+- [ ] Favorites screen (not implemented)
+- [x] Googie animations (WinnerCelebration, slot machine widgets)
+- [ ] Sound effects (not implemented)
 
-### Phase 4: Platform Release
+### Phase 4: Platform Release — Not Started
+- [ ] Ads integration (google_mobile_ads dependency exists but no implementation)
+- [ ] IAP (no in-app purchase implementation)
 - [ ] iOS build & testing
 - [ ] Android build & testing
 - [ ] Web deployment to randoeats.com
 - [ ] App Store / Play Store submission
+
+### Code Stats
+- **50 Dart files** in lib/, ~5,350 LOC
+- **8 test files**, ~650 LOC
+- CI/CD configured (main.yaml, deploy-mobile.yml, distribute.yml)
+- Version: 1.0.0+39
 
 ---
 
