@@ -97,7 +97,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       return;
     }
 
-    var restaurants = (placesResult as PlacesSuccess).restaurants;
+    // Create mutable copy of results so we can filter and sort in-place
+    var restaurants =
+        List<Restaurant>.of((placesResult as PlacesSuccess).restaurants);
 
     // Filter to only open restaurants (if setting enabled)
     if (settings.includeOpenOnly) {
@@ -190,7 +192,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       return;
     }
 
-    var restaurants = (placesResult as PlacesSuccess).restaurants;
+    // Create mutable copy of results so we can filter and sort in-place
+    var restaurants =
+        List<Restaurant>.of((placesResult as PlacesSuccess).restaurants);
 
     // Filter to only open restaurants (if setting enabled)
     if (settings.includeOpenOnly) {

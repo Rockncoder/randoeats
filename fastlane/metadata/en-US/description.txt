@@ -1,0 +1,13 @@
+Can't decide where to eat? Let RandoEats pick for you!
+
+Spin the wheel and discover restaurants near you. RandoEats uses your location to find nearby dining options, then randomly selects one for you. Perfect for indecisive foodies and groups who can never agree on where to eat.
+
+FEATURES:
+- Location-based restaurant discovery
+- Fun slot machine spin animation
+- Save your favorite restaurants
+- Rate and track places you've visited
+- Filter by cuisine and distance
+- Works offline with cached results
+
+Never waste time deciding where to eat again!
