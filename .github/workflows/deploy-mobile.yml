@@ -2,7 +2,7 @@ name: Deploy Mobile Apps to Firebase App Distribution
 
 on:
   push:
-    branches: [main]
+    branches: [production]
     paths:
       - 'lib/**'
       - 'pubspec.yaml'

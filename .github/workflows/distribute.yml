@@ -2,7 +2,7 @@ name: Build and Distribute
 
 on:
   push:
-    branches: [main]
+    branches: [production]
     paths:
       - 'lib/**'
       - 'pubspec.yaml'

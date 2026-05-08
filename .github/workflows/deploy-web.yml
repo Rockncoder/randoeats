@@ -2,7 +2,7 @@ name: Deploy Flutter Web to Cloudflare Pages
 
 on:
   push:
-    branches: [main]
+    branches: [production]
     paths:
       - 'lib/**'
       - 'pubspec.yaml'
