@@ -1,6 +1,4 @@
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:randoeats/models/models.dart';
 
 /// Result types for Places API operations.
@@ -28,15 +26,15 @@ class PlacesError extends PlacesResult {
 
 /// Service for interacting with Google Places API (New).
 class PlacesService {
-  /// Creates a [PlacesService] with optional custom HTTP client.
-  PlacesService({http.Client? client}) : _client = client ?? http.Client();
+  /// Creates a [PlacesService] with optional custom Dio client.
+  PlacesService({Dio? client}) : _client = client ?? Dio();
 
-  PlacesService._internal() : _client = http.Client();
+  PlacesService._internal() : _client = Dio();
 
   /// Singleton instance.
   static final PlacesService instance = PlacesService._internal();
 
-  final http.Client _client;
+  final Dio _client;
 
   /// Google Places API key from dart-define.
   static const _apiKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY');
@@ -120,16 +118,16 @@ class PlacesService {
     required int radiusMeters,
     required int maxResultCount,
   }) async {
-    final uri = Uri.parse('$_baseUrl/places:searchText');
-
-    final response = await _client.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': _apiKey,
-        'X-Goog-FieldMask': _fieldMask,
-      },
-      body: json.encode({
+    final response = await _client.post<Map<String, dynamic>>(
+      '$_baseUrl/places:searchText',
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': _apiKey,
+          'X-Goog-FieldMask': _fieldMask,
+        },
+      ),
+      data: {
         'textQuery': '$query restaurant',
         'includedType': 'restaurant',
         'locationBias': {
@@ -142,7 +140,7 @@ class PlacesService {
           },
         },
         'pageSize': maxResultCount,
-      }),
+      },
     );
 
     return _parseResponse(response);
@@ -155,16 +153,16 @@ class PlacesService {
     required int radiusMeters,
     required int maxResultCount,
   }) async {
-    final uri = Uri.parse('$_baseUrl/places:searchNearby');
-
-    final response = await _client.post(
-      uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': _apiKey,
-        'X-Goog-FieldMask': _fieldMask,
-      },
-      body: json.encode({
+    final response = await _client.post<Map<String, dynamic>>(
+      '$_baseUrl/places:searchNearby',
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': _apiKey,
+          'X-Goog-FieldMask': _fieldMask,
+        },
+      ),
+      data: {
         'includedTypes': ['restaurant'],
         'locationRestriction': {
           'circle': {
@@ -176,19 +174,21 @@ class PlacesService {
           },
         },
         'maxResultCount': maxResultCount,
-      }),
+      },
     );
 
     return _parseResponse(response);
   }
 
   /// Parses the API response and returns a list of restaurants.
-  List<Restaurant> _parseResponse(http.Response response) {
+  List<Restaurant> _parseResponse(Response<Map<String, dynamic>> response) {
     if (response.statusCode != 200) {
-      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+      throw Exception(
+        'HTTP ${response.statusCode}: ${response.data}',
+      );
     }
 
-    final data = json.decode(response.body) as Map<String, dynamic>;
+    final data = response.data!;
 
     // Check for API errors
     if (data.containsKey('error')) {
@@ -254,7 +254,7 @@ class PlacesService {
         '&key=$_apiKey';
   }
 
-  /// Disposes the HTTP client.
+  /// Disposes the Dio client.
   void dispose() {
     _client.close();
   }

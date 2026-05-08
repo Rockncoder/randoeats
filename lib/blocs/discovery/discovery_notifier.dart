@@ -1,48 +1,35 @@
-import 'dart:async';
-
-import 'package:bloc/bloc.dart';
-import 'package:equatable/equatable.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:randoeats/blocs/discovery/discovery_state.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/services/services.dart';
 
-part 'discovery_event.dart';
-part 'discovery_state.dart';
+/// Riverpod provider for restaurant discovery.
+final discoveryProvider =
+    NotifierProvider<DiscoveryNotifier, DiscoveryState>(DiscoveryNotifier.new);
 
-/// BLoC for managing restaurant discovery.
-class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
-  /// Creates a [DiscoveryBloc].
-  DiscoveryBloc({
+/// Notifier for managing restaurant discovery.
+class DiscoveryNotifier extends Notifier<DiscoveryState> {
+  /// Creates a [DiscoveryNotifier].
+  DiscoveryNotifier({
     PlacesService? placesService,
     LocationService? locationService,
     StorageService? storageService,
   }) : _placesService = placesService ?? PlacesService.instance,
        _locationService = locationService ?? LocationService.instance,
-       _storageService = storageService ?? StorageService.instance,
-       super(const DiscoveryState()) {
-    on<DiscoveryStarted>(_onStarted);
-    on<DiscoveryRefreshed>(_onRefreshed);
-    on<DiscoveryRestaurantSelected>(_onRestaurantSelected);
-    on<DiscoveryReset>(_onReset);
-    on<DiscoverySpinStarted>(_onSpinStarted);
-    on<DiscoveryWinnerSelected>(_onWinnerSelected);
-    on<DiscoveryCelebrationComplete>(_onCelebrationComplete);
-    on<DiscoveryRestaurantRemoved>(_onRestaurantRemoved);
-  }
+       _storageService = storageService ?? StorageService.instance;
 
   final PlacesService _placesService;
   final LocationService _locationService;
   final StorageService _storageService;
 
-  Future<void> _onStarted(
-    DiscoveryStarted event,
-    Emitter<DiscoveryState> emit,
-  ) async {
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.loading,
-        mood: event.mood,
-        clearErrorMessage: true,
-      ),
+  @override
+  DiscoveryState build() => const DiscoveryState();
+
+  Future<void> start({String? mood}) async {
+    state = state.copyWith(
+      status: DiscoveryStatus.loading,
+      mood: mood,
+      clearErrorMessage: true,
     );
 
     // Get current location
@@ -60,11 +47,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
         _ => 'Unable to determine location.',
       };
 
-      emit(
-        state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: message,
-        ),
+      state = state.copyWith(
+        status: DiscoveryStatus.failure,
+        errorMessage: message,
       );
       return;
     }
@@ -81,18 +66,16 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     final placesResult = await _placesService.getNearbyRestaurants(
       latitude: position.latitude,
       longitude: position.longitude,
-      mood: event.mood,
+      mood: mood,
       excludePlaceIds: excludedIds,
       radiusMeters: settings.searchRadiusMeters,
       maxResultCount: settings.maxResults,
     );
 
     if (placesResult is PlacesError) {
-      emit(
-        state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: placesResult.message,
-        ),
+      state = state.copyWith(
+        status: DiscoveryStatus.failure,
+        errorMessage: placesResult.message,
       );
       return;
     }
@@ -119,11 +102,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
           ? 'No open restaurants found nearby. '
                 'Try disabling "Open Only" in settings.'
           : 'No restaurants found nearby. Try adjusting your settings!';
-      emit(
-        state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: message,
-        ),
+      state = state.copyWith(
+        status: DiscoveryStatus.failure,
+        errorMessage: message,
       );
       return;
     }
@@ -136,31 +117,24 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       return countA.compareTo(countB);
     });
 
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.success,
-        restaurants: restaurants,
-        shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
-        clearSelectedRestaurant: true,
-      ),
+    state = state.copyWith(
+      status: DiscoveryStatus.success,
+      restaurants: restaurants,
+      shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
+      clearSelectedRestaurant: true,
     );
   }
 
-  Future<void> _onRefreshed(
-    DiscoveryRefreshed event,
-    Emitter<DiscoveryState> emit,
-  ) async {
+  Future<void> refresh() async {
     // Re-fetch restaurants with current settings
-    emit(state.copyWith(status: DiscoveryStatus.loading));
+    state = state.copyWith(status: DiscoveryStatus.loading);
 
     final locationResult = await _locationService.getCurrentLocation();
 
     if (locationResult is! LocationSuccess) {
-      emit(
-        state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: 'Unable to determine location for refresh.',
-        ),
+      state = state.copyWith(
+        status: DiscoveryStatus.failure,
+        errorMessage: 'Unable to determine location for refresh.',
       );
       return;
     }
@@ -183,11 +157,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
     );
 
     if (placesResult is PlacesError) {
-      emit(
-        state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: placesResult.message,
-        ),
+      state = state.copyWith(
+        status: DiscoveryStatus.failure,
+        errorMessage: placesResult.message,
       );
       return;
     }
@@ -214,11 +186,9 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
           ? 'No open restaurants found nearby. '
                 'Try disabling "Open Only" in settings.'
           : 'No restaurants found. Try adjusting your settings!';
-      emit(
-        state.copyWith(
-          status: DiscoveryStatus.failure,
-          errorMessage: message,
-        ),
+      state = state.copyWith(
+        status: DiscoveryStatus.failure,
+        errorMessage: message,
       );
       return;
     }
@@ -231,86 +201,58 @@ class DiscoveryBloc extends Bloc<DiscoveryEvent, DiscoveryState> {
       return countA.compareTo(countB);
     });
 
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.success,
-        restaurants: restaurants,
-        shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
-        clearSelectedRestaurant: true,
-      ),
+    state = state.copyWith(
+      status: DiscoveryStatus.success,
+      restaurants: restaurants,
+      shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
+      clearSelectedRestaurant: true,
     );
   }
 
-  Future<void> _onRestaurantSelected(
-    DiscoveryRestaurantSelected event,
-    Emitter<DiscoveryState> emit,
-  ) async {
+  Future<void> selectRestaurant(Restaurant restaurant) async {
     // Increment visit count for selected restaurant
-    await _storageService.incrementVisitCount(event.restaurant.placeId);
+    await _storageService.incrementVisitCount(restaurant.placeId);
 
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.selected,
-        selectedRestaurant: event.restaurant,
-      ),
+    state = state.copyWith(
+      status: DiscoveryStatus.selected,
+      selectedRestaurant: restaurant,
     );
   }
 
-  void _onReset(
-    DiscoveryReset event,
-    Emitter<DiscoveryState> emit,
-  ) {
-    emit(const DiscoveryState());
+  void reset() {
+    state = const DiscoveryState();
   }
 
-  void _onSpinStarted(
-    DiscoverySpinStarted event,
-    Emitter<DiscoveryState> emit,
-  ) {
-    emit(state.copyWith(status: DiscoveryStatus.spinning));
+  void startSpin() {
+    state = state.copyWith(status: DiscoveryStatus.spinning);
   }
 
-  Future<void> _onWinnerSelected(
-    DiscoveryWinnerSelected event,
-    Emitter<DiscoveryState> emit,
-  ) async {
+  Future<void> selectWinner(Restaurant restaurant) async {
     // Increment visit count for the winning restaurant
-    await _storageService.incrementVisitCount(event.restaurant.placeId);
+    await _storageService.incrementVisitCount(restaurant.placeId);
 
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.winner,
-        selectedRestaurant: event.restaurant,
-      ),
+    state = state.copyWith(
+      status: DiscoveryStatus.winner,
+      selectedRestaurant: restaurant,
     );
   }
 
-  void _onCelebrationComplete(
-    DiscoveryCelebrationComplete event,
-    Emitter<DiscoveryState> emit,
-  ) {
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.selected,
-      ),
+  void completeCelebration() {
+    state = state.copyWith(
+      status: DiscoveryStatus.selected,
     );
   }
 
-  void _onRestaurantRemoved(
-    DiscoveryRestaurantRemoved event,
-    Emitter<DiscoveryState> emit,
-  ) {
+  void removeRestaurant(String placeId) {
     // Remove the restaurant from the current list
     final updatedRestaurants = state.restaurants
-        .where((r) => r.placeId != event.placeId)
+        .where((r) => r.placeId != placeId)
         .toList();
 
-    emit(
-      state.copyWith(
-        status: DiscoveryStatus.success,
-        restaurants: updatedRestaurants,
-        clearSelectedRestaurant: true,
-      ),
+    state = state.copyWith(
+      status: DiscoveryStatus.success,
+      restaurants: updatedRestaurants,
+      clearSelectedRestaurant: true,
     );
   }
 }

@@ -1,4 +1,5 @@
-/// Discovery BLoC for restaurant discovery.
+/// Discovery Notifier for restaurant discovery.
 library;
 
-export 'discovery_bloc.dart';
+export 'discovery_notifier.dart';
+export 'discovery_state.dart';

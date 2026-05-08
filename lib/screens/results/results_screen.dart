@@ -1,26 +1,27 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
-import 'package:randoeats/screens/screens.dart';
 import 'package:randoeats/widgets/widgets.dart';
 
 /// Screen displaying restaurant discovery results with slot machine selection.
 ///
 /// This is the main entry point of the app. Shows restaurants sorted by
 /// visit count (unvisited first) with a slot machine-style selection.
-class ResultsScreen extends StatefulWidget {
+class ResultsScreen extends ConsumerStatefulWidget {
   /// Creates a [ResultsScreen].
   const ResultsScreen({super.key});
 
   @override
-  State<ResultsScreen> createState() => _ResultsScreenState();
+  ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen> {
+class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   final GlobalKey<SlotMachineListState> _slotMachineKey = GlobalKey();
   bool _showCelebration = false;
 
@@ -29,20 +30,20 @@ class _ResultsScreenState extends State<ResultsScreen> {
     super.initState();
     // Auto-fetch restaurants on launch
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final bloc = context.read<DiscoveryBloc>();
-      if (bloc.state.status == DiscoveryStatus.initial) {
-        bloc.add(const DiscoveryStarted());
+      final state = ref.read(discoveryProvider);
+      if (state.status == DiscoveryStatus.initial) {
+        unawaited(ref.read(discoveryProvider.notifier).start());
       }
     });
   }
 
   void _startSpin() {
-    context.read<DiscoveryBloc>().add(const DiscoverySpinStarted());
+    ref.read(discoveryProvider.notifier).startSpin();
     _slotMachineKey.currentState?.spin();
   }
 
   void _onSpinComplete(Restaurant restaurant) {
-    context.read<DiscoveryBloc>().add(DiscoveryWinnerSelected(restaurant));
+    unawaited(ref.read(discoveryProvider.notifier).selectWinner(restaurant));
     setState(() {
       _showCelebration = true;
     });
@@ -52,86 +53,63 @@ class _ResultsScreenState extends State<ResultsScreen> {
     setState(() {
       _showCelebration = false;
     });
-    context.read<DiscoveryBloc>().add(const DiscoveryCelebrationComplete());
+    ref.read(discoveryProvider.notifier).completeCelebration();
 
     // Navigate to detail screen
-    final state = context.read<DiscoveryBloc>().state;
+    final state = ref.read(discoveryProvider);
     if (state.selectedRestaurant != null) {
       unawaited(
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => BlocProvider.value(
-              value: context.read<DiscoveryBloc>(),
-              child: DetailScreen(restaurant: state.selectedRestaurant!),
-            ),
-          ),
-        ),
+        context.push<void>(AppRoutes.detail, extra: state.selectedRestaurant),
       );
     }
   }
 
   void _onDirectTap(Restaurant restaurant) {
-    context.read<DiscoveryBloc>().add(DiscoveryRestaurantSelected(restaurant));
-
     unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => BlocProvider.value(
-            value: context.read<DiscoveryBloc>(),
-            child: DetailScreen(restaurant: restaurant),
-          ),
-        ),
-      ),
+      ref.read(discoveryProvider.notifier).selectRestaurant(restaurant),
     );
+
+    unawaited(context.push<void>(AppRoutes.detail, extra: restaurant));
   }
 
   void _navigateToSettings() {
-    unawaited(
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const SettingsScreen(),
-        ),
-      ),
-    );
+    unawaited(context.push<void>(AppRoutes.settings));
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DiscoveryBloc, DiscoveryState>(
-      builder: (context, state) {
-        final isSpinning = state.status == DiscoveryStatus.spinning;
-        final canRefresh =
-            state.status == DiscoveryStatus.success ||
-            state.status == DiscoveryStatus.selected ||
-            state.status == DiscoveryStatus.winner;
+    final state = ref.watch(discoveryProvider);
+    final isSpinning = state.status == DiscoveryStatus.spinning;
+    final canRefresh =
+        state.status == DiscoveryStatus.success ||
+        state.status == DiscoveryStatus.selected ||
+        state.status == DiscoveryStatus.winner;
 
-        return Scaffold(
-          body: SafeArea(
-            child: Stack(
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
               children: [
-                Column(
-                  children: [
-                    // Top bar with refresh and settings
-                    _buildTopBar(isSpinning, canRefresh),
-                    // Main content
-                    Expanded(
-                      child: _buildBody(context, state),
-                    ),
-                  ],
+                // Top bar with refresh and settings
+                _buildTopBar(isSpinning, canRefresh),
+                // Main content
+                Expanded(
+                  child: _buildBody(context, state),
                 ),
-                // Winner celebration overlay
-                if (_showCelebration)
-                  WinnerCelebration(onComplete: _onCelebrationComplete),
               ],
             ),
-          ),
-        );
-      },
+            // Winner celebration overlay
+            if (_showCelebration)
+              WinnerCelebration(onComplete: _onCelebrationComplete),
+          ],
+        ),
+      ),
     );
   }
 
   void _refreshRestaurants() {
-    context.read<DiscoveryBloc>().add(const DiscoveryRefreshed());
+    unawaited(ref.read(discoveryProvider.notifier).refresh());
   }
 
   Widget _buildTopBar(bool isSpinning, bool canRefresh) {
@@ -257,7 +235,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                context.read<DiscoveryBloc>().add(const DiscoveryStarted());
+                unawaited(ref.read(discoveryProvider.notifier).start());
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Try Again'),

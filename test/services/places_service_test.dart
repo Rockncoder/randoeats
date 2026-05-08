@@ -1,25 +1,23 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:randoeats/services/services.dart';
 
-class MockHttpClient extends Mock implements http.Client {}
+class MockDio extends Mock implements Dio {}
 
 void main() {
   group('PlacesService', () {
-    late MockHttpClient mockClient;
+    late MockDio mockClient;
     late PlacesService service;
 
     setUp(() {
-      mockClient = MockHttpClient();
+      mockClient = MockDio();
       service = PlacesService(client: mockClient);
     });
 
-    setUpAll(() {
-      registerFallbackValue(Uri.parse('https://example.com'));
-    });
-
     tearDown(() {
+      when(() => mockClient.close(force: any(named: 'force')))
+          .thenReturn(null);
       service.dispose();
     });
 
@@ -53,8 +51,9 @@ void main() {
     });
 
     group('dispose', () {
-      test('closes the HTTP client', () {
-        when(() => mockClient.close()).thenReturn(null);
+      test('closes the Dio client', () {
+        when(() => mockClient.close(force: any(named: 'force')))
+            .thenReturn(null);
 
         service.dispose();
 

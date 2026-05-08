@@ -1,25 +1,14 @@
-import 'package:mocktail/mocktail.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/models/models.dart';
 
-/// Mock [DiscoveryBloc] that emits a fixed state for screenshot tests.
-class MockDiscoveryBloc extends Mock implements DiscoveryBloc {
-  MockDiscoveryBloc(this._state) {
-    // Allow any event to be added without throwing.
-    when(() => add(any())).thenReturn(null);
-    when(close).thenAnswer((_) async {});
-  }
+/// Fixed-state [DiscoveryNotifier] for screenshot tests.
+class MockDiscoveryNotifier extends DiscoveryNotifier {
+  MockDiscoveryNotifier(this._state);
 
   final DiscoveryState _state;
 
   @override
-  DiscoveryState get state => _state;
-
-  @override
-  Stream<DiscoveryState> get stream => Stream.value(_state);
-
-  @override
-  bool get isClosed => false;
+  DiscoveryState build() => _state;
 }
 
 /// Sample restaurants for screenshots.

@@ -1,4 +1,4 @@
-/// BLoCs for rand-o-eats.
+/// State management for rand-o-eats.
 library;
 
 export 'discovery/discovery.dart';

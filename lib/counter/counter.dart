@@ -1,2 +1,2 @@
-export 'cubit/counter_cubit.dart';
+export 'cubit/counter_notifier.dart';
 export 'view/counter_page.dart';

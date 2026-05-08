@@ -3,14 +3,14 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/screens/screens.dart';
 
-import 'helpers/mock_blocs.dart';
+import 'helpers/mock_providers.dart';
 
 late Directory _screenshotDir;
 
@@ -37,22 +37,20 @@ void main() {
 
   // ==================== 1. Home Screen ====================
   testWidgets('home_light', (tester) async {
-    final bloc = MockDiscoveryBloc(homeState());
     await _pumpScreenshot(
       tester,
       theme: GoogieTheme.light,
-      bloc: bloc,
+      discoveryState: homeState(),
       child: const HomeScreen(),
     );
     await _saveScreenshot(tester, 'home_light');
   });
 
   testWidgets('home_dark', (tester) async {
-    final bloc = MockDiscoveryBloc(homeState());
     await _pumpScreenshot(
       tester,
       theme: GoogieTheme.dark,
-      bloc: bloc,
+      discoveryState: homeState(),
       child: const HomeScreen(),
     );
     await _saveScreenshot(tester, 'home_dark');
@@ -60,22 +58,20 @@ void main() {
 
   // ==================== 2. Results Screen ====================
   testWidgets('results_light', (tester) async {
-    final bloc = MockDiscoveryBloc(resultsState());
     await _pumpScreenshot(
       tester,
       theme: GoogieTheme.light,
-      bloc: bloc,
+      discoveryState: resultsState(),
       child: const ResultsScreen(),
     );
     await _saveScreenshot(tester, 'results_light');
   });
 
   testWidgets('results_dark', (tester) async {
-    final bloc = MockDiscoveryBloc(resultsState());
     await _pumpScreenshot(
       tester,
       theme: GoogieTheme.dark,
-      bloc: bloc,
+      discoveryState: resultsState(),
       child: const ResultsScreen(),
     );
     await _saveScreenshot(tester, 'results_dark');
@@ -83,22 +79,20 @@ void main() {
 
   // ==================== 3. Detail Screen ====================
   testWidgets('detail_light', (tester) async {
-    final bloc = MockDiscoveryBloc(detailState());
     await _pumpScreenshot(
       tester,
       theme: GoogieTheme.light,
-      bloc: bloc,
+      discoveryState: detailState(),
       child: DetailScreen(restaurant: sampleRestaurants[2]),
     );
     await _saveScreenshot(tester, 'detail_light');
   });
 
   testWidgets('detail_dark', (tester) async {
-    final bloc = MockDiscoveryBloc(detailState());
     await _pumpScreenshot(
       tester,
       theme: GoogieTheme.dark,
-      bloc: bloc,
+      discoveryState: detailState(),
       child: DetailScreen(restaurant: sampleRestaurants[2]),
     );
     await _saveScreenshot(tester, 'detail_dark');
@@ -149,7 +143,7 @@ Future<void> _pumpScreenshot(
   WidgetTester tester, {
   required ThemeData theme,
   required Widget child,
-  DiscoveryBloc? bloc,
+  DiscoveryState? discoveryState,
 }) async {
   Widget app = MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -157,12 +151,15 @@ Future<void> _pumpScreenshot(
     home: child,
   );
 
-  if (bloc != null) {
-    app = BlocProvider<DiscoveryBloc>.value(
-      value: bloc,
-      child: app,
-    );
-  }
+  app = ProviderScope(
+    overrides: [
+      if (discoveryState != null)
+        discoveryProvider.overrideWith(
+          () => MockDiscoveryNotifier(discoveryState),
+        ),
+    ],
+    child: app,
+  );
 
   // Suppress RenderFlex overflow errors.
   final origOnError = FlutterError.onError;

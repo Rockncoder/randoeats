@@ -1,24 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
-import 'package:randoeats/screens/screens.dart';
 import 'package:randoeats/services/services.dart';
 
 /// The main home screen of rand-o-eats.
 ///
 /// Displays a retro-future themed interface for discovering restaurants.
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   /// Creates a [HomeScreen].
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _moodController = TextEditingController();
   bool _isLoading = false;
   String? _locationError;
@@ -60,20 +61,16 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _onEngagePressed() async {
+  void _onEngagePressed() {
     final mood = _moodController.text.trim();
-    final bloc = context.read<DiscoveryBloc>()
-      ..add(DiscoveryStarted(mood: mood.isEmpty ? null : mood));
-
-    // Navigate to results with BLoC access
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => BlocProvider.value(
-          value: bloc,
-          child: const ResultsScreen(),
-        ),
-      ),
+    unawaited(
+      ref
+          .read(discoveryProvider.notifier)
+          .start(mood: mood.isEmpty ? null : mood),
     );
+
+    // Navigate to results
+    unawaited(context.push<void>(AppRoutes.results));
   }
 
   @override
@@ -87,15 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: GoogieColors.turquoise),
-            onPressed: () {
-              unawaited(
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const SettingsScreen(),
-                  ),
-                ),
-              );
-            },
+            onPressed: () => unawaited(context.push<void>(AppRoutes.settings)),
           ),
         ],
       ),

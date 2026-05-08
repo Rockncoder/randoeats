@@ -1,29 +1,13 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:randoeats/services/services.dart';
-
-class AppBlocObserver extends BlocObserver {
-  const AppBlocObserver();
-
-  @override
-  void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
-    super.onChange(bloc, change);
-    log('onChange(${bloc.runtimeType}, $change)');
-  }
-
-  @override
-  void onError(BlocBase<dynamic> bloc, Object error, StackTrace stackTrace) {
-    log('onError(${bloc.runtimeType}, $error, $stackTrace)');
-    super.onError(bloc, error, stackTrace);
-  }
-}
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,8 +44,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     };
   }
 
-  Bloc.observer = const AppBlocObserver();
-
   // Initialize Google Mobile Ads (mobile only)
   if (!kIsWeb) {
     await MobileAds.instance.initialize();
@@ -70,5 +52,5 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   // Initialize storage
   await StorageService.instance.initialize();
 
-  runApp(await builder());
+  runApp(ProviderScope(child: await builder()));
 }

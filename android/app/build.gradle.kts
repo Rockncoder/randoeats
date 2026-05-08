@@ -65,7 +65,7 @@ android {
         create("staging") {
             dimension = "default"
             applicationIdSuffix = ".stg"
-            manifestPlaceholders["appName"] = "[STG] Randoeats"
+            manifestPlaceholders["appName"] = "stg_RandoEats"
         }
     }
 

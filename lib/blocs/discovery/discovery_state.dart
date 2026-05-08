@@ -1,4 +1,5 @@
-part of 'discovery_bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:randoeats/models/models.dart';
 
 /// Status of the discovery process.
 enum DiscoveryStatus {

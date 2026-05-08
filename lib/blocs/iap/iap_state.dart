@@ -1,6 +1,6 @@
-part of 'iap_bloc.dart';
+import 'package:equatable/equatable.dart';
 
-/// States for the IAP BLoC.
+/// States for the IAP Notifier.
 sealed class IapState extends Equatable {
   const IapState();
 }

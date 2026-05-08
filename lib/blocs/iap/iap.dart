@@ -1,4 +1,5 @@
-/// IAP BLoC for in-app purchases.
+/// IAP Notifier for in-app purchases.
 library;
 
-export 'iap_bloc.dart';
+export 'iap_notifier.dart';
+export 'iap_state.dart';

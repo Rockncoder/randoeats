@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
@@ -7,7 +9,7 @@ import 'package:randoeats/services/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen displaying restaurant details with navigation and rating options.
-class DetailScreen extends StatelessWidget {
+class DetailScreen extends ConsumerWidget {
   /// Creates a [DetailScreen].
   const DetailScreen({required this.restaurant, super.key});
 
@@ -15,7 +17,7 @@ class DetailScreen extends StatelessWidget {
   final Restaurant restaurant;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -23,7 +25,7 @@ class DetailScreen extends StatelessWidget {
         title: const Text('Destination Locked!'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
       ),
       body: SingleChildScrollView(
@@ -35,7 +37,7 @@ class DetailScreen extends StatelessWidget {
             const Divider(height: 32, indent: 16, endIndent: 16),
             _buildActions(context, theme),
             const SizedBox(height: 24),
-            _buildRatingSection(context, theme),
+            _buildRatingSection(context, ref, theme),
             const SizedBox(height: 32),
           ],
         ),
@@ -240,7 +242,7 @@ class DetailScreen extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             style: OutlinedButton.styleFrom(
               foregroundColor: GoogieColors.coral,
               side: const BorderSide(color: GoogieColors.coral, width: 2),
@@ -253,7 +255,11 @@ class DetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRatingSection(BuildContext context, ThemeData theme) {
+  Widget _buildRatingSection(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -279,6 +285,7 @@ class DetailScreen extends StatelessWidget {
               Expanded(
                 child: _buildRatingButton(
                   context: context,
+                  ref: ref,
                   ratingType: RatingType.thumbsUp,
                   icon: Icons.thumb_up,
                   label: 'Good Pick!',
@@ -290,6 +297,7 @@ class DetailScreen extends StatelessWidget {
               Expanded(
                 child: _buildRatingButton(
                   context: context,
+                  ref: ref,
                   ratingType: RatingType.thumbsDown,
                   icon: Icons.thumb_down,
                   label: 'Not For Me',
@@ -306,6 +314,7 @@ class DetailScreen extends StatelessWidget {
 
   Widget _buildRatingButton({
     required BuildContext context,
+    required WidgetRef ref,
     required RatingType ratingType,
     required IconData icon,
     required String label,
@@ -348,11 +357,11 @@ class DetailScreen extends StatelessWidget {
 
           // For thumbs down, remove from list; for thumbs up, just go back
           if (ratingType == RatingType.thumbsDown) {
-            context.read<DiscoveryBloc>().add(
-              DiscoveryRestaurantRemoved(restaurant.placeId),
+            ref.read(discoveryProvider.notifier).removeRestaurant(
+              restaurant.placeId,
             );
           }
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          context.go(AppRoutes.results);
         }
       },
       style: OutlinedButton.styleFrom(
