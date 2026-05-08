@@ -79,12 +79,12 @@ const List<Restaurant> sampleRestaurants = [
 DiscoveryState homeState() => const DiscoveryState();
 
 DiscoveryState resultsState() => const DiscoveryState(
-      status: DiscoveryStatus.success,
-      restaurants: sampleRestaurants,
-    );
+  status: DiscoveryStatus.success,
+  restaurants: sampleRestaurants,
+);
 
 DiscoveryState detailState() => DiscoveryState(
-      status: DiscoveryStatus.selected,
-      restaurants: sampleRestaurants,
-      selectedRestaurant: sampleRestaurants[2],
-    );
+  status: DiscoveryStatus.selected,
+  restaurants: sampleRestaurants,
+  selectedRestaurant: sampleRestaurants[2],
+);

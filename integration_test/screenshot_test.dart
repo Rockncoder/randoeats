@@ -126,15 +126,14 @@ Future<void> _saveScreenshot(
 ) async {
   await tester.pump();
 
-  final renderObject =
-      tester.binding.rootElement!.renderObject!;
+  final renderObject = tester.binding.rootElement!.renderObject!;
   final layer = renderObject.debugLayer! as OffsetLayer;
   final image = await layer.toImage(renderObject.paintBounds);
-  final byteData =
-      await image.toByteData(format: ui.ImageByteFormat.png);
+  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-  File('${_screenshotDir.path}/$name.png')
-      .writeAsBytesSync(byteData!.buffer.asUint8List());
+  File(
+    '${_screenshotDir.path}/$name.png',
+  ).writeAsBytesSync(byteData!.buffer.asUint8List());
 }
 
 // ==================== Pump Helper ====================
