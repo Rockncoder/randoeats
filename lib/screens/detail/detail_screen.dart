@@ -357,9 +357,11 @@ class DetailScreen extends ConsumerWidget {
 
           // For thumbs down, remove from list; for thumbs up, just go back
           if (ratingType == RatingType.thumbsDown) {
-            ref.read(discoveryProvider.notifier).removeRestaurant(
-              restaurant.placeId,
-            );
+            ref
+                .read(discoveryProvider.notifier)
+                .removeRestaurant(
+                  restaurant.placeId,
+                );
           }
           context.go(AppRoutes.results);
         }

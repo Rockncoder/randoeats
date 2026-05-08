@@ -6,14 +6,13 @@ import 'package:randoeats/blocs/iap/iap_state.dart';
 import 'package:randoeats/services/iap_service.dart';
 
 /// Riverpod provider for in-app purchases.
-final iapProvider =
-    NotifierProvider<IapNotifier, IapState>(IapNotifier.new);
+final iapProvider = NotifierProvider<IapNotifier, IapState>(IapNotifier.new);
 
 /// Notifier for managing in-app purchases.
 class IapNotifier extends Notifier<IapState> {
   /// Creates an [IapNotifier].
   IapNotifier({IapService? iapService})
-      : _iapService = iapService ?? IapService();
+    : _iapService = iapService ?? IapService();
 
   final IapService _iapService;
   StreamSubscription<bool>? _purchaseSubscription;

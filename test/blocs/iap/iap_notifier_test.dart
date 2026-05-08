@@ -17,8 +17,9 @@ void main() {
       mockIapService = MockIapService();
       purchaseStreamController = StreamController<bool>.broadcast();
 
-      when(() => mockIapService.purchaseStream)
-          .thenAnswer((_) => purchaseStreamController.stream);
+      when(
+        () => mockIapService.purchaseStream,
+      ).thenAnswer((_) => purchaseStreamController.stream);
       when(() => mockIapService.isPurchased).thenReturn(false);
       when(() => mockIapService.isAvailable).thenReturn(true);
       when(() => mockIapService.initialize()).thenAnswer((_) async {});
@@ -92,8 +93,9 @@ void main() {
       test(
         'emits [IapLoading, IapError] when initialization fails',
         () async {
-          when(() => mockIapService.initialize())
-              .thenThrow(Exception('init failed'));
+          when(
+            () => mockIapService.initialize(),
+          ).thenThrow(Exception('init failed'));
 
           final container = buildContainer();
           final states = <IapState>[];
@@ -118,8 +120,9 @@ void main() {
 
     group('purchase', () {
       test('emits [IapLoading] and starts purchase', () async {
-        when(() => mockIapService.purchaseAdRemoval())
-            .thenAnswer((_) async => true);
+        when(
+          () => mockIapService.purchaseAdRemoval(),
+        ).thenAnswer((_) async => true);
 
         final container = buildContainer();
         final states = <IapState>[];
@@ -139,8 +142,9 @@ void main() {
       test(
         'emits [IapLoading, IapError] when purchase fails to start',
         () async {
-          when(() => mockIapService.purchaseAdRemoval())
-              .thenAnswer((_) async => false);
+          when(
+            () => mockIapService.purchaseAdRemoval(),
+          ).thenAnswer((_) async => false);
 
           final container = buildContainer();
           final states = <IapState>[];
@@ -163,8 +167,9 @@ void main() {
       );
 
       test('emits [IapLoading, IapError] when purchase throws', () async {
-        when(() => mockIapService.purchaseAdRemoval())
-            .thenThrow(Exception('purchase failed'));
+        when(
+          () => mockIapService.purchaseAdRemoval(),
+        ).thenThrow(Exception('purchase failed'));
 
         final container = buildContainer();
         final states = <IapState>[];
@@ -190,8 +195,9 @@ void main() {
       test(
         'emits [IapLoading, IapNotPurchased] when nothing to restore',
         () async {
-          when(() => mockIapService.restorePurchases())
-              .thenAnswer((_) async {});
+          when(
+            () => mockIapService.restorePurchases(),
+          ).thenAnswer((_) async {});
 
           final container = buildContainer();
           final states = <IapState>[];
@@ -213,8 +219,9 @@ void main() {
       test(
         'emits [IapLoading, IapPurchased] when restore finds purchase',
         () async {
-          when(() => mockIapService.restorePurchases())
-              .thenAnswer((_) async {});
+          when(
+            () => mockIapService.restorePurchases(),
+          ).thenAnswer((_) async {});
           when(() => mockIapService.isPurchased).thenReturn(true);
 
           final container = buildContainer();
@@ -234,8 +241,9 @@ void main() {
       );
 
       test('emits [IapLoading, IapError] when restore fails', () async {
-        when(() => mockIapService.restorePurchases())
-            .thenThrow(Exception('restore failed'));
+        when(
+          () => mockIapService.restorePurchases(),
+        ).thenThrow(Exception('restore failed'));
 
         final container = buildContainer();
         final states = <IapState>[];

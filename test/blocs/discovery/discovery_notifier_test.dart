@@ -77,14 +77,18 @@ void main() {
       );
 
       // Default stubs
-      when(() => mockStorageService.getSettings())
-          .thenReturn(const UserSettings());
-      when(() => mockStorageService.getExcludedPlaceIds())
-          .thenReturn(<String>{});
-      when(() => mockStorageService.getVisitCountMap())
-          .thenReturn(<String, int>{});
-      when(() => mockStorageService.incrementVisitCount(any()))
-          .thenAnswer((_) async {});
+      when(
+        () => mockStorageService.getSettings(),
+      ).thenReturn(const UserSettings());
+      when(
+        () => mockStorageService.getExcludedPlaceIds(),
+      ).thenReturn(<String>{});
+      when(
+        () => mockStorageService.getVisitCountMap(),
+      ).thenReturn(<String, int>{});
+      when(
+        () => mockStorageService.incrementVisitCount(any()),
+      ).thenAnswer((_) async {});
     });
 
     ProviderContainer buildContainer() {
@@ -119,8 +123,9 @@ void main() {
       test(
         'emits [loading, success] when location and places succeed',
         () async {
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => LocationSuccess(testPosition));
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => LocationSuccess(testPosition));
           when(
             () => mockPlacesService.getNearbyRestaurants(
               latitude: any(named: 'latitude'),
@@ -151,8 +156,9 @@ void main() {
       );
 
       test('emits [loading, success] with mood parameter', () async {
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => LocationSuccess(testPosition));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
         when(
           () => mockPlacesService.getNearbyRestaurants(
             latitude: any(named: 'latitude'),
@@ -172,9 +178,7 @@ void main() {
           fireImmediately: false,
         );
 
-        await container
-            .read(discoveryProvider.notifier)
-            .start(mood: 'tacos');
+        await container.read(discoveryProvider.notifier).start(mood: 'tacos');
 
         expect(states.length, 2);
         expect(states[0].status, DiscoveryStatus.loading);
@@ -183,8 +187,9 @@ void main() {
       });
 
       test('emits [loading, failure] when location is denied', () async {
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => const LocationPermissionDenied());
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => const LocationPermissionDenied());
 
         final container = buildContainer();
         final states = <DiscoveryState>[];
@@ -232,8 +237,9 @@ void main() {
       test(
         'emits [loading, failure] when location services disabled',
         () async {
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => const LocationServicesDisabled());
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => const LocationServicesDisabled());
 
           final container = buildContainer();
           final states = <DiscoveryState>[];
@@ -256,8 +262,9 @@ void main() {
       );
 
       test('emits [loading, failure] when location error occurs', () async {
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => const LocationError('GPS failed'));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => const LocationError('GPS failed'));
 
         final container = buildContainer();
         final states = <DiscoveryState>[];
@@ -276,8 +283,9 @@ void main() {
       });
 
       test('emits [loading, failure] when places API fails', () async {
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => LocationSuccess(testPosition));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
         when(
           () => mockPlacesService.getNearbyRestaurants(
             latitude: any(named: 'latitude'),
@@ -308,8 +316,9 @@ void main() {
       test(
         'emits [loading, failure] when no restaurants found',
         () async {
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => LocationSuccess(testPosition));
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => LocationSuccess(testPosition));
           when(
             () => mockPlacesService.getNearbyRestaurants(
               latitude: any(named: 'latitude'),
@@ -348,8 +357,9 @@ void main() {
             bannedCategories: {'cafe'},
           ),
         );
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => LocationSuccess(testPosition));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
         when(
           () => mockPlacesService.getNearbyRestaurants(
             latitude: any(named: 'latitude'),
@@ -386,8 +396,9 @@ void main() {
           'place_2': 1,
           'place_3': 0,
         });
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => LocationSuccess(testPosition));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
         when(
           () => mockPlacesService.getNearbyRestaurants(
             latitude: any(named: 'latitude'),
@@ -418,8 +429,9 @@ void main() {
 
     group('refresh', () {
       test('emits [loading, success] on refresh', () async {
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => LocationSuccess(testPosition));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
         when(
           () => mockPlacesService.getNearbyRestaurants(
             latitude: any(named: 'latitude'),
@@ -449,8 +461,9 @@ void main() {
       test(
         'emits [loading, failure] when location fails on refresh',
         () async {
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => const LocationServicesDisabled());
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => const LocationServicesDisabled());
 
           final container = buildContainer();
           final states = <DiscoveryState>[];
@@ -475,8 +488,9 @@ void main() {
       test(
         'emits [loading, failure] when places API fails on refresh',
         () async {
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => LocationSuccess(testPosition));
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => LocationSuccess(testPosition));
           when(
             () => mockPlacesService.getNearbyRestaurants(
               latitude: any(named: 'latitude'),
@@ -508,8 +522,9 @@ void main() {
       test(
         'emits failure when no restaurants found on refresh with open only',
         () async {
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => LocationSuccess(testPosition));
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => LocationSuccess(testPosition));
           when(
             () => mockPlacesService.getNearbyRestaurants(
               latitude: any(named: 'latitude'),
@@ -547,8 +562,9 @@ void main() {
           when(() => mockStorageService.getSettings()).thenReturn(
             const UserSettings(includeOpenOnly: false),
           );
-          when(() => mockLocationService.getCurrentLocation())
-              .thenAnswer((_) async => LocationSuccess(testPosition));
+          when(
+            () => mockLocationService.getCurrentLocation(),
+          ).thenAnswer((_) async => LocationSuccess(testPosition));
           when(
             () => mockPlacesService.getNearbyRestaurants(
               latitude: any(named: 'latitude'),
@@ -690,8 +706,9 @@ void main() {
       test('removes restaurant from list', () async {
         final container = buildContainer();
         // Set up success state with restaurants first
-        when(() => mockLocationService.getCurrentLocation())
-            .thenAnswer((_) async => LocationSuccess(testPosition));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
         when(() => mockStorageService.getSettings()).thenReturn(
           const UserSettings(includeOpenOnly: false),
         );
@@ -715,9 +732,7 @@ void main() {
           fireImmediately: false,
         );
 
-        container
-            .read(discoveryProvider.notifier)
-            .removeRestaurant('place_2');
+        container.read(discoveryProvider.notifier).removeRestaurant('place_2');
 
         expect(states.length, 1);
         expect(states[0].status, DiscoveryStatus.success);

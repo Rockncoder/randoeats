@@ -16,8 +16,7 @@ void main() {
     });
 
     tearDown(() {
-      when(() => mockClient.close(force: any(named: 'force')))
-          .thenReturn(null);
+      when(() => mockClient.close(force: any(named: 'force'))).thenReturn(null);
       service.dispose();
     });
 
@@ -52,8 +51,9 @@ void main() {
 
     group('dispose', () {
       test('closes the Dio client', () {
-        when(() => mockClient.close(force: any(named: 'force')))
-            .thenReturn(null);
+        when(
+          () => mockClient.close(force: any(named: 'force')),
+        ).thenReturn(null);
 
         service.dispose();
 

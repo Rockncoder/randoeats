@@ -4,8 +4,9 @@ import 'package:randoeats/models/models.dart';
 import 'package:randoeats/services/services.dart';
 
 /// Riverpod provider for restaurant discovery.
-final discoveryProvider =
-    NotifierProvider<DiscoveryNotifier, DiscoveryState>(DiscoveryNotifier.new);
+final discoveryProvider = NotifierProvider<DiscoveryNotifier, DiscoveryState>(
+  DiscoveryNotifier.new,
+);
 
 /// Notifier for managing restaurant discovery.
 class DiscoveryNotifier extends Notifier<DiscoveryState> {
@@ -81,8 +82,9 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     }
 
     // Create mutable copy of results so we can filter and sort in-place
-    var restaurants =
-        List<Restaurant>.of((placesResult as PlacesSuccess).restaurants);
+    var restaurants = List<Restaurant>.of(
+      (placesResult as PlacesSuccess).restaurants,
+    );
 
     // Filter to only open restaurants (if setting enabled)
     if (settings.includeOpenOnly) {
@@ -165,8 +167,9 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     }
 
     // Create mutable copy of results so we can filter and sort in-place
-    var restaurants =
-        List<Restaurant>.of((placesResult as PlacesSuccess).restaurants);
+    var restaurants = List<Restaurant>.of(
+      (placesResult as PlacesSuccess).restaurants,
+    );
 
     // Filter to only open restaurants (if setting enabled)
     if (settings.includeOpenOnly) {

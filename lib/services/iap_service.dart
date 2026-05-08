@@ -20,7 +20,7 @@ const String _purchasedKey = 'ad_free_purchased';
 class IapService {
   /// Creates an [IapService].
   IapService({InAppPurchase? inAppPurchase})
-      : _inAppPurchase = inAppPurchase ?? InAppPurchase.instance;
+    : _inAppPurchase = inAppPurchase ?? InAppPurchase.instance;
 
   final InAppPurchase _inAppPurchase;
   StreamSubscription<List<PurchaseDetails>>? _subscription;

@@ -65,8 +65,11 @@ void main() {
       ];
 
       for (final key in expectedKeys) {
-        expect(restaurantCategories.containsKey(key), isTrue,
-            reason: 'Missing key: $key');
+        expect(
+          restaurantCategories.containsKey(key),
+          isTrue,
+          reason: 'Missing key: $key',
+        );
       }
     });
   });

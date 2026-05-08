@@ -174,8 +174,11 @@ void main() {
           };
 
           final result = Restaurant.fromPlacesApiNew(json);
-          expect(result.priceLevel, entry.value,
-              reason: '${entry.key} should map to ${entry.value}');
+          expect(
+            result.priceLevel,
+            entry.value,
+            reason: '${entry.key} should map to ${entry.value}',
+          );
         }
       });
 
