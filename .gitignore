@@ -151,3 +151,6 @@ AppIcons.zip
 !/dev/ci/**/Gemfile.lock
 !.vscode/extensions.json
 !.vscode/launch.json
+
+# Local-only keys & service accounts
+.keys/
