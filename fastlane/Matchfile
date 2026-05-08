@@ -1,4 +1,4 @@
-git_url("git@github.com:Rockncoder/tekadept-certificates.git")
+git_url("git@github.com:Rockncoder/tekadept_certificates.git")
 git_branch("main")
 storage_mode("git")
 type("appstore")

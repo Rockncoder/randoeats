@@ -431,13 +431,13 @@ This way `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD` are the same 
 
 Use ONE certificates repo for all iOS apps:
 
-1. Create single repo: `github.com/USERNAME/tekadept-certificates`
+1. Create single repo: `github.com/USERNAME/tekadept_certificates`
 2. Run `fastlane match adhoc` for each app's bundle ID
 3. All certs stored in same repo, encrypted with same `MATCH_PASSWORD`
 
 Each app's Matchfile just specifies its own `app_identifier`:
 ```ruby
-git_url("https://github.com/USERNAME/tekadept-certificates.git")
+git_url("https://github.com/USERNAME/tekadept_certificates.git")
 storage_mode("git")
 type("adhoc")
 app_identifier("com.tekadept.THIS_APP_NAME")  # Only this changes per app
