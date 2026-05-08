@@ -16,6 +16,11 @@
   ],
   "useGitignore": true,
   "ignorePaths": [
+    "**/node_modules/**",
+    "**/build/**",
+    "**/.dart_tool/**",
+    "**/coverage/**",
+    "**/Pods/**",
     "lib/l10n/gen/",
     "**/*.g.dart",
     "**/*.freezed.dart"
