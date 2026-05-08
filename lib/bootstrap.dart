@@ -6,13 +6,18 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:randoeats/providers/service_providers.dart';
 import 'package:randoeats/services/services.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Use path-based URLs on web (not hash-based) for clean deep links.
+  usePathUrlStrategy();
+
+  // Initialize Firebase (skip on web — not configured yet)
   if (!kIsWeb) {
     try {
       await Firebase.initializeApp();
@@ -44,13 +49,40 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     };
   }
 
+  // Initialize Analytics (mobile only — Firebase Analytics is not yet
+  // configured for web).
+  AnalyticsService? analyticsService;
+  if (!kIsWeb) {
+    try {
+      analyticsService = AnalyticsService();
+    } on Exception catch (e) {
+      log('Analytics initialization failed: $e');
+    }
+  }
+
   // Initialize Google Mobile Ads (mobile only)
   if (!kIsWeb) {
-    await MobileAds.instance.initialize();
+    try {
+      await MobileAds.instance.initialize();
+    } on Exception catch (e) {
+      log('MobileAds initialization failed: $e');
+    }
   }
 
   // Initialize storage
-  await StorageService.instance.initialize();
+  try {
+    await StorageService.instance.initialize();
+  } on Exception catch (e) {
+    log('Storage initialization failed: $e');
+  }
 
-  runApp(ProviderScope(child: await builder()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        if (analyticsService != null)
+          analyticsServiceProvider.overrideWithValue(analyticsService),
+      ],
+      child: await builder(),
+    ),
+  );
 }
