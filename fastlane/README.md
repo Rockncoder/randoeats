@@ -1,0 +1,64 @@
+fastlane documentation
+----
+
+# Installation
+
+Make sure you have the latest version of the Xcode command line tools installed:
+
+```sh
+xcode-select --install
+```
+
+For _fastlane_ installation instructions, see [Installing _fastlane_](https://docs.fastlane.tools/#installing-fastlane)
+
+# Available Actions
+
+### distribute_all
+
+```sh
+[bundle exec] fastlane distribute_all
+```
+
+Build and distribute both platforms
+
+----
+
+
+## iOS
+
+### ios distribute
+
+```sh
+[bundle exec] fastlane ios distribute
+```
+
+Build and upload iOS to Firebase App Distribution
+
+### ios sync_certs
+
+```sh
+[bundle exec] fastlane ios sync_certs
+```
+
+Sync certificates (run locally first time)
+
+----
+
+
+## Android
+
+### android distribute
+
+```sh
+[bundle exec] fastlane android distribute
+```
+
+Build and upload Android to Firebase App Distribution
+
+----
+
+This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
+
+More information about _fastlane_ can be found on [fastlane.tools](https://fastlane.tools).
+
+The documentation of _fastlane_ can be found on [docs.fastlane.tools](https://docs.fastlane.tools).
