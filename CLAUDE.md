@@ -23,7 +23,7 @@
 
 | Component | Technology | Notes |
 |-----------|------------|-------|
-| **Framework** | Flutter 3.24+ | iOS, Android, Web from single codebase |
+| **Framework** | Flutter 3.44.0 via FVM | iOS, Android, Web from single codebase |
 | **State Management** | BLoC/Cubit | TekAdept standard |
 | **CLI Tools** | VGV CLI | `very_good create flutter_app` |
 | **Local Storage** | Hive | Fast, lightweight, no native dependencies |

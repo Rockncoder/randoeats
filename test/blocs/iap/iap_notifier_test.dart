@@ -57,7 +57,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).initialize();
@@ -79,7 +78,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).initialize();
@@ -102,7 +100,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).initialize();
@@ -129,7 +126,6 @@ void main() {
         container.listen(
           iapProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(iapProvider.notifier).purchase();
@@ -151,7 +147,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).purchase();
@@ -176,7 +171,6 @@ void main() {
         container.listen(
           iapProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(iapProvider.notifier).purchase();
@@ -204,7 +198,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).restore();
@@ -229,7 +222,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).restore();
@@ -250,7 +242,6 @@ void main() {
         container.listen(
           iapProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(iapProvider.notifier).restore();
@@ -274,7 +265,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).initialize();
@@ -300,7 +290,6 @@ void main() {
           container.listen(
             iapProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(iapProvider.notifier).initialize();

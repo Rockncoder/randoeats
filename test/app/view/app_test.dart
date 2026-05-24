@@ -12,7 +12,7 @@ void main() {
         ProviderScope(
           overrides: [
             discoveryProvider.overrideWith(
-              () => DiscoveryNotifier(),
+              DiscoveryNotifier.new,
             ),
           ],
           child: const ResultsScreen(),

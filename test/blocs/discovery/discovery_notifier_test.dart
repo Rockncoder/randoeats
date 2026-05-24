@@ -142,7 +142,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).start();
@@ -175,7 +174,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).start(mood: 'tacos');
@@ -196,7 +194,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).start();
@@ -222,7 +219,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).start();
@@ -246,7 +242,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).start();
@@ -271,7 +266,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).start();
@@ -302,7 +296,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).start();
@@ -335,7 +328,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).start();
@@ -376,7 +368,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).start();
@@ -415,7 +406,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).start();
@@ -448,7 +438,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container.read(discoveryProvider.notifier).refresh();
@@ -470,7 +459,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).refresh();
@@ -507,7 +495,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).refresh();
@@ -541,7 +528,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).refresh();
@@ -581,7 +567,6 @@ void main() {
           container.listen(
             discoveryProvider,
             (_, next) => states.add(next),
-            fireImmediately: false,
           );
 
           await container.read(discoveryProvider.notifier).refresh();
@@ -604,7 +589,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container
@@ -630,7 +614,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         container.read(discoveryProvider.notifier).reset();
@@ -647,7 +630,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         container.read(discoveryProvider.notifier).startSpin();
@@ -664,7 +646,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         await container
@@ -692,7 +673,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         container.read(discoveryProvider.notifier).completeCelebration();
@@ -729,7 +709,6 @@ void main() {
         container.listen(
           discoveryProvider,
           (_, next) => states.add(next),
-          fireImmediately: false,
         );
 
         container.read(discoveryProvider.notifier).removeRestaurant('place_2');
