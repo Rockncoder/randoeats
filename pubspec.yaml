@@ -43,6 +43,11 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  config:
+    # google_mobile_ads is CocoaPods-only and pulls webview_flutter_wkwebview
+    # transitively. Under SPM-mixed mode the wkwebview podspec gets skipped
+    # and pod install can't resolve the dependency. Route everything via Pods.
+    enable-swift-package-manager: false
   assets:
     - assets/images/
 
