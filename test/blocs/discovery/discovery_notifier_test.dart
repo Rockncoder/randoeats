@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_region_provider.dart';
 import 'package:randoeats/services/services.dart';
 
 class MockPlacesService extends Mock implements PlacesService {}
@@ -417,6 +418,107 @@ void main() {
       });
     });
 
+    group('region scope', () {
+      const inside = Restaurant(
+        placeId: 'inside',
+        name: 'Inside Diner',
+        address: '1 In St',
+        latitude: 34,
+        longitude: -118.05,
+        isOpen: true,
+        types: ['restaurant'],
+      );
+      const outside = Restaurant(
+        placeId: 'outside',
+        name: 'Outside Cafe',
+        address: '2 Out Rd',
+        latitude: 35,
+        longitude: -119,
+        isOpen: true,
+        types: ['restaurant'],
+      );
+      // A square covering lat [33.9, 34.1], lng [-118.1, -118.0].
+      final region = SavedRegion(
+        id: 'r1',
+        name: 'Orange Circle',
+        points: const [
+          33.9, -118.1, //
+          33.9, -118.0, //
+          34.1, -118.0, //
+          34.1, -118.1, //
+        ],
+        createdAt: DateTime(2026),
+      );
+
+      void stubPlaces(List<Restaurant> results) {
+        when(
+          () => mockPlacesService.getNearbyRestaurants(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            mood: any(named: 'mood'),
+            excludePlaceIds: any(named: 'excludePlaceIds'),
+            radiusMeters: any(named: 'radiusMeters'),
+            maxResultCount: any(named: 'maxResultCount'),
+          ),
+        ).thenAnswer((_) async => PlacesSuccess(results));
+      }
+
+      test('keeps only restaurants inside the polygon', () async {
+        stubPlaces(const [inside, outside]);
+        final container = buildContainer();
+        container.read(activeRegionProvider.notifier).select(region);
+
+        await container.read(discoveryProvider.notifier).start();
+
+        final state = container.read(discoveryProvider);
+        expect(state.status, DiscoveryStatus.success);
+        expect(state.restaurants.map((r) => r.placeId), ['inside']);
+      });
+
+      test('does not request the device location', () async {
+        stubPlaces(const [inside]);
+        final container = buildContainer();
+        container.read(activeRegionProvider.notifier).select(region);
+
+        await container.read(discoveryProvider.notifier).start();
+
+        verifyNever(() => mockLocationService.getCurrentLocation());
+      });
+
+      test('searches the region bounding circle (centroid), not GPS', () async {
+        stubPlaces(const [inside]);
+        final container = buildContainer();
+        container.read(activeRegionProvider.notifier).select(region);
+
+        await container.read(discoveryProvider.notifier).start();
+
+        final captured = verify(
+          () => mockPlacesService.getNearbyRestaurants(
+            latitude: captureAny(named: 'latitude'),
+            longitude: captureAny(named: 'longitude'),
+            mood: any(named: 'mood'),
+            excludePlaceIds: any(named: 'excludePlaceIds'),
+            radiusMeters: any(named: 'radiusMeters'),
+            maxResultCount: any(named: 'maxResultCount'),
+          ),
+        ).captured;
+        expect(captured[0] as double, closeTo(34, 0.001));
+        expect(captured[1] as double, closeTo(-118.05, 0.001));
+      });
+
+      test('emits region-specific failure when nothing is inside', () async {
+        stubPlaces(const [outside]);
+        final container = buildContainer();
+        container.read(activeRegionProvider.notifier).select(region);
+
+        await container.read(discoveryProvider.notifier).start();
+
+        final state = container.read(discoveryProvider);
+        expect(state.status, DiscoveryStatus.failure);
+        expect(state.errorMessage, contains('Orange Circle'));
+      });
+    });
+
     group('refresh', () {
       test('emits [loading, success] on refresh', () async {
         when(
@@ -466,9 +568,10 @@ void main() {
           expect(states.length, 2);
           expect(states[0].status, DiscoveryStatus.loading);
           expect(states[1].status, DiscoveryStatus.failure);
+          // refresh now surfaces the same specific location messages as start.
           expect(
             states[1].errorMessage,
-            contains('Unable to determine location'),
+            contains('enable location services'),
           );
         },
       );

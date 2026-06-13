@@ -7,6 +7,8 @@ import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_region_provider.dart';
+import 'package:randoeats/services/services.dart';
 import 'package:randoeats/widgets/widgets.dart';
 
 /// Screen displaying restaurant discovery results with slot machine selection.
@@ -24,10 +26,12 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   final GlobalKey<SlotMachineListState> _slotMachineKey = GlobalKey();
   bool _showCelebration = false;
+  List<SavedRegion> _regions = [];
 
   @override
   void initState() {
     super.initState();
+    _loadRegions();
     // Auto-fetch restaurants on launch
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(discoveryProvider);
@@ -35,6 +39,56 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         unawaited(ref.read(discoveryProvider.notifier).start());
       }
     });
+  }
+
+  void _loadRegions() {
+    if (!StorageService.instance.isInitialized) return;
+    setState(() => _regions = StorageService.instance.getAllRegions());
+  }
+
+  Future<void> _onCreateRegion() async {
+    await context.push<void>(AppRoutes.regionDraw);
+    _loadRegions();
+  }
+
+  Future<void> _onDeleteRegion(SavedRegion region) async {
+    await StorageService.instance.deleteRegion(region.id);
+    if (ref.read(activeRegionProvider)?.id == region.id) {
+      ref.read(activeRegionProvider.notifier).clear();
+    }
+    _loadRegions();
+  }
+
+  Future<void> _onRenameRegion(SavedRegion region) async {
+    final controller = TextEditingController(text: region.name);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rename area'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.trim().isEmpty) return;
+
+    final renamed = region.copyWith(name: name.trim());
+    await StorageService.instance.saveRegion(renamed);
+    if (ref.read(activeRegionProvider)?.id == region.id) {
+      ref.read(activeRegionProvider.notifier).select(renamed);
+    }
+    _loadRegions();
   }
 
   void _startSpin() {
@@ -79,6 +133,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(discoveryProvider);
+    // Re-run discovery whenever the active scope (Near Me / a region) changes.
+    ref.listen(activeRegionProvider, (previous, next) {
+      if (previous?.id != next?.id) {
+        unawaited(ref.read(discoveryProvider.notifier).start());
+      }
+    });
     final isSpinning = state.status == DiscoveryStatus.spinning;
     final canRefresh =
         state.status == DiscoveryStatus.success ||
@@ -93,6 +153,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               children: [
                 // Top bar with refresh and settings
                 _buildTopBar(isSpinning, canRefresh),
+                // One-tap scope picker: Near Me + saved regions + New Area
+                RegionChipBar(
+                  regions: _regions,
+                  onCreate: _onCreateRegion,
+                  onRename: _onRenameRegion,
+                  onDelete: _onDeleteRegion,
+                ),
                 // Main content
                 Expanded(
                   child: _buildBody(context, state),
@@ -128,12 +195,16 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
           const Spacer(),
           // Settings gear (right side)
-          IconButton(
-            icon: const Icon(Icons.settings),
-            color: GoogieColors.deepTeal,
-            iconSize: 28,
-            onPressed: isSpinning ? null : _navigateToSettings,
-            tooltip: 'Settings',
+          Semantics(
+            identifier: 'settings_button',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.settings),
+              color: GoogieColors.deepTeal,
+              iconSize: 28,
+              onPressed: isSpinning ? null : _navigateToSettings,
+              tooltip: 'Settings',
+            ),
           ),
         ],
       ),
@@ -174,9 +245,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               left: 16,
               right: 16,
             ),
-            child: RandoEatsButton(
-              onPressed: _startSpin,
-              isSpinning: isSpinning,
+            child: Semantics(
+              identifier: 'spin_button',
+              button: true,
+              child: RandoEatsButton(
+                onPressed: _startSpin,
+                isSpinning: isSpinning,
+              ),
             ),
           ),
       ],

@@ -1,0 +1,13 @@
+# Long-press a region chip to rename or delete it.
+#
+# PREREQUISITE: a saved region named "Orange Circle" must exist (create it by
+# hand first — see create_region.yaml limitation). Run with clearState: false.
+appId: com.tekadept.randoeats
+---
+- launchApp:
+    clearState: false
+- longPressOn: "Orange Circle"
+- assertVisible: "Rename"
+- assertVisible: "Delete"
+- tapOn: "Delete"
+- assertNotVisible: "Orange Circle"

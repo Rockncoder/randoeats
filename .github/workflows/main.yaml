@@ -11,6 +11,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   semantic-pull-request:
@@ -19,6 +20,10 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # Exposed at job level so the DCM steps can self-skip until the license
+    # secrets exist (you can't reference secrets directly in a step `if`).
+    env:
+      DCM_CI_KEY: ${{ secrets.DCM_CI_KEY }}
     steps:
       - name: 📚 Git Checkout
         uses: actions/checkout@v6
@@ -38,8 +43,35 @@ jobs:
       - name: 🕵️ Analyze
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      # Complexity gate (DCM). Thresholds live in analysis_options.yaml
+      # (dart_code_metrics:). Requires a DCM license — set DCM_CI_KEY and
+      # DCM_EMAIL repo secrets (free for OSS/individuals at https://dcm.dev).
+      # These steps self-skip (CI stays green) until DCM_CI_KEY is set.
+      - name: 🧮 Setup DCM
+        if: ${{ env.DCM_CI_KEY != '' }}
+        uses: CQLabs/setup-dcm@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🧮 Complexity gate (DCM)
+        if: ${{ env.DCM_CI_KEY != '' }}
+        uses: CQLabs/dcm-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ci-key: ${{ secrets.DCM_CI_KEY }}
+          email: ${{ secrets.DCM_EMAIL }}
+          folders: lib
+          fatal-found: true
+
       - name: 🧪 Run Tests
         run: flutter test --no-pub --coverage
+
+      - name: 📊 Check Coverage
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 40
+          exclude: "**/*.g.dart **/l10n/**"
 
   spell-check:
     if: ${{ github.actor != 'dependabot[bot]' }}
