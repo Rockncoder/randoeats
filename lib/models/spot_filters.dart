@@ -71,6 +71,35 @@ class SpotFilters extends Equatable {
   bool get usesAtmosphere =>
       servesBeer || outdoorSeating || goodForGroups || hasParking;
 
+  /// Display labels for known cuisine codes; unknown codes are title-cased.
+  static const _cuisineLabels = <String, String>{
+    'mexican': 'Mexican',
+    'hamburger': 'Burgers',
+    'sushi': 'Sushi',
+    'pizza': 'Pizza',
+    'coffee': 'Coffee',
+  };
+
+  /// A short, human-friendly summary of the active filters, e.g.
+  /// `Mexican · Beer · 4.0+`. Empty string when no filters are active.
+  String get summaryLabel {
+    final sortedCuisines = cuisines.toList()..sort();
+    final sortedPrices = priceLevels.toList()..sort();
+    final parts = <String>[
+      for (final c in sortedCuisines)
+        _cuisineLabels[c] ??
+            (c.isEmpty ? c : '${c[0].toUpperCase()}${c.substring(1)}'),
+      if (servesBeer) 'Beer',
+      if (outdoorSeating) 'Patio',
+      if (hasParking) 'Parking',
+      if (goodForGroups) 'Group',
+      if (openNow) 'Open',
+      if (minRating != null) '${minRating!.toStringAsFixed(1)}+',
+      for (final level in sortedPrices) r'$' * level,
+    ];
+    return parts.join(' · ');
+  }
+
   /// Count of active filter facets (for a chip-bar badge).
   int get activeCount {
     var n = 0;

@@ -92,6 +92,76 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     _loadRegions();
   }
 
+  /// Saves the current filters (and the active area, if any) as a named Spot.
+  ///
+  /// On "Near Me" this creates an area-less (GPS) Spot — recalling it searches
+  /// the user's location with these filters. With an area active, the new Spot
+  /// reuses that area's polygon plus the current filters.
+  Future<void> _onSaveSpot() async {
+    final filters = ref.read(activeFiltersProvider);
+    if (filters.isEmpty) return;
+
+    final activeRegion = ref.read(activeRegionProvider);
+    final hasArea = activeRegion != null && activeRegion.hasArea;
+    final areaName = hasArea ? activeRegion.name : null;
+    final summary = filters.summaryLabel;
+    final suggestion = areaName == null ? summary : '$areaName — $summary';
+
+    final controller = TextEditingController(text: suggestion);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.star, color: GoogieColors.mustard),
+            SizedBox(width: 8),
+            Text('Save Spot'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: const ValueKey('spot_name_field'),
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            const SizedBox(height: 16),
+            Text('Area: ${areaName ?? 'Near Me (GPS)'}'),
+            const SizedBox(height: 4),
+            Text('Filters: $summary'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const ValueKey('spot_save_confirm'),
+            onPressed: () => Navigator.pop(dialogContext, controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.trim().isEmpty) return;
+
+    final now = DateTime.now();
+    final spot = SavedRegion(
+      id: now.millisecondsSinceEpoch.toString(),
+      name: name.trim(),
+      points: hasArea ? activeRegion.points : const <double>[],
+      createdAt: now,
+      filters: filters,
+    );
+    await StorageService.instance.saveRegion(spot);
+    ref.read(activeRegionProvider.notifier).select(spot);
+    _loadRegions();
+  }
+
   void _startSpin() {
     ref.read(discoveryProvider.notifier).startSpin();
     _slotMachineKey.currentState?.spin();
@@ -168,7 +238,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   onDelete: _onDeleteRegion,
                 ),
                 // One-tap filters: cuisine + atmosphere + rating/price
-                const FilterChipBar(),
+                FilterChipBar(onSaveSpot: _onSaveSpot),
                 // Main content
                 Expanded(
                   child: _buildBody(context, state),

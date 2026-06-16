@@ -18,7 +18,11 @@ const List<_Cuisine> _cuisines = [
 /// toggles. All taps drive [activeFiltersProvider].
 class FilterChipBar extends ConsumerWidget {
   /// Creates a [FilterChipBar].
-  const FilterChipBar({super.key});
+  const FilterChipBar({this.onSaveSpot, super.key});
+
+  /// Called when the user taps the trailing "save as Spot" star. The star is
+  /// shown only when this is non-null and at least one filter is active.
+  final VoidCallback? onSaveSpot;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -98,6 +102,27 @@ class FilterChipBar extends ConsumerWidget {
               label: r'$' * level,
               selected: filters.priceLevels.contains(level),
               onToggle: () => notifier.togglePriceLevel(level),
+            ),
+          // Trailing: save the current ad-hoc filters as a named Spot.
+          if (onSaveSpot != null && !filters.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: ActionChip(
+                key: const ValueKey('filter_save_spot'),
+                avatar: const Icon(
+                  Icons.star,
+                  size: 18,
+                  color: GoogieColors.deepTeal,
+                ),
+                label: const Text('Save Spot'),
+                labelStyle: const TextStyle(
+                  color: GoogieColors.deepTeal,
+                  fontWeight: FontWeight.w600,
+                ),
+                backgroundColor: GoogieColors.mustard,
+                side: const BorderSide(color: GoogieColors.chrome),
+                onPressed: onSaveSpot,
+              ),
             ),
         ],
       ),

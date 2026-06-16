@@ -19,6 +19,19 @@ void main() {
       expect(buildSquare(), equals(buildSquare()));
     });
 
+    test('hasArea is true for a polygon, false for an area-less Spot', () {
+      expect(buildSquare().hasArea, isTrue);
+      final gpsSpot = SavedRegion(
+        id: 'g1',
+        name: 'Quick Tacos',
+        points: const [],
+        createdAt: createdAt,
+      );
+      expect(gpsSpot.hasArea, isFalse);
+      // Two vertices (4 doubles) is still not a polygon.
+      expect(gpsSpot.copyWith(points: const [0, 0, 1, 1]).hasArea, isFalse);
+    });
+
     test('differs when any field differs', () {
       expect(buildSquare(), isNot(equals(buildSquare().copyWith(id: 'r2'))));
       expect(
