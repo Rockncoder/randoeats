@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
 import 'package:randoeats/services/services.dart';
 
@@ -58,6 +59,10 @@ void main() {
     late MockLocationService mockLocationService;
     late MockStorageService mockStorageService;
     late Position testPosition;
+
+    setUpAll(() {
+      registerFallbackValue(const SpotFilters());
+    });
 
     setUp(() {
       mockPlacesService = MockPlacesService();
@@ -516,6 +521,115 @@ void main() {
         final state = container.read(discoveryProvider);
         expect(state.status, DiscoveryStatus.failure);
         expect(state.errorMessage, contains('Orange Circle'));
+      });
+    });
+
+    group('filters', () {
+      const beerMex = Restaurant(
+        placeId: 'beer_mex',
+        name: 'Beer Mex',
+        address: 'a',
+        latitude: 34,
+        longitude: -118,
+        rating: 4.6,
+        priceLevel: r'$',
+        isOpen: true,
+        types: ['restaurant', 'mexican_restaurant'],
+        servesBeer: true,
+        outdoorSeating: true,
+        goodForGroups: true,
+        hasParking: true,
+      );
+      const sushiNoBeer = Restaurant(
+        placeId: 'sushi',
+        name: 'Sushi',
+        address: 'b',
+        latitude: 34,
+        longitude: -118,
+        rating: 3.9,
+        priceLevel: r'$$$',
+        isOpen: true,
+        types: ['restaurant', 'sushi_restaurant'],
+        servesBeer: false,
+        outdoorSeating: false,
+      );
+      const burgerBeer = Restaurant(
+        placeId: 'burger',
+        name: 'Burger',
+        address: 'c',
+        latitude: 34,
+        longitude: -118,
+        rating: 4.2,
+        priceLevel: r'$$',
+        isOpen: true,
+        types: ['restaurant', 'hamburger_restaurant'],
+        servesBeer: true,
+        outdoorSeating: false,
+      );
+      const all = [beerMex, sushiNoBeer, burgerBeer];
+
+      void stubPlaces() {
+        when(
+          () => mockPlacesService.getNearbyRestaurants(
+            latitude: any(named: 'latitude'),
+            longitude: any(named: 'longitude'),
+            mood: any(named: 'mood'),
+            excludePlaceIds: any(named: 'excludePlaceIds'),
+            radiusMeters: any(named: 'radiusMeters'),
+            maxResultCount: any(named: 'maxResultCount'),
+            filters: any(named: 'filters'),
+          ),
+        ).thenAnswer((_) async => const PlacesSuccess(all));
+        when(
+          () => mockLocationService.getCurrentLocation(),
+        ).thenAnswer((_) async => LocationSuccess(testPosition));
+      }
+
+      Future<Set<String>> runWith(SpotFilters filters) async {
+        stubPlaces();
+        final container = buildContainer();
+        container.read(activeFiltersProvider.notifier).set(filters);
+        await container.read(discoveryProvider.notifier).start();
+        return container
+            .read(discoveryProvider)
+            .restaurants
+            .map((r) => r.placeId)
+            .toSet();
+      }
+
+      test('cuisine keeps only matching types', () async {
+        expect(await runWith(const SpotFilters(cuisines: {'mexican'})), {
+          'beer_mex',
+        });
+      });
+
+      test('minRating keeps only high-rated', () async {
+        expect(await runWith(const SpotFilters(minRating: 4.5)), {'beer_mex'});
+      });
+
+      test('servesBeer keeps only beer places', () async {
+        expect(await runWith(const SpotFilters(servesBeer: true)), {
+          'beer_mex',
+          'burger',
+        });
+      });
+
+      test('priceLevels keeps only matching price', () async {
+        final ids = await runWith(const SpotFilters(priceLevels: {1}));
+        expect(ids, {'beer_mex'});
+      });
+
+      test('outdoorSeating excludes unknown/false', () async {
+        expect(await runWith(const SpotFilters(outdoorSeating: true)), {
+          'beer_mex',
+        });
+      });
+
+      test('combined filters intersect', () async {
+        final ids = await runWith(
+          const SpotFilters(servesBeer: true, minRating: 4.5),
+        );
+        expect(ids, {'beer_mex'}); // beer AND >=4.5
       });
     });
 

@@ -55,6 +55,27 @@ class PlacesService {
       'places.primaryType,'
       'places.currentOpeningHours';
 
+  /// Extra ("atmosphere") fields, requested only when an atmosphere filter is
+  /// active — these push the request into Google's pricier SKU.
+  static const _atmosphereFields =
+      'places.servesBeer,'
+      'places.outdoorSeating,'
+      'places.goodForGroups,'
+      'places.parkingOptions';
+
+  static String _fieldMaskFor(SpotFilters filters) =>
+      filters.usesAtmosphere ? '$_fieldMask,$_atmosphereFields' : _fieldMask;
+
+  static List<String> _priceLevelEnums(Set<int> levels) {
+    const names = {
+      1: 'PRICE_LEVEL_INEXPENSIVE',
+      2: 'PRICE_LEVEL_MODERATE',
+      3: 'PRICE_LEVEL_EXPENSIVE',
+      4: 'PRICE_LEVEL_VERY_EXPENSIVE',
+    };
+    return levels.map((l) => names[l]).whereType<String>().toList();
+  }
+
   /// Fetches nearby restaurants based on location and optional mood.
   ///
   /// [latitude] and [longitude] specify the search center.
@@ -69,6 +90,7 @@ class PlacesService {
     Set<String> excludePlaceIds = const {},
     int radiusMeters = 5000,
     int maxResultCount = 50,
+    SpotFilters filters = const SpotFilters(),
   }) async {
     if (_apiKey.isEmpty) {
       return const PlacesError(
@@ -78,7 +100,11 @@ class PlacesService {
     }
 
     try {
-      final keyword = _extractKeyword(mood);
+      // Cuisine chips drive the text query when there's no typed mood.
+      final keyword =
+          _extractKeyword(mood) ??
+          (filters.cuisines.isNotEmpty ? filters.cuisines.join(' ') : null);
+      final fieldMask = _fieldMaskFor(filters);
       final List<Restaurant> restaurants;
 
       // Use text search if there's a keyword, otherwise use nearby search
@@ -89,6 +115,8 @@ class PlacesService {
           query: keyword,
           radiusMeters: radiusMeters,
           maxResultCount: maxResultCount,
+          fieldMask: fieldMask,
+          filters: filters,
         );
       } else {
         restaurants = await _nearbySearchRestaurants(
@@ -96,6 +124,7 @@ class PlacesService {
           longitude: longitude,
           radiusMeters: radiusMeters,
           maxResultCount: maxResultCount,
+          fieldMask: fieldMask,
         );
       }
 
@@ -117,30 +146,37 @@ class PlacesService {
     required String query,
     required int radiusMeters,
     required int maxResultCount,
+    required String fieldMask,
+    required SpotFilters filters,
   }) async {
+    final data = <String, dynamic>{
+      'textQuery': '$query restaurant',
+      'includedType': 'restaurant',
+      'locationBias': {
+        'circle': {
+          'center': {'latitude': latitude, 'longitude': longitude},
+          'radius': radiusMeters.toDouble(),
+        },
+      },
+      'pageSize': maxResultCount,
+    };
+    // Cheap server-side filters supported by Text Search.
+    if (filters.openNow) data['openNow'] = true;
+    if (filters.minRating != null) data['minRating'] = filters.minRating;
+    if (filters.priceLevels.isNotEmpty) {
+      data['priceLevels'] = _priceLevelEnums(filters.priceLevels);
+    }
+
     final response = await _client.post<Map<String, dynamic>>(
       '$_baseUrl/places:searchText',
       options: Options(
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': _apiKey,
-          'X-Goog-FieldMask': _fieldMask,
+          'X-Goog-FieldMask': fieldMask,
         },
       ),
-      data: {
-        'textQuery': '$query restaurant',
-        'includedType': 'restaurant',
-        'locationBias': {
-          'circle': {
-            'center': {
-              'latitude': latitude,
-              'longitude': longitude,
-            },
-            'radius': radiusMeters.toDouble(),
-          },
-        },
-        'pageSize': maxResultCount,
-      },
+      data: data,
     );
 
     return _parseResponse(response);
@@ -152,6 +188,7 @@ class PlacesService {
     required double longitude,
     required int radiusMeters,
     required int maxResultCount,
+    required String fieldMask,
   }) async {
     final response = await _client.post<Map<String, dynamic>>(
       '$_baseUrl/places:searchNearby',
@@ -159,7 +196,7 @@ class PlacesService {
         headers: {
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': _apiKey,
-          'X-Goog-FieldMask': _fieldMask,
+          'X-Goog-FieldMask': fieldMask,
         },
       ),
       data: {
