@@ -36,6 +36,26 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
+    testWidgets('spins the round badge logo (clipped to a circle)', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        RandoEatsButton(onPressed: () {}, isSpinning: true),
+      );
+
+      // The spinning image is the new round badge, clipped to a circle.
+      final image = tester.widget<Image>(find.byType(Image));
+      final provider = image.image as AssetImage;
+      expect(provider.assetName, 'assets/images/rand-o-eats-badge.png');
+      expect(
+        find.descendant(
+          of: find.byType(RotationTransition),
+          matching: find.byType(ClipOval),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('calls onPressed when tapped and not spinning', (
       tester,
     ) async {

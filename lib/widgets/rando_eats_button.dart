@@ -79,6 +79,8 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
 
   Widget _buildSpinningButton() {
     const size = 80.0;
+    // Spin the round badge logo itself — clipped to a circle so it reads as a
+    // slot-machine wheel, with a warm glow behind it.
     return RotationTransition(
       turns: _spinController,
       child: Container(
@@ -98,26 +100,13 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
               offset: const Offset(0, 4),
             ),
           ],
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              GoogieColors.coral,
-              Color(0xFFFF8A65),
-              GoogieColors.mustard,
-            ],
-          ),
-          border: Border.all(
-            color: GoogieColors.mustard.withValues(alpha: 0.6),
-            width: 3,
-          ),
         ),
-        child: Center(
+        child: ClipOval(
           child: Image.asset(
-            'assets/images/rand-o-eats.png',
-            width: 56,
-            height: 56,
-            fit: BoxFit.contain,
+            'assets/images/rand-o-eats-badge.png',
+            width: size,
+            height: size,
+            fit: BoxFit.cover,
           ),
         ),
       ),
