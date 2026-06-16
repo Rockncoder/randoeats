@@ -35,7 +35,7 @@ class DetailScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(theme),
-            _buildInfo(theme),
+            _buildInfo(context, theme),
             const Divider(height: 32, indent: 16, endIndent: 16),
             _buildActions(context, theme),
             const SizedBox(height: 24),
@@ -91,7 +91,7 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfo(ThemeData theme) {
+  Widget _buildInfo(BuildContext context, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -125,6 +125,11 @@ class DetailScreen extends ConsumerWidget {
               ),
             ],
           ),
+          // Phone — tap to call (useful for checking group availability).
+          if (restaurant.phoneNumber != null) ...[
+            const SizedBox(height: 8),
+            _buildPhoneRow(context, theme, restaurant.phoneNumber!),
+          ],
           const SizedBox(height: 16),
           // Metadata row
           Wrap(
@@ -170,6 +175,40 @@ class DetailScreen extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildPhoneRow(
+    BuildContext context,
+    ThemeData theme,
+    String phoneNumber,
+  ) {
+    return InkWell(
+      key: const ValueKey('detail_call'),
+      onTap: () => _callPhone(context, phoneNumber),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.phone,
+              size: 18,
+              color: GoogieColors.turquoise,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                phoneNumber,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: GoogieColors.turquoise,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -404,6 +443,25 @@ class DetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _callPhone(BuildContext context, String phoneNumber) async {
+    // Keep digits and a leading + so the dialer gets a clean tel: URI.
+    final sanitized = phoneNumber.replaceAll(RegExp('[^0-9+]'), '');
+    final url = Uri(scheme: 'tel', path: sanitized);
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to place the call'),
+            backgroundColor: GoogieColors.coral,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _openMaps(BuildContext context) async {

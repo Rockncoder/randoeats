@@ -23,6 +23,7 @@ class Restaurant extends Equatable {
     this.outdoorSeating,
     this.goodForGroups,
     this.hasParking,
+    this.phoneNumber,
   });
 
   /// Creates a [Restaurant] from Places API (New) response.
@@ -50,6 +51,7 @@ class Restaurant extends Equatable {
       hasParking: _parseParking(
         json['parkingOptions'] as Map<String, dynamic>?,
       ),
+      phoneNumber: json['nationalPhoneNumber'] as String?,
     );
   }
 
@@ -112,6 +114,10 @@ class Restaurant extends Equatable {
   /// Whether the place has any parking option (null = unknown).
   @HiveField(14)
   final bool? hasParking;
+
+  /// National-format phone number (e.g. "(415) 555-0123"); null = unknown.
+  @HiveField(15)
+  final String? phoneNumber;
 
   /// Parses price level from new API enum string format.
   static String? _parsePriceLevelNew(String? level) {
@@ -182,5 +188,6 @@ class Restaurant extends Equatable {
     outdoorSeating,
     goodForGroups,
     hasParking,
+    phoneNumber,
   ];
 }

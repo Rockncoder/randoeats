@@ -52,6 +52,7 @@ void main() {
         null, // outdoorSeating
         null, // goodForGroups
         null, // hasParking
+        null, // phoneNumber
       ]);
     });
 
@@ -87,6 +88,7 @@ void main() {
           ],
           'primaryType': 'restaurant',
           'types': ['restaurant', 'food', 'establishment'],
+          'nationalPhoneNumber': '(415) 555-0123',
           'currentOpeningHours': {'openNow': true},
         };
 
@@ -103,6 +105,7 @@ void main() {
         expect(result.photoReference, 'places/abc/photos/xyz');
         expect(result.types, contains('restaurant'));
         expect(result.isOpen, true);
+        expect(result.phoneNumber, '(415) 555-0123');
       });
 
       test('handles missing optional fields', () {
@@ -122,6 +125,7 @@ void main() {
         expect(result.photoReference, isNull);
         expect(result.isOpen, isNull);
         expect(result.totalRatings, isNull);
+        expect(result.phoneNumber, isNull);
       });
 
       test('handles null id', () {
