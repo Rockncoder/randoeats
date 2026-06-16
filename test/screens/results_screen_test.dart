@@ -100,7 +100,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(SlotMachineList), findsOneWidget);
+      expect(find.byType(MultiReelSlotMachine), findsOneWidget);
       expect(find.byType(RandoEatsButton), findsOneWidget);
     });
 

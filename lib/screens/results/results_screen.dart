@@ -24,7 +24,7 @@ class ResultsScreen extends ConsumerStatefulWidget {
 }
 
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
-  final GlobalKey<SlotMachineListState> _slotMachineKey = GlobalKey();
+  final GlobalKey<MultiReelSlotMachineState> _slotMachineKey = GlobalKey();
   bool _showCelebration = false;
   List<SavedRegion> _regions = [];
 
@@ -322,7 +322,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Widget _buildSlotMachineList(BuildContext context, DiscoveryState state) {
-    return SlotMachineList(
+    return MultiReelSlotMachine(
       key: _slotMachineKey,
       restaurants: state.restaurants,
       onRestaurantTap: _onDirectTap,
