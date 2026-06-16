@@ -8,11 +8,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:randoeats/providers/service_providers.dart';
 import 'package:randoeats/services/services.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // In debug builds (not web, not release), use MarionetteBinding so AI agents
+  // can drive the running app via marionette_mcp for feature/bug-fix proofing.
+  // It must be the only WidgetsBinding initialized in the process.
+  if (kDebugMode && !kIsWeb) {
+    MarionetteBinding.ensureInitialized();
+  } else {
+    WidgetsFlutterBinding.ensureInitialized();
+  }
 
   // Use path-based URLs on web (not hash-based) for clean deep links.
   usePathUrlStrategy();

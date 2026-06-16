@@ -49,13 +49,14 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       bannedCategories:
           (fields[5] as List<dynamic>?)?.cast<String>().toSet() ??
           const <String>{},
+      calmMode: fields[6] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserSettings obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.hideDaysAfterPick)
       ..writeByte(1)
@@ -67,7 +68,9 @@ class UserSettingsAdapter extends TypeAdapter<UserSettings> {
       ..writeByte(4)
       ..write(obj.distanceUnit)
       ..writeByte(5)
-      ..write(obj.bannedCategories.toList());
+      ..write(obj.bannedCategories.toList())
+      ..writeByte(6)
+      ..write(obj.calmMode);
   }
 
   @override

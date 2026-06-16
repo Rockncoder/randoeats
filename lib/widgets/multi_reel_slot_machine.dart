@@ -22,6 +22,7 @@ class MultiReelSlotMachine extends StatefulWidget {
     required this.onRestaurantTap,
     required this.onSpinComplete,
     this.maxColumns = 3,
+    this.calmMode = false,
     super.key,
   });
 
@@ -37,6 +38,9 @@ class MultiReelSlotMachine extends StatefulWidget {
   /// Upper bound on reel count (3 by default — fits an iPad in landscape).
   final int maxColumns;
 
+  /// Reduced motion: skip the scrolling spin and reveal the winner directly.
+  final bool calmMode;
+
   @override
   State<MultiReelSlotMachine> createState() => MultiReelSlotMachineState();
 }
@@ -47,6 +51,10 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
   static const Duration _baseSpin = Duration(milliseconds: 2600);
   static const Duration _stagger = Duration(milliseconds: 450);
 
+  /// How long the winner is held — expanded + announced — before the
+  /// celebration/handoff fires, so the result is unmistakable.
+  static const Duration _revealHold = Duration(milliseconds: 650);
+
   final _random = math.Random();
   final List<GlobalKey<_ReelState>> _reelKeys = [];
 
@@ -55,9 +63,17 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
   bool _isSpinning = false;
   int? _winnerColumn;
   int _stoppedCount = 0;
+  String? _winnerName;
+  Timer? _revealTimer;
 
   /// Whether a spin is in progress.
   bool get isSpinning => _isSpinning;
+
+  @override
+  void dispose() {
+    _revealTimer?.cancel();
+    super.dispose();
+  }
 
   int _rowsFor(double height) {
     if (!height.isFinite || height <= 0) return 4;
@@ -75,15 +91,29 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
   }
 
   /// Spins every reel; stops them left→right; reveals one winning cell.
+  ///
+  /// In [MultiReelSlotMachine.calmMode] the reels are placed instantly (no
+  /// scrolling) and the winner is revealed directly — reduced motion.
   void spin() {
     if (_isSpinning || widget.restaurants.isEmpty) return;
+    _revealTimer?.cancel();
     setState(() {
       _isSpinning = true;
       _winnerColumn = null;
+      _winnerName = null;
       _stoppedCount = 0;
     });
 
     final winnerColumn = _random.nextInt(_columns);
+
+    if (widget.calmMode) {
+      for (var c = 0; c < _columns; c++) {
+        _reelKeys[c].currentState?.placeInstantly();
+      }
+      _revealWinner(winnerColumn);
+      return;
+    }
+
     for (var c = 0; c < _columns; c++) {
       _reelKeys[c].currentState?.spin(
         duration: _baseSpin + _stagger * c,
@@ -95,7 +125,12 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
   void _onReelStopped(int winnerColumn) {
     _stoppedCount++;
     if (_stoppedCount < _columns) return;
+    _revealWinner(winnerColumn);
+  }
 
+  /// Highlights and expands the winning cell, announces it to assistive
+  /// tech, then hands off to [MultiReelSlotMachine.onSpinComplete].
+  void _revealWinner(int winnerColumn) {
     final reels = ReelLayout.buildReels(
       widget.restaurants,
       columns: _columns,
@@ -107,8 +142,11 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
     setState(() {
       _isSpinning = false;
       _winnerColumn = winnerColumn;
+      _winnerName = winner.name;
     });
-    widget.onSpinComplete(winner);
+
+    // Let the expand + live-region announcement land before the handoff.
+    _revealTimer = Timer(_revealHold, () => widget.onSpinComplete(winner));
   }
 
   @override
@@ -131,19 +169,36 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
           rows: rows,
         );
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        return Stack(
           children: [
-            for (var c = 0; c < columns; c++)
-              Expanded(
-                child: _Reel(
-                  key: _reelKeys[c],
-                  restaurants: reels[c],
-                  cardHeight: cardHeight,
-                  isWinner: _winnerColumn == c,
-                  dimmed: _winnerColumn != null && _winnerColumn != c,
-                  spinning: _isSpinning,
-                  onCardTap: widget.onRestaurantTap,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var c = 0; c < columns; c++)
+                  Expanded(
+                    child: _Reel(
+                      key: _reelKeys[c],
+                      restaurants: reels[c],
+                      cardHeight: cardHeight,
+                      isWinner: _winnerColumn == c,
+                      dimmed: _winnerColumn != null && _winnerColumn != c,
+                      spinning: _isSpinning,
+                      onCardTap: widget.onRestaurantTap,
+                    ),
+                  ),
+              ],
+            ),
+            // Off-screen live region so screen readers announce the winner.
+            if (_winnerName != null)
+              Positioned(
+                left: 0,
+                top: 0,
+                width: 0,
+                height: 0,
+                child: Semantics(
+                  liveRegion: true,
+                  label: 'Winner: $_winnerName',
+                  child: const SizedBox.shrink(),
                 ),
               ),
           ],
@@ -197,6 +252,18 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
     _scroll.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Places this reel at a random cell instantly, with no animation.
+  ///
+  /// Used by calm (reduced-motion) mode.
+  void placeInstantly() {
+    if (widget.restaurants.isEmpty) return;
+    landedIndex = math.Random().nextInt(widget.restaurants.length);
+    if (_scroll.hasClients) {
+      final maxExtent = _scroll.position.maxScrollExtent;
+      _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0, maxExtent));
+    }
   }
 
   /// Spins this reel for [duration], landing a random cell at the top.
@@ -264,7 +331,7 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
             final restaurant = widget.restaurants[index];
             final isWinnerCell =
                 widget.isWinner && index == landedIndex && !widget.spinning;
-            return Stack(
+            final cell = Stack(
               children: [
                 RestaurantCard(
                   key: ValueKey('reel_cell_${restaurant.placeId}_$index'),
@@ -289,6 +356,13 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
                     ),
                   ),
               ],
+            );
+            // The winning cell expands to make the result unmistakable.
+            return AnimatedScale(
+              scale: isWinnerCell ? 1.04 : 1,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutBack,
+              child: cell,
             );
           },
         ),

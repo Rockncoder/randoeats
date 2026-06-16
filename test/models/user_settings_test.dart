@@ -12,6 +12,7 @@ void main() {
       expect(settings.maxResults, UserSettings.defaultMaxResults);
       expect(settings.distanceUnit, DistanceUnit.miles);
       expect(settings.bannedCategories, isEmpty);
+      expect(settings.calmMode, isFalse);
     });
 
     test('supports value equality', () {
@@ -31,6 +32,7 @@ void main() {
         UserSettings.defaultMaxResults,
         DistanceUnit.miles,
         <String>{},
+        false,
       ]);
     });
 
@@ -105,6 +107,14 @@ void main() {
         final updated = settings.copyWith(bannedCategories: {'cafe', 'bar'});
 
         expect(updated.bannedCategories, {'cafe', 'bar'});
+      });
+
+      test('updates calmMode', () {
+        const settings = UserSettings();
+        final updated = settings.copyWith(calmMode: true);
+
+        expect(updated.calmMode, isTrue);
+        expect(updated.includeOpenOnly, settings.includeOpenOnly);
       });
     });
 
