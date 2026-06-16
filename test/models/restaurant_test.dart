@@ -48,6 +48,10 @@ void main() {
         'photo_ref_123',
         true,
         100,
+        null, // servesBeer
+        null, // outdoorSeating
+        null, // goodForGroups
+        null, // hasParking
       ]);
     });
 
