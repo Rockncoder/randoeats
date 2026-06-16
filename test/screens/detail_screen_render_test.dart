@@ -70,6 +70,38 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('shows a tappable phone row when a number is present', (
+    tester,
+  ) async {
+    const withPhone = Restaurant(
+      placeId: 'p9',
+      name: 'Phone Diner',
+      address: '1 Call St',
+      latitude: 34,
+      longitude: -118,
+      isOpen: true,
+      phoneNumber: '(415) 555-0123',
+    );
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: DetailScreen(restaurant: withPhone)),
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(const ValueKey('detail_call')), findsOneWidget);
+    expect(find.text('(415) 555-0123'), findsOneWidget);
+  });
+
+  testWidgets('hides the phone row when no number is present', (tester) async {
+    // The module-level `restaurant` has no phoneNumber.
+    await pumpDetail(tester, const Size(390, 844));
+    expect(find.byKey(const ValueKey('detail_call')), findsNothing);
+  });
+
   testWidgets('both action buttons are flexible (no unbounded-width row)', (
     tester,
   ) async {

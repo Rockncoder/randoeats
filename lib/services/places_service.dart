@@ -53,6 +53,7 @@ class PlacesService {
       'places.priceLevel,'
       'places.photos,'
       'places.primaryType,'
+      'places.nationalPhoneNumber,'
       'places.currentOpeningHours';
 
   /// Extra ("atmosphere") fields, requested only when an atmosphere filter is
