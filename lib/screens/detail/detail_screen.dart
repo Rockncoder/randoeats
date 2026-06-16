@@ -6,6 +6,7 @@ import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/services/services.dart';
+import 'package:randoeats/widgets/widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Screen displaying restaurant details with navigation and rating options.
@@ -52,23 +53,27 @@ class DetailScreen extends ConsumerWidget {
       maxWidth: 800,
     );
 
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: GoogieColors.turquoise.withValues(alpha: 0.2),
+    return Hero(
+      tag: restaurantPhotoHeroTag(restaurant.placeId),
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: GoogieColors.turquoise.withValues(alpha: 0.2),
+        ),
+        child: photoUrl != null
+            ? Image.network(
+                photoUrl,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (_, error, stackTrace) =>
+                    _buildPhotoPlaceholder(),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return _buildPhotoPlaceholder(isLoading: true);
+                },
+              )
+            : _buildPhotoPlaceholder(),
       ),
-      child: photoUrl != null
-          ? Image.network(
-              photoUrl,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              errorBuilder: (_, error, stackTrace) => _buildPhotoPlaceholder(),
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return _buildPhotoPlaceholder(isLoading: true);
-              },
-            )
-          : _buildPhotoPlaceholder(),
     );
   }
 
