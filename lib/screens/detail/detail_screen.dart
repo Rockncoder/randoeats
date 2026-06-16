@@ -248,15 +248,25 @@ class DetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 12),
-          OutlinedButton(
-            key: const ValueKey('detail_abort'),
-            onPressed: () => context.pop(),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: GoogieColors.coral,
-              side: const BorderSide(color: GoogieColors.coral, width: 2),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          // Expanded (flexible) so RenderFlex never measures this Material
+          // button with an unbounded main-axis width — an inflexible child here
+          // triggers "BoxConstraints forces an infinite width" during the iPad
+          // accessibility layout pass (the rating buttons below, both Expanded,
+          // never hit this).
+          Expanded(
+            child: OutlinedButton(
+              key: const ValueKey('detail_abort'),
+              onPressed: () => context.pop(),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GoogieColors.coral,
+                side: const BorderSide(color: GoogieColors.coral, width: 2),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text(
+                'Abort Mission',
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            child: const Text('Abort Mission'),
           ),
         ],
       ),
