@@ -70,6 +70,22 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('both action buttons are flexible (no unbounded-width row)', (
+    tester,
+  ) async {
+    // The "Abort Mission" button must be Expanded like NAVIGATE. An inflexible
+    // child in the actions Row is measured by RenderFlex with an unbounded
+    // main-axis width, which on the iPad accessibility layout pass triggers
+    // "BoxConstraints forces an infinite width". Keep it flexible.
+    await pumpDetail(tester, const Size(390, 844));
+    final abort = find.byKey(const ValueKey('detail_abort'));
+    expect(abort, findsOneWidget);
+    expect(
+      find.ancestor(of: abort, matching: find.byType(Expanded)),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('renders wide + scrollable with semantics (no infinite width)', (
     tester,
   ) async {
