@@ -22,6 +22,7 @@ void main() {
     required GlobalKey<MultiReelSlotMachineState> machineKey,
     required List<Restaurant> restaurants,
     void Function(Restaurant)? onWin,
+    bool calmMode = false,
   }) async {
     tester.view.devicePixelRatio = 1.0;
     tester.view.physicalSize = size;
@@ -35,6 +36,7 @@ void main() {
             restaurants: restaurants,
             onRestaurantTap: (_) {},
             onSpinComplete: onWin ?? (_) {},
+            calmMode: calmMode,
           ),
         ),
       ),
@@ -98,6 +100,39 @@ void main() {
       contains(winner!.placeId),
     );
     expect(machineKey.currentState!.isSpinning, isFalse);
+  });
+
+  testWidgets('calm mode reveals a winner without a long spin', (
+    tester,
+  ) async {
+    final machineKey = GlobalKey<MultiReelSlotMachineState>();
+    final restaurants = makeRestaurants(20);
+    Restaurant? winner;
+
+    await pumpMachine(
+      tester,
+      size: const Size(1100, 900),
+      machineKey: machineKey,
+      restaurants: restaurants,
+      onWin: (r) => winner = r,
+      calmMode: true,
+    );
+
+    machineKey.currentState!.spin();
+    // No scrolling spin: spinning ends immediately, winner held briefly.
+    await tester.pump();
+    expect(machineKey.currentState!.isSpinning, isFalse);
+    expect(winner, isNull); // reveal hold not elapsed yet
+
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(winner, isNotNull);
+    expect(restaurants.map((r) => r.placeId), contains(winner!.placeId));
+
+    // Live region announces the winner.
+    expect(
+      find.bySemanticsLabel('Winner: ${winner!.name}'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('does nothing on spin with no restaurants', (tester) async {

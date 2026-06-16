@@ -41,6 +41,7 @@ class UserSettings extends Equatable {
     this.maxResults = defaultMaxResults,
     this.distanceUnit = DistanceUnit.miles,
     this.bannedCategories = const {},
+    this.calmMode = false,
   });
 
   /// Default number of days to hide a restaurant after picking.
@@ -94,6 +95,13 @@ class UserSettings extends Equatable {
   @HiveField(5)
   final Set<String> bannedCategories;
 
+  /// Whether to reduce motion (skip the slot-machine spin animation).
+  ///
+  /// When true, the winner is revealed without the reels scrolling — an
+  /// accessibility accommodation for motion sensitivity.
+  @HiveField(6)
+  final bool calmMode;
+
   /// Creates a copy with the given fields replaced.
   UserSettings copyWith({
     int? hideDaysAfterPick,
@@ -102,6 +110,7 @@ class UserSettings extends Equatable {
     int? maxResults,
     DistanceUnit? distanceUnit,
     Set<String>? bannedCategories,
+    bool? calmMode,
   }) {
     return UserSettings(
       hideDaysAfterPick: hideDaysAfterPick ?? this.hideDaysAfterPick,
@@ -110,6 +119,7 @@ class UserSettings extends Equatable {
       maxResults: maxResults ?? this.maxResults,
       distanceUnit: distanceUnit ?? this.distanceUnit,
       bannedCategories: bannedCategories ?? this.bannedCategories,
+      calmMode: calmMode ?? this.calmMode,
     );
   }
 
@@ -121,5 +131,6 @@ class UserSettings extends Equatable {
     maxResults,
     distanceUnit,
     bannedCategories,
+    calmMode,
   ];
 }

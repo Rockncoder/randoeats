@@ -331,11 +331,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Widget _buildSlotMachineList(BuildContext context, DiscoveryState state) {
+    final calmMode =
+        StorageService.instance.isInitialized &&
+        StorageService.instance.getSettings().calmMode;
     return MultiReelSlotMachine(
       key: _slotMachineKey,
       restaurants: state.restaurants,
       onRestaurantTap: _onDirectTap,
       onSpinComplete: _onSpinComplete,
+      calmMode: calmMode,
     );
   }
 }

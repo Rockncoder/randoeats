@@ -189,6 +189,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ),
+          const SizedBox(height: 12),
+
+          // Calm Mode (reduced motion) Toggle
+          _buildSettingCard(
+            theme,
+            title: 'Calm Mode',
+            subtitle: _settings.calmMode
+                ? 'Reduced motion — winner revealed without spinning'
+                : 'Full slot-machine spin animation',
+            child: Switch(
+              key: const ValueKey('setting_calm_mode'),
+              value: _settings.calmMode,
+              activeTrackColor: GoogieColors.turquoise,
+              onChanged: (value) {
+                _updateSettings(
+                  _settings.copyWith(calmMode: value),
+                );
+              },
+            ),
+          ),
 
           const SizedBox(height: 24),
 
