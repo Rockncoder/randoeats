@@ -1,0 +1,14 @@
+# One-tap scope switching between Near Me and a saved region.
+#
+# PREREQUISITE: at least one saved region must already exist. Because the lasso
+# can't be drawn headlessly (see create_region.yaml), create a region named
+# "Orange Circle" by hand first, then run this flow with clearState: false.
+appId: com.tekadept.randoeats
+---
+- launchApp:
+    clearState: false
+- assertVisible: "Near Me"
+- tapOn: "Orange Circle"
+# Switching back to GPS is a single tap, no navigation.
+- tapOn: "Near Me"
+- assertVisible: "Near Me"

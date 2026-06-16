@@ -68,11 +68,19 @@ PODS:
   - Flutter (1.0.0)
   - flutter_native_splash (2.4.3):
     - Flutter
+  - geocoding_ios (1.0.5):
+    - Flutter
   - geolocator_apple (1.2.0):
     - Flutter
     - FlutterMacOS
+  - Google-Maps-iOS-Utils (6.1.0):
+    - GoogleMaps (~> 9.0)
   - Google-Mobile-Ads-SDK (12.14.0):
     - GoogleUserMessagingPlatform (>= 1.1)
+  - google_maps_flutter_ios (0.0.1):
+    - Flutter
+    - Google-Maps-iOS-Utils (< 7.0, >= 5.0)
+    - GoogleMaps (< 11.0, >= 8.4)
   - google_mobile_ads (7.0.0):
     - Flutter
     - Google-Mobile-Ads-SDK (~> 12.14.0)
@@ -107,6 +115,9 @@ PODS:
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
+  - GoogleMaps (9.4.0):
+    - GoogleMaps/Maps (= 9.4.0)
+  - GoogleMaps/Maps (9.4.0)
   - GoogleUserMessagingPlatform (3.1.0)
   - GoogleUtilities/AppDelegateSwizzler (8.1.0):
     - GoogleUtilities/Environment
@@ -167,7 +178,9 @@ DEPENDENCIES:
   - firebase_crashlytics (from `.symlinks/plugins/firebase_crashlytics/ios`)
   - Flutter (from `Flutter`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
+  - geocoding_ios (from `.symlinks/plugins/geocoding_ios/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
+  - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - in_app_purchase_storekit (from `.symlinks/plugins/in_app_purchase_storekit/darwin`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
@@ -188,10 +201,12 @@ SPEC REPOS:
     - FirebaseInstallations
     - FirebaseRemoteConfigInterop
     - FirebaseSessions
+    - Google-Maps-iOS-Utils
     - Google-Mobile-Ads-SDK
     - GoogleAdsOnDeviceConversion
     - GoogleAppMeasurement
     - GoogleDataTransport
+    - GoogleMaps
     - GoogleUserMessagingPlatform
     - GoogleUtilities
     - nanopb
@@ -209,8 +224,12 @@ EXTERNAL SOURCES:
     :path: Flutter
   flutter_native_splash:
     :path: ".symlinks/plugins/flutter_native_splash/ios"
+  geocoding_ios:
+    :path: ".symlinks/plugins/geocoding_ios/ios"
   geolocator_apple:
     :path: ".symlinks/plugins/geolocator_apple/darwin"
+  google_maps_flutter_ios:
+    :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
   google_mobile_ads:
     :path: ".symlinks/plugins/google_mobile_ads/ios"
   in_app_purchase_storekit:
@@ -243,12 +262,16 @@ SPEC CHECKSUMS:
   FirebaseSessions: 0e5f64cd99400275798fcb5e2b773dd000ca02c1
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_native_splash: c32d145d68aeda5502d5f543ee38c192065986cf
+  geocoding_ios: 33776c9ebb98d037b5e025bb0e7537f6dd19646e
   geolocator_apple: ab36aa0e8b7d7a2d7639b3b4e48308394e8cef5e
+  Google-Maps-iOS-Utils: 0a484b05ed21d88c9f9ebbacb007956edd508a96
   Google-Mobile-Ads-SDK: 4534fd2dfcd3f705c5485a6633c5188d03d4eed2
+  google_maps_flutter_ios: 17552876e72723da1d41accc22f03b5f7afbde69
   google_mobile_ads: df3008bafbe1f2ad6862f87334e560d2f047f902
   GoogleAdsOnDeviceConversion: 914d95386d0dd6815e8b1d70c465fe1d13312a1e
   GoogleAppMeasurement: 01e991b4c0c025dd66558dbc5133b5d70ccdf88e
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
+  GoogleMaps: 0608099d4870cac8754bdba9b6953db543432438
   GoogleUserMessagingPlatform: befe603da6501006420c206222acd449bba45a9c
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   in_app_purchase_storekit: 22cca7d08eebca9babdf4d07d0baccb73325d3c8

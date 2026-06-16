@@ -1,0 +1,11 @@
+# Cold launch -> results load -> spin -> a winner is locked in.
+appId: com.tekadept.randoeats
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Near Me"
+- tapOn:
+    id: "spin_button"
+- assertVisible:
+    text: "Destination Locked!"
+    timeout: 20000
