@@ -24,6 +24,7 @@ class DetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Destination Locked!'),
         leading: IconButton(
+          key: const ValueKey('detail_back'),
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
@@ -232,6 +233,7 @@ class DetailScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: ElevatedButton.icon(
+              key: const ValueKey('detail_navigate'),
               onPressed: () => _openMaps(context),
               icon: const Icon(Icons.navigation),
               label: const Text('NAVIGATE'),
@@ -242,6 +244,7 @@ class DetailScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 12),
           OutlinedButton(
+            key: const ValueKey('detail_abort'),
             onPressed: () => context.pop(),
             style: OutlinedButton.styleFrom(
               foregroundColor: GoogieColors.coral,
@@ -327,6 +330,7 @@ class DetailScreen extends ConsumerWidget {
     final isSelected = existingRating?.rating == ratingType;
 
     return OutlinedButton(
+      key: ValueKey('detail_rate_${ratingType.name}'),
       onPressed: () async {
         final rating = UserRating(
           placeId: restaurant.placeId,
@@ -377,7 +381,11 @@ class DetailScreen extends ConsumerWidget {
         children: [
           Icon(icon, size: 24),
           const SizedBox(width: 8),
-          Text(label),
+          // Flexible + ellipsis so the label shrinks instead of overflowing on
+          // narrow phones (each rating button is a half-width Expanded).
+          Flexible(
+            child: Text(label, overflow: TextOverflow.ellipsis),
+          ),
         ],
       ),
     );
