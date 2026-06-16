@@ -6,7 +6,10 @@ import 'package:randoeats/widgets/filter_chip_bar.dart';
 
 void main() {
   group('FilterChipBar', () {
-    Future<ProviderContainer> pump(WidgetTester tester) async {
+    Future<ProviderContainer> pump(
+      WidgetTester tester, {
+      VoidCallback? onSaveSpot,
+    }) async {
       // Wide surface so every chip is on-screen and hittable.
       tester.view.devicePixelRatio = 1.0;
       tester.view.physicalSize = const Size(2200, 400);
@@ -17,7 +20,9 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: FilterChipBar())),
+          child: MaterialApp(
+            home: Scaffold(body: FilterChipBar(onSaveSpot: onSaveSpot)),
+          ),
         ),
       );
       return container;
@@ -63,6 +68,36 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('filter_price_2')));
       await tester.pump();
       expect(container.read(activeFiltersProvider).priceLevels, {2});
+    });
+
+    testWidgets('save-spot star is hidden without onSaveSpot', (tester) async {
+      final container = await pump(tester);
+      container.read(activeFiltersProvider.notifier).toggleCuisine('mexican');
+      await tester.pump();
+      expect(find.byKey(const ValueKey('filter_save_spot')), findsNothing);
+    });
+
+    testWidgets('save-spot star is hidden when no filters are active', (
+      tester,
+    ) async {
+      await pump(tester, onSaveSpot: () {});
+      expect(find.byKey(const ValueKey('filter_save_spot')), findsNothing);
+    });
+
+    testWidgets('save-spot star appears and fires when filters active', (
+      tester,
+    ) async {
+      var saved = false;
+      final container = await pump(tester, onSaveSpot: () => saved = true);
+      expect(find.byKey(const ValueKey('filter_save_spot')), findsNothing);
+
+      container.read(activeFiltersProvider.notifier).toggleCuisine('mexican');
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('filter_save_spot')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('filter_save_spot')));
+      await tester.pump();
+      expect(saved, isTrue);
     });
   });
 }

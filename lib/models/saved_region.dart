@@ -65,6 +65,12 @@ class SavedRegion extends Equatable {
   @HiveField(4)
   final SpotFilters? filters;
 
+  /// Whether this Spot has a usable drawn area (a polygon of ≥3 vertices).
+  ///
+  /// An area-less Spot represents "Near Me" — discovery falls back to the
+  /// device's GPS location and applies only the saved [filters].
+  bool get hasArea => vertices.length >= 3;
+
   /// The polygon vertices as lat/lng pairs.
   List<({double lat, double lng})> get vertices {
     final result = <({double lat, double lng})>[];

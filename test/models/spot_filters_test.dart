@@ -25,6 +25,22 @@ void main() {
       expect(f.activeCount, 5); // cuisines, beer, open, rating, price
     });
 
+    test('summaryLabel renders a short, ordered summary', () {
+      expect(const SpotFilters().summaryLabel, '');
+      const f = SpotFilters(
+        cuisines: {'mexican'},
+        servesBeer: true,
+        minRating: 4,
+        priceLevels: {1, 2},
+      );
+      expect(f.summaryLabel, r'Mexican · Beer · 4.0+ · $ · $$');
+      // Known cuisine code maps to a friendly label.
+      expect(
+        const SpotFilters(cuisines: {'hamburger'}).summaryLabel,
+        'Burgers',
+      );
+    });
+
     test('usesAtmosphere is true only for atmosphere facets', () {
       expect(const SpotFilters(openNow: true).usesAtmosphere, isFalse);
       expect(const SpotFilters(minRating: 4).usesAtmosphere, isFalse);
