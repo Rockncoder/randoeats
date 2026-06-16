@@ -154,3 +154,4 @@ AppIcons.zip
 
 # Local-only keys & service accounts
 .keys/
+ios/Flutter/Secrets.xcconfig

@@ -8,10 +8,11 @@ import GoogleMaps
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // TODO(maps): Google Maps SDK for iOS key. Enable "Maps SDK for iOS" in
-    // Google Cloud, create an iOS-restricted key, and paste it below (or read
-    // it from a config/secret). Separate from GOOGLE_PLACES_API_KEY.
-    GMSServices.provideAPIKey("YOUR_GOOGLE_MAPS_API_KEY")
+    // Google Maps SDK key, read from Info.plist (GMSApiKey), which is
+    // substituted from Secrets.xcconfig (gitignored) at build time. Empty when
+    // no key is provided (map renders gray). Separate from GOOGLE_PLACES_API_KEY.
+    let mapsApiKey = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String ?? ""
+    GMSServices.provideAPIKey(mapsApiKey)
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

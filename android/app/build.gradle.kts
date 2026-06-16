@@ -13,6 +13,16 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Google Maps API key, injected at build time and never committed.
+// Source priority: MAPS_API_KEY env var (CI) -> local.properties (gitignored).
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+val mapsApiKey: String =
+    System.getenv("MAPS_API_KEY") ?: localProperties.getProperty("MAPS_API_KEY", "")
+
 android {
     namespace = "com.tekadept.randoeats"
     compileSdk = flutter.compileSdkVersion
@@ -36,6 +46,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Consumed by the com.google.android.geo.API_KEY meta-data in the
+        // manifest. Empty when no key is provided (map renders gray).
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     signingConfigs {
