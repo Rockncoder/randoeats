@@ -23,6 +23,14 @@ abstract final class GoogieColors {
   /// Borders, subtle accents
   static const chrome = Color(0xFFC0C0C0);
 
+  /// "Open" status — an on-brand retro emerald that reads green without the
+  /// harsh Material `Colors.green`. WCAG AA as text on cream/white (~4.7:1).
+  static const statusOpen = Color(0xFF2E7D5B);
+
+  /// "Closed" status — a deep coral-red drawn from the palette's coral rather
+  /// than raw `Colors.red`. WCAG AA as text on cream/white (~5:1).
+  static const statusClosed = Color(0xFFC4452F);
+
   /// Text color, dark mode background
   static const spaceBlack = Color(0xFF1A1A2E);
 

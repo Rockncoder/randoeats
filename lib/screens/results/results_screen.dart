@@ -263,15 +263,26 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          // Refresh button (left side)
-          if (canRefresh)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              color: GoogieColors.deepTeal,
-              iconSize: 28,
-              onPressed: isSpinning ? null : _refreshRestaurants,
-              tooltip: 'Find new restaurants',
-            ),
+          // Refresh button (left side). A fixed-width slot keeps the centered
+          // brand badge centered whether or not the refresh button is shown.
+          SizedBox(
+            width: 48,
+            child: canRefresh
+                ? IconButton(
+                    icon: const Icon(Icons.refresh),
+                    color: GoogieColors.deepTeal,
+                    iconSize: 28,
+                    onPressed: isSpinning ? null : _refreshRestaurants,
+                    tooltip: 'Find new restaurants',
+                  )
+                : null,
+          ),
+          const Spacer(),
+          // Brand badge — identity for the app's primary screen.
+          Image.asset(
+            'assets/images/rand-o-eats-badge.png',
+            height: 40,
+          ),
           const Spacer(),
           // Settings gear (right side)
           Semantics(

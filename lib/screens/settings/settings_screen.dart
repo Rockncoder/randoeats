@@ -452,9 +452,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: GoogieColors.turquoise,
-                        fontWeight: FontWeight.w500,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: GoogieColors.deepTeal,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],

@@ -34,13 +34,26 @@ class DetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Photo stays full-bleed; everything below is capped to a readable
+            // width and centered so the body doesn't stretch edge-to-edge on
+            // tablets (where it otherwise reads as a blown-up phone layout).
             _buildHeader(theme),
-            _buildInfo(context, theme),
-            const Divider(height: 32, indent: 16, endIndent: 16),
-            _buildActions(context, theme),
-            const SizedBox(height: 24),
-            _buildRatingSection(context, ref, theme),
-            const SizedBox(height: 32),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildInfo(context, theme),
+                    const Divider(height: 24, indent: 16, endIndent: 16),
+                    _buildActions(context, theme),
+                    const SizedBox(height: 24),
+                    _buildRatingSection(context, ref, theme),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -60,8 +73,11 @@ class DetailScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: GoogieColors.turquoise.withValues(alpha: 0.2),
         ),
-        child: photoUrl != null
-            ? Image.network(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (photoUrl != null)
+              Image.network(
                 photoUrl,
                 fit: BoxFit.cover,
                 width: double.infinity,
@@ -72,7 +88,22 @@ class DetailScreen extends ConsumerWidget {
                   return _buildPhotoPlaceholder(isLoading: true);
                 },
               )
-            : _buildPhotoPlaceholder(),
+            else
+              _buildPhotoPlaceholder(),
+            // Subtle bottom scrim so the photo transitions into the content
+            // instead of butting hard against it.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0x29000000)],
+                  stops: [0.65, 1],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -144,11 +175,10 @@ class DetailScreen extends ConsumerWidget {
                   label: _formatRating(),
                   theme: theme,
                 ),
-              // Price level
+              // Price level — the "$$" string already reads as price, so no
+              // leading dollar-sign icon (it would render as "$ $$").
               if (restaurant.priceLevel != null)
                 _buildChip(
-                  icon: Icons.attach_money,
-                  iconColor: GoogieColors.turquoise,
                   label: restaurant.priceLevel!,
                   theme: theme,
                 ),
@@ -156,8 +186,10 @@ class DetailScreen extends ConsumerWidget {
               if (restaurant.isOpen != null)
                 _buildChip(
                   icon: restaurant.isOpen! ? Icons.check_circle : Icons.cancel,
-                  iconColor: restaurant.isOpen! ? Colors.green : Colors.red,
-                  label: restaurant.isOpen! ? 'Open now' : 'Closed',
+                  iconColor: restaurant.isOpen!
+                      ? GoogieColors.statusOpen
+                      : GoogieColors.statusClosed,
+                  label: restaurant.isOpen! ? 'Open' : 'Closed',
                   theme: theme,
                 ),
             ],
@@ -214,10 +246,10 @@ class DetailScreen extends ConsumerWidget {
   }
 
   Widget _buildChip({
-    required IconData icon,
-    required Color iconColor,
     required String label,
     required ThemeData theme,
+    IconData? icon,
+    Color? iconColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -231,8 +263,10 @@ class DetailScreen extends ConsumerWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: iconColor),
-          const SizedBox(width: 6),
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(width: 6),
+          ],
           Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -253,21 +287,34 @@ class DetailScreen extends ConsumerWidget {
   }
 
   Widget _buildCategoryChip(String type, ThemeData theme) {
-    final displayType = type.replaceAll('_', ' ');
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: GoogieColors.turquoise.withValues(alpha: 0.1),
+        color: GoogieColors.deepTeal.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: GoogieColors.deepTeal.withValues(alpha: 0.4)),
       ),
       child: Text(
-        displayType,
+        _prettyType(type),
         style: theme.textTheme.bodySmall?.copyWith(
-          color: GoogieColors.turquoise,
+          color: GoogieColors.deepTeal,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
+  }
+
+  /// Turns a raw Places type ("mexican_restaurant", "greek restaurant") into a
+  /// friendly, title-cased label ("Mexican", "Greek") for display. A redundant
+  /// trailing "restaurant" is dropped unless it's the only word.
+  String _prettyType(String type) {
+    var words = type.replaceAll('_', ' ').trim().split(RegExp(r'\s+'));
+    if (words.length > 1 && words.last.toLowerCase() == 'restaurant') {
+      words = words.sublist(0, words.length - 1);
+    }
+    return words
+        .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 
   Widget _buildActions(BuildContext context, ThemeData theme) {

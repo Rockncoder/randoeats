@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/providers/active_filters_provider.dart';
+import 'package:randoeats/widgets/chip_row_label.dart';
+import 'package:randoeats/widgets/horizontal_scroll_fade.dart';
 
 /// A cuisine option: a Places type keyword + a label/icon for the chip.
 typedef _Cuisine = ({String code, String label, IconData icon});
@@ -31,82 +33,94 @@ class FilterChipBar extends ConsumerWidget {
 
     return SizedBox(
       height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
         children: [
-          for (final c in _cuisines)
-            _FacetChip(
-              key: ValueKey('filter_cuisine_${c.code}'),
-              label: c.label,
-              icon: c.icon,
-              selected: filters.cuisines.contains(c.code),
-              onToggle: () => notifier.toggleCuisine(c.code),
+          const ChipRowLabel(icon: Icons.tune, label: 'Filters'),
+          Expanded(
+            child: HorizontalScrollFade(
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(left: 4, right: 16),
+                children: [
+                  for (final c in _cuisines)
+                    _FacetChip(
+                      key: ValueKey('filter_cuisine_${c.code}'),
+                      label: c.label,
+                      icon: c.icon,
+                      selected: filters.cuisines.contains(c.code),
+                      onToggle: () => notifier.toggleCuisine(c.code),
+                    ),
+                  _FacetChip(
+                    key: const ValueKey('filter_beer'),
+                    label: 'Beer',
+                    icon: Icons.sports_bar,
+                    selected: filters.servesBeer,
+                    onToggle: () => notifier.update(
+                      (f) => f.copyWith(servesBeer: !f.servesBeer),
+                    ),
+                  ),
+                  _FacetChip(
+                    key: const ValueKey('filter_patio'),
+                    label: 'Patio',
+                    icon: Icons.deck,
+                    selected: filters.outdoorSeating,
+                    onToggle: () => notifier.update(
+                      (f) => f.copyWith(outdoorSeating: !f.outdoorSeating),
+                    ),
+                  ),
+                  _FacetChip(
+                    key: const ValueKey('filter_parking'),
+                    label: 'Parking',
+                    icon: Icons.local_parking,
+                    selected: filters.hasParking,
+                    onToggle: () => notifier.update(
+                      (f) => f.copyWith(hasParking: !f.hasParking),
+                    ),
+                  ),
+                  _FacetChip(
+                    key: const ValueKey('filter_group'),
+                    label: 'Group',
+                    icon: Icons.groups,
+                    selected: filters.goodForGroups,
+                    onToggle: () => notifier.update(
+                      (f) => f.copyWith(goodForGroups: !f.goodForGroups),
+                    ),
+                  ),
+                  _FacetChip(
+                    key: const ValueKey('filter_open'),
+                    label: 'Open',
+                    icon: Icons.schedule,
+                    selected: filters.openNow,
+                    onToggle: () =>
+                        notifier.update((f) => f.copyWith(openNow: !f.openNow)),
+                  ),
+                  _FacetChip(
+                    key: const ValueKey('filter_rating'),
+                    label: '4.0+',
+                    icon: Icons.star,
+                    selected: filters.minRating != null,
+                    onToggle: () => notifier.update(
+                      (f) => f.minRating != null
+                          ? f.copyWith(clearMinRating: true)
+                          : f.copyWith(minRating: 4),
+                    ),
+                  ),
+                  for (final level in const [1, 2, 3])
+                    _FacetChip(
+                      key: ValueKey('filter_price_$level'),
+                      label: r'$' * level,
+                      selected: filters.priceLevels.contains(level),
+                      onToggle: () => notifier.togglePriceLevel(level),
+                    ),
+                ],
+              ),
             ),
-          _FacetChip(
-            key: const ValueKey('filter_beer'),
-            label: 'Beer',
-            icon: Icons.sports_bar,
-            selected: filters.servesBeer,
-            onToggle: () =>
-                notifier.update((f) => f.copyWith(servesBeer: !f.servesBeer)),
           ),
-          _FacetChip(
-            key: const ValueKey('filter_patio'),
-            label: 'Patio',
-            icon: Icons.deck,
-            selected: filters.outdoorSeating,
-            onToggle: () => notifier.update(
-              (f) => f.copyWith(outdoorSeating: !f.outdoorSeating),
-            ),
-          ),
-          _FacetChip(
-            key: const ValueKey('filter_parking'),
-            label: 'Parking',
-            icon: Icons.local_parking,
-            selected: filters.hasParking,
-            onToggle: () =>
-                notifier.update((f) => f.copyWith(hasParking: !f.hasParking)),
-          ),
-          _FacetChip(
-            key: const ValueKey('filter_group'),
-            label: 'Group',
-            icon: Icons.groups,
-            selected: filters.goodForGroups,
-            onToggle: () => notifier.update(
-              (f) => f.copyWith(goodForGroups: !f.goodForGroups),
-            ),
-          ),
-          _FacetChip(
-            key: const ValueKey('filter_open'),
-            label: 'Open',
-            icon: Icons.schedule,
-            selected: filters.openNow,
-            onToggle: () =>
-                notifier.update((f) => f.copyWith(openNow: !f.openNow)),
-          ),
-          _FacetChip(
-            key: const ValueKey('filter_rating'),
-            label: '4.0+',
-            icon: Icons.star,
-            selected: filters.minRating != null,
-            onToggle: () => notifier.update(
-              (f) => f.minRating != null
-                  ? f.copyWith(clearMinRating: true)
-                  : f.copyWith(minRating: 4),
-            ),
-          ),
-          for (final level in const [1, 2, 3])
-            _FacetChip(
-              key: ValueKey('filter_price_$level'),
-              label: r'$' * level,
-              selected: filters.priceLevels.contains(level),
-              onToggle: () => notifier.togglePriceLevel(level),
-            ),
-          // Trailing: save the current ad-hoc filters as a named Spot.
+          // Pinned trailing action (outside the scroll/fade so it stays fully
+          // visible): save the current ad-hoc filters as a named Spot.
           if (onSaveSpot != null && !filters.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: ActionChip(
                 key: const ValueKey('filter_save_spot'),
                 avatar: const Icon(

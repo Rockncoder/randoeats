@@ -37,7 +37,7 @@ class RestaurantCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -184,14 +184,16 @@ class RestaurantCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: restaurant.isOpen!
-                  ? Colors.green.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
+                  ? GoogieColors.statusOpen.withValues(alpha: 0.16)
+                  : GoogieColors.statusClosed.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               restaurant.isOpen! ? 'Open' : 'Closed',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: restaurant.isOpen! ? Colors.green : Colors.red,
+                color: restaurant.isOpen!
+                    ? GoogieColors.statusOpen
+                    : GoogieColors.statusClosed,
                 fontWeight: FontWeight.bold,
               ),
             ),

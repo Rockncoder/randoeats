@@ -4,6 +4,8 @@ import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
+import 'package:randoeats/widgets/chip_row_label.dart';
+import 'package:randoeats/widgets/horizontal_scroll_fade.dart';
 
 /// A horizontal, one-tap scope picker shown on the results screen.
 ///
@@ -40,38 +42,47 @@ class RegionChipBar extends ConsumerWidget {
 
     return SizedBox(
       height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
         children: [
-          _ScopeChip(
-            key: const ValueKey('region_chip_near_me'),
-            label: 'Near Me',
-            icon: Icons.my_location,
-            selected: active == null,
-            onTap: notifier.clear,
-          ),
-          for (final region in regions)
-            _ScopeChip(
-              key: ValueKey('region_chip_${region.id}'),
-              label: region.name,
-              icon: Icons.place,
-              selected: active?.id == region.id,
-              // Selecting a Spot restores both its area and its filters.
-              onTap: () {
-                notifier.select(region);
-                ref
-                    .read(activeFiltersProvider.notifier)
-                    .set(region.filters ?? const SpotFilters());
-              },
-              onLongPress: () => _showRegionMenu(context, region),
+          const ChipRowLabel(icon: Icons.public, label: 'Area'),
+          Expanded(
+            child: HorizontalScrollFade(
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(left: 4, right: 16),
+                children: [
+                  _ScopeChip(
+                    key: const ValueKey('region_chip_near_me'),
+                    label: 'Near Me',
+                    icon: Icons.my_location,
+                    selected: active == null,
+                    onTap: notifier.clear,
+                  ),
+                  for (final region in regions)
+                    _ScopeChip(
+                      key: ValueKey('region_chip_${region.id}'),
+                      label: region.name,
+                      icon: Icons.place,
+                      selected: active?.id == region.id,
+                      // Selecting a Spot restores its area and filters.
+                      onTap: () {
+                        notifier.select(region);
+                        ref
+                            .read(activeFiltersProvider.notifier)
+                            .set(region.filters ?? const SpotFilters());
+                      },
+                      onLongPress: () => _showRegionMenu(context, region),
+                    ),
+                  _ScopeChip(
+                    key: const ValueKey('region_chip_add'),
+                    label: 'New Area',
+                    icon: Icons.add,
+                    selected: false,
+                    onTap: onCreate,
+                  ),
+                ],
+              ),
             ),
-          _ScopeChip(
-            key: const ValueKey('region_chip_add'),
-            label: 'New Area',
-            icon: Icons.add,
-            selected: false,
-            onTap: onCreate,
           ),
         ],
       ),
