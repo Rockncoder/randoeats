@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:randoeats/blocs/discovery/discovery_state.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
 import 'package:randoeats/services/services.dart';
 
@@ -57,6 +58,7 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     if (area == null) return; // failure state already emitted
 
     final settings = _storageService.getSettings();
+    final filters = ref.read(activeFiltersProvider);
     final placesResult = await _placesService.getNearbyRestaurants(
       latitude: area.lat,
       longitude: area.lng,
@@ -64,6 +66,7 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
       excludePlaceIds: _storageService.getExcludedPlaceIds(),
       radiusMeters: area.radiusMeters,
       maxResultCount: settings.maxResults,
+      filters: filters,
     );
 
     if (placesResult is PlacesError) {
@@ -78,12 +81,12 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     if (region != null) {
       restaurants = _filterToPolygon(restaurants, region.vertices);
     }
-    restaurants = _applyFilters(restaurants, settings);
+    restaurants = _applyFilters(restaurants, settings, filters);
 
     if (restaurants.isEmpty) {
       state = state.copyWith(
         status: DiscoveryStatus.failure,
-        errorMessage: _emptyMessage(settings, region),
+        errorMessage: _emptyMessage(settings, region, filters),
       );
       return;
     }
@@ -150,9 +153,10 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
   List<Restaurant> _applyFilters(
     List<Restaurant> restaurants,
     UserSettings settings,
+    SpotFilters filters,
   ) {
     var result = restaurants;
-    if (settings.includeOpenOnly) {
+    if (settings.includeOpenOnly || filters.openNow) {
       result = result.where((r) => r.isOpen ?? false).toList();
     }
     if (settings.bannedCategories.isNotEmpty) {
@@ -160,8 +164,46 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
           .where((r) => !r.types.any(settings.bannedCategories.contains))
           .toList();
     }
+    if (filters.cuisines.isNotEmpty) {
+      result = result
+          .where((r) => r.types.any((t) => filters.cuisines.any(t.contains)))
+          .toList();
+    }
+    if (filters.minRating != null) {
+      result = result
+          .where((r) => (r.rating ?? 0) >= filters.minRating!)
+          .toList();
+    }
+    if (filters.priceLevels.isNotEmpty) {
+      result = result.where((r) {
+        final level = _priceLevelInt(r.priceLevel);
+        return level != null && filters.priceLevels.contains(level);
+      }).toList();
+    }
+    // Atmosphere filters: a null attribute means "unknown" → excluded when the
+    // filter is on (we can't confirm it).
+    if (filters.servesBeer) {
+      result = result.where((r) => r.servesBeer ?? false).toList();
+    }
+    if (filters.outdoorSeating) {
+      result = result.where((r) => r.outdoorSeating ?? false).toList();
+    }
+    if (filters.goodForGroups) {
+      result = result.where((r) => r.goodForGroups ?? false).toList();
+    }
+    if (filters.hasParking) {
+      result = result.where((r) => r.hasParking ?? false).toList();
+    }
     return result;
   }
+
+  int? _priceLevelInt(String? priceLevel) => switch (priceLevel) {
+    r'$' => 1,
+    r'$$' => 2,
+    r'$$$' => 3,
+    r'$$$$' => 4,
+    _ => null,
+  };
 
   /// Sorts unvisited first, then by ascending visit count.
   List<Restaurant> _sortByVisits(List<Restaurant> restaurants) {
@@ -173,7 +215,14 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     });
   }
 
-  String _emptyMessage(UserSettings settings, SavedRegion? region) {
+  String _emptyMessage(
+    UserSettings settings,
+    SavedRegion? region,
+    SpotFilters filters,
+  ) {
+    if (!filters.isEmpty) {
+      return 'No spots match those filters here. Try removing one.';
+    }
     if (region != null) {
       return 'No restaurants found in ${region.name}. '
           'Try a bigger area or different settings.';

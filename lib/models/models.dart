@@ -5,6 +5,7 @@ export 'rating_type.dart';
 export 'recent_pick.dart';
 export 'restaurant.dart';
 export 'saved_region.dart';
+export 'spot_filters.dart';
 export 'user_rating.dart';
 export 'user_settings.dart';
 export 'visited_place.dart';

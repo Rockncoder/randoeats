@@ -4,6 +4,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
 import 'package:randoeats/screens/region_draw/region_draw_controller.dart';
 import 'package:randoeats/services/services.dart';
@@ -109,6 +110,8 @@ class _RegionDrawScreenState extends ConsumerState<RegionDrawScreen> {
       name: name.trim(),
       vertices: vertices,
       createdAt: DateTime.now(),
+      // Bundle the currently-active filters so the Spot recalls where + what.
+      filters: ref.read(activeFiltersProvider),
     );
     await StorageService.instance.saveRegion(region);
     if (!mounted) return;

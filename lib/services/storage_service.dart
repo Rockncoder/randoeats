@@ -75,7 +75,8 @@ class StorageService {
       ..registerAdapter(UserSettingsAdapter())
       ..registerAdapter(RestaurantAdapter())
       ..registerAdapter(VisitedPlaceAdapter())
-      ..registerAdapter(SavedRegionAdapter());
+      ..registerAdapter(SavedRegionAdapter())
+      ..registerAdapter(SpotFiltersAdapter());
   }
 
   Future<void> _openBoxes() async {

@@ -34,6 +34,7 @@ void main() {
         'Orange Circle',
         region.points,
         createdAt,
+        null, // filters
       ]);
     });
 
@@ -106,6 +107,9 @@ void main() {
         if (!Hive.isAdapterRegistered(7)) {
           Hive.registerAdapter(SavedRegionAdapter());
         }
+        if (!Hive.isAdapterRegistered(8)) {
+          Hive.registerAdapter(SpotFiltersAdapter());
+        }
       });
 
       tearDown(() async {
@@ -125,6 +129,33 @@ void main() {
 
         final reopened = await Hive.openBox<SavedRegion>('regions_roundtrip');
         expect(reopened.get('r1'), equals(region));
+      });
+
+      test('round-trips a Spot with filters', () async {
+        final spot = buildSquare().copyWith(
+          filters: const SpotFilters(
+            cuisines: {'tacos'},
+            servesBeer: true,
+            minRating: 4,
+          ),
+        );
+        final box = await Hive.openBox<SavedRegion>('spots_roundtrip');
+        await box.put(spot.id, spot);
+        await box.close();
+
+        final reopened = await Hive.openBox<SavedRegion>('spots_roundtrip');
+        final read = reopened.get('r1');
+        expect(read, equals(spot));
+        expect(read!.filters?.servesBeer, isTrue);
+        expect(read.filters?.cuisines, {'tacos'});
+      });
+
+      test('null filters round-trips (backward compatible)', () async {
+        final box = await Hive.openBox<SavedRegion>('nofilters');
+        await box.put('r1', buildSquare()); // no filters
+        await box.close();
+        final reopened = await Hive.openBox<SavedRegion>('nofilters');
+        expect(reopened.get('r1')!.filters, isNull);
       });
     });
   });

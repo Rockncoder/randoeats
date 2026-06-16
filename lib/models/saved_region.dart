@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:hive/hive.dart';
+import 'package:randoeats/models/spot_filters.dart';
 
 part 'saved_region.g.dart';
 
@@ -18,6 +19,7 @@ class SavedRegion extends Equatable {
     required this.name,
     required this.points,
     required this.createdAt,
+    this.filters,
   });
 
   /// Creates a [SavedRegion] from polygon [vertices] (lat/lng pairs).
@@ -26,6 +28,7 @@ class SavedRegion extends Equatable {
     required String name,
     required List<({double lat, double lng})> vertices,
     required DateTime createdAt,
+    SpotFilters? filters,
   }) {
     final flat = <double>[];
     for (final v in vertices) {
@@ -33,7 +36,13 @@ class SavedRegion extends Equatable {
         ..add(v.lat)
         ..add(v.lng);
     }
-    return SavedRegion(id: id, name: name, points: flat, createdAt: createdAt);
+    return SavedRegion(
+      id: id,
+      name: name,
+      points: flat,
+      createdAt: createdAt,
+      filters: filters,
+    );
   }
 
   /// Unique identifier (e.g. `millisecondsSinceEpoch` as a string).
@@ -52,6 +61,10 @@ class SavedRegion extends Equatable {
   @HiveField(3)
   final DateTime createdAt;
 
+  /// The filters saved with this Spot (the "what"); null = no filters.
+  @HiveField(4)
+  final SpotFilters? filters;
+
   /// The polygon vertices as lat/lng pairs.
   List<({double lat, double lng})> get vertices {
     final result = <({double lat, double lng})>[];
@@ -67,15 +80,17 @@ class SavedRegion extends Equatable {
     String? name,
     List<double>? points,
     DateTime? createdAt,
+    SpotFilters? filters,
   }) {
     return SavedRegion(
       id: id ?? this.id,
       name: name ?? this.name,
       points: points ?? this.points,
       createdAt: createdAt ?? this.createdAt,
+      filters: filters ?? this.filters,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, points, createdAt];
+  List<Object?> get props => [id, name, points, createdAt, filters];
 }
