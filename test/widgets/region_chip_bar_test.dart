@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
 import 'package:randoeats/widgets/region_chip_bar.dart';
 
@@ -66,6 +67,36 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('region_chip_r1')));
       await tester.pump();
       expect(container.read(activeRegionProvider)?.id, 'r1');
+    });
+
+    testWidgets('selecting a Spot restores its area AND filters', (
+      tester,
+    ) async {
+      final spot = region('s1', 'Beer Spot').copyWith(
+        filters: const SpotFilters(servesBeer: true, minRating: 4),
+      );
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(
+              body: RegionChipBar(
+                regions: [spot],
+                onCreate: () {},
+                onRename: (_) {},
+                onDelete: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('region_chip_s1')));
+      await tester.pump();
+      expect(container.read(activeRegionProvider)?.id, 's1');
+      expect(container.read(activeFiltersProvider).servesBeer, isTrue);
+      expect(container.read(activeFiltersProvider).minRating, 4);
     });
 
     testWidgets('tapping Near Me clears the active region', (tester) async {

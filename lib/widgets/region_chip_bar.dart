@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
 
 /// A horizontal, one-tap scope picker shown on the results screen.
@@ -56,7 +57,13 @@ class RegionChipBar extends ConsumerWidget {
               label: region.name,
               icon: Icons.place,
               selected: active?.id == region.id,
-              onTap: () => notifier.select(region),
+              // Selecting a Spot restores both its area and its filters.
+              onTap: () {
+                notifier.select(region);
+                ref
+                    .read(activeFiltersProvider.notifier)
+                    .set(region.filters ?? const SpotFilters());
+              },
               onLongPress: () => _showRegionMenu(context, region),
             ),
           _ScopeChip(
