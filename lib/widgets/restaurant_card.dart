@@ -3,6 +3,10 @@ import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/services/services.dart';
 
+/// Hero tag for a restaurant's photo, shared between the winning slot-machine
+/// cell and the detail screen header so the photo flies between them.
+String restaurantPhotoHeroTag(String placeId) => 'restaurant_photo_$placeId';
+
 /// A card displaying restaurant information in Googie style.
 class RestaurantCard extends StatelessWidget {
   /// Creates a [RestaurantCard].
@@ -10,6 +14,7 @@ class RestaurantCard extends StatelessWidget {
     required this.restaurant,
     required this.onTap,
     this.index = 0,
+    this.heroTag,
     super.key,
   });
 
@@ -21,6 +26,11 @@ class RestaurantCard extends StatelessWidget {
 
   /// Index in the list (used for animation stagger).
   final int index;
+
+  /// Optional Hero tag for the photo. Set only for a unique card (e.g. the
+  /// winning reel cell) — repeated cells must leave this null to avoid
+  /// duplicate Hero tags on the same route.
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +79,7 @@ class RestaurantCard extends StatelessWidget {
       restaurant.photoReference,
     );
 
-    return ClipRRect(
+    final photo = ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
       child: Container(
         height: 80,
@@ -90,6 +100,9 @@ class RestaurantCard extends StatelessWidget {
             : _buildPlaceholder(),
       ),
     );
+
+    if (heroTag == null) return photo;
+    return Hero(tag: heroTag!, child: photo);
   }
 
   Widget _buildPlaceholder({bool isLoading = false}) {

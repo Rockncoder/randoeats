@@ -337,6 +337,11 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
                   key: ValueKey('reel_cell_${restaurant.placeId}_$index'),
                   restaurant: restaurant,
                   index: index,
+                  // Only the unique winning cell anchors the Hero flight into
+                  // the detail screen; repeated cells leave it null.
+                  heroTag: isWinnerCell
+                      ? restaurantPhotoHeroTag(restaurant.placeId)
+                      : null,
                   onTap: widget.spinning
                       ? () {}
                       : () => widget.onCardTap(restaurant),

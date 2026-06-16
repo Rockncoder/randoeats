@@ -191,6 +191,30 @@ void main() {
       expect(find.byType(RestaurantCard), findsOneWidget);
     });
 
+    testWidgets('wraps photo in a Hero when heroTag is set', (tester) async {
+      await tester.pumpApp(
+        RestaurantCard(
+          restaurant: _testRestaurant,
+          onTap: () {},
+          heroTag: restaurantPhotoHeroTag(_testRestaurant.placeId),
+        ),
+      );
+
+      final hero = tester.widget<Hero>(find.byType(Hero));
+      expect(hero.tag, 'restaurant_photo_place_1');
+    });
+
+    testWidgets('has no Hero when heroTag is null', (tester) async {
+      await tester.pumpApp(
+        RestaurantCard(
+          restaurant: _testRestaurant,
+          onTap: () {},
+        ),
+      );
+
+      expect(find.byType(Hero), findsNothing);
+    });
+
     testWidgets('renders rating without totalRatings', (tester) async {
       const restaurantNoCount = Restaurant(
         placeId: 'p1',
