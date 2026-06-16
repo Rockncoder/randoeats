@@ -1,6 +1,7 @@
 /// Widgets for rand-o-eats.
 library;
 
+export 'filter_chip_bar.dart';
 export 'multi_reel_slot_machine.dart';
 export 'rando_eats_button.dart';
 export 'reel_layout.dart';

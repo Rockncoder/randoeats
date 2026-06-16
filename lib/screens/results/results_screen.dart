@@ -7,6 +7,7 @@ import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
 import 'package:randoeats/services/services.dart';
 import 'package:randoeats/widgets/widgets.dart';
@@ -133,12 +134,18 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(discoveryProvider);
-    // Re-run discovery whenever the active scope (Near Me / a region) changes.
-    ref.listen(activeRegionProvider, (previous, next) {
-      if (previous?.id != next?.id) {
-        unawaited(ref.read(discoveryProvider.notifier).start());
-      }
-    });
+    // Re-run discovery whenever the active scope or filters change.
+    ref
+      ..listen(activeRegionProvider, (previous, next) {
+        if (previous?.id != next?.id) {
+          unawaited(ref.read(discoveryProvider.notifier).start());
+        }
+      })
+      ..listen(activeFiltersProvider, (previous, next) {
+        if (previous != next) {
+          unawaited(ref.read(discoveryProvider.notifier).start());
+        }
+      });
     final isSpinning = state.status == DiscoveryStatus.spinning;
     final canRefresh =
         state.status == DiscoveryStatus.success ||
@@ -160,6 +167,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   onRename: _onRenameRegion,
                   onDelete: _onDeleteRegion,
                 ),
+                // One-tap filters: cuisine + atmosphere + rating/price
+                const FilterChipBar(),
                 // Main content
                 Expanded(
                   child: _buildBody(context, state),
