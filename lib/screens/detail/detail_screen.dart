@@ -47,8 +47,8 @@ class DetailScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildInfo(context, theme),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                       child: WavyLine(
                         secondaryColor: GoogieColors.coral,
                         height: 18,
@@ -129,10 +129,10 @@ class DetailScreen extends ConsumerWidget {
   Widget _buildPhotoPlaceholder({bool isLoading = false}) {
     return Center(
       child: isLoading
-          ? const CircularProgressIndicator(
+          ? CircularProgressIndicator(
               color: GoogieColors.turquoise,
             )
-          : const Icon(
+          : Icon(
               Icons.restaurant,
               size: 80,
               color: GoogieColors.turquoise,
@@ -158,7 +158,7 @@ class DetailScreen extends ConsumerWidget {
           // Address
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on,
                 size: 18,
                 color: GoogieColors.turquoise,
@@ -252,7 +252,7 @@ class DetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.phone,
               size: 18,
               color: GoogieColors.turquoise,
@@ -278,13 +278,13 @@ class DetailScreen extends ConsumerWidget {
     required ThemeData theme,
     IconData? icon,
     Color? iconColor,
-    Color fill = GoogieColors.white,
+    Color? fill,
     Color? textColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: fill,
+        color: fill ?? GoogieColors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -517,8 +517,8 @@ class DetailScreen extends ConsumerWidget {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to place the call'),
+          SnackBar(
+            content: const Text('Unable to place the call'),
             backgroundColor: GoogieColors.coral,
           ),
         );
@@ -538,8 +538,8 @@ class DetailScreen extends ConsumerWidget {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to open maps'),
+          SnackBar(
+            content: const Text('Unable to open maps'),
             backgroundColor: GoogieColors.coral,
           ),
         );

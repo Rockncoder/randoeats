@@ -98,13 +98,13 @@ class RegionChipBar extends ConsumerWidget {
           children: [
             ListTile(
               key: const ValueKey('region_menu_rename'),
-              leading: const Icon(Icons.edit, color: GoogieColors.deepTeal),
+              leading: Icon(Icons.edit, color: GoogieColors.deepTeal),
               title: const Text('Rename'),
               onTap: () => Navigator.pop(sheetContext, _RegionAction.rename),
             ),
             ListTile(
               key: const ValueKey('region_menu_delete'),
-              leading: const Icon(Icons.delete, color: GoogieColors.coral),
+              leading: Icon(Icons.delete, color: GoogieColors.coral),
               title: const Text('Delete'),
               onTap: () => Navigator.pop(sheetContext, _RegionAction.delete),
             ),

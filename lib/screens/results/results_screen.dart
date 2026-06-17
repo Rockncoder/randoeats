@@ -111,11 +111,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.star, color: GoogieColors.mustard),
-            SizedBox(width: 8),
-            Text('Save Spot'),
+            const SizedBox(width: 8),
+            const Text('Save Spot'),
           ],
         ),
         content: Column(
@@ -338,7 +338,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Expressive "scanning" wave instead of a plain spinner.
-          const SizedBox(
+          SizedBox(
             width: 220,
             child: WavyLine(
               secondaryColor: GoogieColors.coral,
@@ -369,7 +369,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
               size: 64,
               color: GoogieColors.coral,

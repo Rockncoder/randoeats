@@ -111,11 +111,11 @@ class RestaurantCard extends StatelessWidget {
   Widget _buildPlaceholder({bool isLoading = false}) {
     return Center(
       child: isLoading
-          ? const CircularProgressIndicator(
+          ? CircularProgressIndicator(
               strokeWidth: 2,
               color: GoogieColors.turquoise,
             )
-          : const Icon(
+          : Icon(
               Icons.restaurant,
               size: 36,
               color: GoogieColors.turquoise,
@@ -151,7 +151,7 @@ class RestaurantCard extends StatelessWidget {
       children: [
         // Rating
         if (restaurant.rating != null) ...[
-          const Icon(Icons.star, size: 18, color: GoogieColors.mustard),
+          Icon(Icons.star, size: 18, color: GoogieColors.mustard),
           const SizedBox(width: 4),
           Text(
             restaurant.rating!.toStringAsFixed(1),
@@ -204,7 +204,7 @@ class RestaurantCard extends StatelessWidget {
         // Phone indicator — this place can be called (tap through to detail).
         if (restaurant.phoneNumber != null) ...[
           const Spacer(),
-          const Icon(Icons.phone, size: 16, color: GoogieColors.deepTeal),
+          Icon(Icons.phone, size: 16, color: GoogieColors.deepTeal),
         ],
       ],
     );

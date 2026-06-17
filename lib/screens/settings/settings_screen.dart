@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
+import 'package:randoeats/providers/theme_provider.dart';
 import 'package:randoeats/services/services.dart';
 
 /// Available restaurant categories that can be banned.
@@ -34,15 +36,15 @@ const restaurantCategories = <String, String>{
 };
 
 /// Screen for configuring app settings.
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   /// Creates a [SettingsScreen].
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late UserSettings _settings;
   bool _hasChanges = false;
 
@@ -59,8 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Settings saved!'),
+        SnackBar(
+          content: const Text('Settings saved!'),
           backgroundColor: GoogieColors.turquoise,
         ),
       );
@@ -120,6 +122,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Appearance / Theme Section
+          _buildSectionHeader(theme, 'Appearance'),
+          const SizedBox(height: 4),
+          Text(
+            'Pick a season',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildThemePicker(theme),
+
+          const SizedBox(height: 24),
+
           // Distance Units Section
           _buildSectionHeader(theme, 'Distance Units'),
           const SizedBox(height: 12),
@@ -284,6 +300,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => _showClearAllDataDialog(theme),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildThemePicker(ThemeData theme) {
+    final current = ref.watch(themeProvider);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        for (final appTheme in AppTheme.values)
+          _buildThemeSwatch(theme, appTheme, selected: appTheme == current),
+      ],
+    );
+  }
+
+  Widget _buildThemeSwatch(
+    ThemeData theme,
+    AppTheme appTheme, {
+    required bool selected,
+  }) {
+    final p = appTheme.palette;
+    return GestureDetector(
+      key: ValueKey('theme_swatch_${appTheme.id}'),
+      onTap: () => ref.read(themeProvider.notifier).select(appTheme),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 104,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: p.cream,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: selected ? GoogieColors.coral : p.chrome,
+            width: selected ? 3 : 1.5,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: GoogieColors.coral.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _swatchDot(p.turquoise),
+                _swatchDot(p.coral),
+                _swatchDot(p.mustard),
+                const Spacer(),
+                if (selected)
+                  Icon(Icons.check_circle, size: 18, color: GoogieColors.coral),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              appTheme.label,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: p.spaceBlack,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _swatchDot(Color color) {
+    return Container(
+      width: 18,
+      height: 18,
+      margin: const EdgeInsets.only(right: 5),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.black.withValues(alpha: 0.1)),
       ),
     );
   }
@@ -549,7 +647,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               'CLEAR',
               style: TextStyle(color: GoogieColors.coral),
             ),
@@ -562,8 +660,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await StorageService.instance.clearVisitedPlaces();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Visit history cleared!'),
+        SnackBar(
+          content: const Text('Visit history cleared!'),
           backgroundColor: GoogieColors.turquoise,
         ),
       );
@@ -586,7 +684,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               'CLEAR',
               style: TextStyle(color: GoogieColors.coral),
             ),
@@ -599,8 +697,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await StorageService.instance.clearRecentPicks();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Recent picks cleared!'),
+        SnackBar(
+          content: const Text('Recent picks cleared!'),
           backgroundColor: GoogieColors.turquoise,
         ),
       );
@@ -623,7 +721,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text(
+            child: Text(
               'DELETE ALL',
               style: TextStyle(color: GoogieColors.coral),
             ),
@@ -636,8 +734,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await StorageService.instance.clearAll();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('All data cleared!'),
+        SnackBar(
+          content: const Text('All data cleared!'),
           backgroundColor: GoogieColors.coral,
         ),
       );

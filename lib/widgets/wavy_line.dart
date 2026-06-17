@@ -12,7 +12,7 @@ import 'package:randoeats/config/config.dart';
 class WavyLine extends StatefulWidget {
   /// Creates a [WavyLine].
   const WavyLine({
-    this.color = GoogieColors.turquoise,
+    this.color,
     this.secondaryColor,
     this.height = 20,
     this.amplitude = 5,
@@ -23,8 +23,8 @@ class WavyLine extends StatefulWidget {
     super.key,
   });
 
-  /// Primary wave color.
-  final Color color;
+  /// Primary wave color. Defaults to the theme's primary accent.
+  final Color? color;
 
   /// Optional second wave, drawn half a wavelength out of phase behind the
   /// primary one.
@@ -92,7 +92,7 @@ class _WavyLineState extends State<WavyLine>
           return CustomPaint(
             painter: _WavyPainter(
               phase: _controller.value * 2 * math.pi,
-              color: widget.color,
+              color: widget.color ?? GoogieColors.turquoise,
               secondaryColor: widget.secondaryColor,
               amplitude: widget.amplitude,
               wavelength: widget.wavelength,

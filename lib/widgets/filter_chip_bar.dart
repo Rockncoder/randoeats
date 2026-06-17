@@ -123,18 +123,18 @@ class FilterChipBar extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: ActionChip(
                 key: const ValueKey('filter_save_spot'),
-                avatar: const Icon(
+                avatar: Icon(
                   Icons.star,
                   size: 18,
                   color: GoogieColors.deepTeal,
                 ),
                 label: const Text('Save Spot'),
-                labelStyle: const TextStyle(
+                labelStyle: TextStyle(
                   color: GoogieColors.deepTeal,
                   fontWeight: FontWeight.w600,
                 ),
                 backgroundColor: GoogieColors.mustard,
-                side: const BorderSide(color: GoogieColors.chrome),
+                side: BorderSide(color: GoogieColors.chrome),
                 onPressed: onSaveSpot,
               ),
             ),

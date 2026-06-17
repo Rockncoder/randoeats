@@ -198,37 +198,40 @@ void main() {
         expect(darkTheme.brightness, Brightness.dark);
       });
 
-      test('uses spaceBlack scaffold background', () {
+      test('uses the dark palette background', () {
         expect(
           darkTheme.scaffoldBackgroundColor,
-          GoogieColors.spaceBlack,
+          GoogiePalette.dark.cream,
         );
       });
 
       test('has turquoise primary color', () {
-        expect(darkTheme.colorScheme.primary, GoogieColors.turquoise);
+        expect(darkTheme.colorScheme.primary, GoogiePalette.dark.turquoise);
       });
 
-      test('appBar uses spaceBlack background', () {
+      test('appBar uses the dark palette background', () {
         expect(
           darkTheme.appBarTheme.backgroundColor,
-          GoogieColors.spaceBlack,
+          GoogiePalette.dark.cream,
         );
       });
 
-      test('card theme uses darkCard background', () {
-        expect(darkTheme.cardTheme.color, GoogieColors.darkCard);
+      test('card theme uses the dark surface', () {
+        expect(darkTheme.cardTheme.color, GoogiePalette.dark.white);
       });
 
-      test('input decoration uses darkCard fill', () {
+      test('input decoration uses the dark surface fill', () {
         expect(
           darkTheme.inputDecorationTheme.fillColor,
-          GoogieColors.darkCard,
+          GoogiePalette.dark.white,
         );
       });
 
-      test('text theme applies cream colors', () {
-        expect(darkTheme.textTheme.bodyLarge?.color, GoogieColors.cream);
+      test('text theme applies the dark ink color', () {
+        expect(
+          darkTheme.textTheme.bodyLarge?.color,
+          GoogiePalette.dark.spaceBlack,
+        );
       });
     });
   });

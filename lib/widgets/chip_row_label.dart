@@ -27,7 +27,7 @@ class ChipRowLabel extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: GoogieColors.deepTeal,
               fontWeight: FontWeight.w700,
               fontSize: 12,
