@@ -325,7 +325,9 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
           physics: widget.spinning
               ? const NeverScrollableScrollPhysics()
               : const ClampingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          // Extra bottom padding so the last card can scroll clear of the
+          // floating spin badge that hovers over the bottom of the list.
+          padding: const EdgeInsets.only(top: 4, bottom: 120),
           itemCount: widget.restaurants.length,
           itemBuilder: (context, index) {
             final restaurant = widget.restaurants[index];

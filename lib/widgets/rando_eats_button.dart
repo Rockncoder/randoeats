@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:randoeats/config/config.dart';
@@ -70,175 +69,50 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
 
   @override
   Widget build(BuildContext context) {
-    // Circular spinning button when active, pill-shaped otherwise
-    if (widget.isSpinning) {
-      return _buildSpinningButton();
-    }
-    return _buildPillButton();
-  }
-
-  Widget _buildSpinningButton() {
-    const size = 80.0;
-    // Spin the round badge logo itself — clipped to a circle so it reads as a
-    // slot-machine wheel, with a warm glow behind it.
-    return RotationTransition(
-      turns: _spinController,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: GoogieColors.coral.withValues(alpha: 0.5),
-              blurRadius: 24,
-              offset: const Offset(0, 6),
-            ),
-            BoxShadow(
-              color: GoogieColors.mustard.withValues(alpha: 0.4),
-              blurRadius: 32,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipOval(
-          child: Image.asset(
-            'assets/images/rand-o-eats-badge.png',
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPillButton() {
-    return AnimatedBuilder(
-      animation: _pulseAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _pulseAnimation.value,
-          child: child,
-        );
-      },
-      child: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(40),
-          boxShadow: [
-            BoxShadow(
-              color: GoogieColors.coral.withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: GoogieColors.mustard.withValues(alpha: 0.3),
-              blurRadius: 30,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onPressed,
-            borderRadius: BorderRadius.circular(40),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    GoogieColors.coral,
-                    Color(0xFFFF8965),
-                    Color(0xFFFF8A65),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(40),
-                border: Border.all(
-                  color: GoogieColors.mustard.withValues(alpha: 0.5),
-                  width: 3,
-                ),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Starburst decorations
-                  Positioned(
-                    left: 20,
-                    child: _buildStarburst(size: 24),
-                  ),
-                  Positioned(
-                    right: 20,
-                    child: _buildStarburst(size: 24),
-                  ),
-                  // Button content - logo
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 8,
-                    ),
-                    child: Image.asset(
-                      'assets/images/rand-o-eats-no-motto.png',
-                      height: 56,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStarburst({required double size}) {
-    return SizedBox(
+    const size = 88.0;
+    // The round badge logo IS the control: it floats above the listings,
+    // gently pulses to invite a tap, and rotates while the reels spin.
+    final badge = Container(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _StarburstPainter(
-          color: GoogieColors.mustard.withValues(alpha: 0.8),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: GoogieColors.coral.withValues(alpha: 0.5),
+            blurRadius: 24,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: GoogieColors.mustard.withValues(alpha: 0.4),
+            blurRadius: 32,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/rand-o-eats-badge.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
         ),
       ),
     );
-  }
-}
 
-class _StarburstPainter extends CustomPainter {
-  _StarburstPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Draw 8-point starburst
-    final path = Path();
-    const points = 8;
-    for (var i = 0; i < points * 2; i++) {
-      final angle = (i * math.pi / points) - math.pi / 2;
-      final r = i.isEven ? radius : radius * 0.4;
-      final x = center.dx + r * math.cos(angle);
-      final y = center.dy + r * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+    // While spinning the badge rotates and is not tappable.
+    if (widget.isSpinning) {
+      return RotationTransition(turns: _spinController, child: badge);
     }
-    path.close();
-    canvas.drawPath(path, paint);
-  }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+    // Idle: pulse and accept taps to start the spin.
+    return Semantics(
+      button: true,
+      label: 'Spin to pick a restaurant',
+      child: GestureDetector(
+        onTap: widget.onPressed,
+        child: ScaleTransition(scale: _pulseAnimation, child: badge),
+      ),
+    );
+  }
 }

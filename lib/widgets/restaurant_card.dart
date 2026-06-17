@@ -198,6 +198,11 @@ class RestaurantCard extends StatelessWidget {
               ),
             ),
           ),
+        // Phone indicator — this place can be called (tap through to detail).
+        if (restaurant.phoneNumber != null) ...[
+          const Spacer(),
+          const Icon(Icons.phone, size: 16, color: GoogieColors.deepTeal),
+        ],
       ],
     );
   }

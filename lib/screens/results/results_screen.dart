@@ -222,6 +222,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         state.status == DiscoveryStatus.selected ||
         state.status == DiscoveryStatus.winner;
 
+    final showSpinButton =
+        state.status == DiscoveryStatus.success ||
+        state.status == DiscoveryStatus.spinning ||
+        state.status == DiscoveryStatus.selected ||
+        state.status == DiscoveryStatus.winner;
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -245,6 +251,25 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 ),
               ],
             ),
+            // Floating round badge: tap to spin. Floats above the listings so
+            // users can still tap a card directly to skip the game.
+            if (showSpinButton)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 20,
+                child: Center(
+                  child: Semantics(
+                    identifier: 'spin_button',
+                    button: true,
+                    child: RandoEatsButton(
+                      key: const ValueKey('spin_button'),
+                      onPressed: _startSpin,
+                      isSpinning: isSpinning,
+                    ),
+                  ),
+                ),
+              ),
             // Winner celebration overlay
             if (_showCelebration)
               WinnerCelebration(onComplete: _onCelebrationComplete),
@@ -263,26 +288,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          // Refresh button (left side). A fixed-width slot keeps the centered
-          // brand badge centered whether or not the refresh button is shown.
-          SizedBox(
-            width: 48,
-            child: canRefresh
-                ? IconButton(
-                    icon: const Icon(Icons.refresh),
-                    color: GoogieColors.deepTeal,
-                    iconSize: 28,
-                    onPressed: isSpinning ? null : _refreshRestaurants,
-                    tooltip: 'Find new restaurants',
-                  )
-                : null,
-          ),
-          const Spacer(),
-          // Brand badge — identity for the app's primary screen.
-          Image.asset(
-            'assets/images/rand-o-eats-badge.png',
-            height: 40,
-          ),
+          // Refresh button (left side)
+          if (canRefresh)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              color: GoogieColors.deepTeal,
+              iconSize: 28,
+              onPressed: isSpinning ? null : _refreshRestaurants,
+              tooltip: 'Find new restaurants',
+            ),
           const Spacer(),
           // Settings gear (right side)
           Semantics(
@@ -303,49 +317,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   Widget _buildBody(BuildContext context, DiscoveryState state) {
     final theme = Theme.of(context);
-    final isSpinning = state.status == DiscoveryStatus.spinning;
-    final showSpinButton =
-        state.status == DiscoveryStatus.success ||
-        state.status == DiscoveryStatus.spinning ||
-        state.status == DiscoveryStatus.selected ||
-        state.status == DiscoveryStatus.winner;
 
-    return Column(
-      children: [
-        // Restaurant list
-        Expanded(
-          child:
-              state.status == DiscoveryStatus.initial ||
-                  state.status == DiscoveryStatus.loading
-              ? _buildLoading(theme)
-              : state.status == DiscoveryStatus.failure
-              ? _buildError(
-                  context,
-                  theme,
-                  state.errorMessage ?? 'Unknown error',
-                )
-              : _buildSlotMachineList(context, state),
-        ),
-        // Rand-o-Eats button - allows re-spin after returning from details
-        if (showSpinButton)
-          Padding(
-            padding: const EdgeInsets.only(
-              top: 4,
-              bottom: 12,
-              left: 16,
-              right: 16,
-            ),
-            child: Semantics(
-              identifier: 'spin_button',
-              button: true,
-              child: RandoEatsButton(
-                onPressed: _startSpin,
-                isSpinning: isSpinning,
-              ),
-            ),
-          ),
-      ],
-    );
+    // The spin control floats over this body (see build); the list fills the
+    // whole area and scrolls behind it.
+    return state.status == DiscoveryStatus.initial ||
+            state.status == DiscoveryStatus.loading
+        ? _buildLoading(theme)
+        : state.status == DiscoveryStatus.failure
+        ? _buildError(
+            context,
+            theme,
+            state.errorMessage ?? 'Unknown error',
+          )
+        : _buildSlotMachineList(context, state);
   }
 
   Widget _buildLoading(ThemeData theme) {

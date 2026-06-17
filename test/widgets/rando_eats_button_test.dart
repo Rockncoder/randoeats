@@ -9,15 +9,20 @@ import '../helpers/helpers.dart';
 
 void main() {
   group('RandoEatsButton', () {
-    testWidgets('renders button with logo image when not spinning', (
+    testWidgets('renders the round badge logo when not spinning', (
       tester,
     ) async {
       await tester.pumpApp(
         RandoEatsButton(onPressed: () {}),
       );
 
-      // Now uses logo image instead of text
-      expect(find.byType(Image), findsOneWidget);
+      // Idle state is the round badge logo (clipped to a circle), not text.
+      final image = tester.widget<Image>(find.byType(Image));
+      expect(
+        (image.image as AssetImage).assetName,
+        'assets/images/rand-o-eats-badge.png',
+      );
+      expect(find.byType(ClipOval), findsOneWidget);
       expect(find.text('RAND-O-EATS!'), findsNothing);
     });
 
@@ -64,7 +69,7 @@ void main() {
         RandoEatsButton(onPressed: () => tapped = true),
       );
 
-      await tester.tap(find.byType(InkWell));
+      await tester.tap(find.byType(RandoEatsButton));
       await tester.pump();
 
       expect(tapped, isTrue);
@@ -73,12 +78,16 @@ void main() {
     testWidgets('spinning button is not tappable', (
       tester,
     ) async {
+      var tapped = false;
       await tester.pumpApp(
-        RandoEatsButton(onPressed: () {}, isSpinning: true),
+        RandoEatsButton(onPressed: () => tapped = true, isSpinning: true),
       );
 
-      // Spinning state has no InkWell - button is not tappable
-      expect(find.byType(InkWell), findsNothing);
+      // Spinning state has no gesture handler - tapping does nothing.
+      await tester.tap(find.byType(RandoEatsButton), warnIfMissed: false);
+      await tester.pump();
+      expect(tapped, isFalse);
+      expect(find.byType(GestureDetector), findsNothing);
       expect(find.byType(RotationTransition), findsOneWidget);
     });
 
@@ -89,30 +98,19 @@ void main() {
         RandoEatsButton(onPressed: null),
       );
 
-      await tester.tap(find.byType(InkWell));
+      await tester.tap(find.byType(RandoEatsButton));
       await tester.pump();
 
       // No error should occur
     });
 
-    testWidgets('has pulse animation when not spinning', (tester) async {
+    testWidgets('pulses (scale animation) when not spinning', (tester) async {
       await tester.pumpApp(
         RandoEatsButton(onPressed: () {}),
       );
 
-      // Verify AnimatedBuilder exists for the pulse animation
-      expect(find.byType(AnimatedBuilder), findsWidgets);
-    });
-
-    testWidgets('renders starburst decorations when not spinning', (
-      tester,
-    ) async {
-      await tester.pumpApp(
-        RandoEatsButton(onPressed: () {}),
-      );
-
-      // CustomPaint widgets are used for starburst decorations
-      expect(find.byType(CustomPaint), findsWidgets);
+      // The idle badge gently pulses via a ScaleTransition.
+      expect(find.byType(ScaleTransition), findsOneWidget);
     });
 
     testWidgets('changes appearance when spinning', (tester) async {
@@ -120,11 +118,10 @@ void main() {
         RandoEatsButton(onPressed: () {}, isSpinning: true),
       );
 
-      // When spinning, shows circular rotating button with logo
+      // When spinning, shows the rotating badge and is no longer tappable.
       expect(find.byType(RotationTransition), findsOneWidget);
       expect(find.byType(Image), findsOneWidget);
-      // No starburst decorations when spinning (different layout)
-      expect(find.byType(InkWell), findsNothing);
+      expect(find.byType(GestureDetector), findsNothing);
     });
   });
 }

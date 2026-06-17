@@ -37,7 +37,7 @@ class DetailScreen extends ConsumerWidget {
             // Photo stays full-bleed; everything below is capped to a readable
             // width and centered so the body doesn't stretch edge-to-edge on
             // tablets (where it otherwise reads as a blown-up phone layout).
-            _buildHeader(theme),
+            _buildHeader(context, theme),
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 640),
@@ -60,16 +60,22 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(ThemeData theme) {
+  Widget _buildHeader(BuildContext context, ThemeData theme) {
     final photoUrl = PlacesService.instance.getPhotoUrl(
       restaurant.photoReference,
       maxWidth: 800,
     );
 
+    // Give the full-bleed photo more presence on wide screens, where a short
+    // strip looked thin above the centered content column.
+    final headerHeight = MediaQuery.sizeOf(context).width >= 640
+        ? 340.0
+        : 220.0;
+
     return Hero(
       tag: restaurantPhotoHeroTag(restaurant.placeId),
       child: Container(
-        height: 200,
+        height: headerHeight,
         decoration: BoxDecoration(
           color: GoogieColors.turquoise.withValues(alpha: 0.2),
         ),
@@ -318,43 +324,20 @@ class DetailScreen extends ConsumerWidget {
   }
 
   Widget _buildActions(BuildContext context, ThemeData theme) {
+    // Single, clearly-labelled action. The app bar's back arrow already covers
+    // "go back," so there's no separate abort button. Width is bounded by the
+    // centered content column, so the button can stretch without hitting the
+    // iPad infinite-width layout assert.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              key: const ValueKey('detail_navigate'),
-              onPressed: () => _openMaps(context),
-              icon: const Icon(Icons.navigation),
-              label: const Text('NAVIGATE'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Expanded (flexible) so RenderFlex never measures this Material
-          // button with an unbounded main-axis width — an inflexible child here
-          // triggers "BoxConstraints forces an infinite width" during the iPad
-          // accessibility layout pass (the rating buttons below, both Expanded,
-          // never hit this).
-          Expanded(
-            child: OutlinedButton(
-              key: const ValueKey('detail_abort'),
-              onPressed: () => context.pop(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: GoogieColors.coral,
-                side: const BorderSide(color: GoogieColors.coral, width: 2),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Abort Mission',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
+      child: ElevatedButton.icon(
+        key: const ValueKey('detail_navigate'),
+        onPressed: () => _openMaps(context),
+        icon: const Icon(Icons.navigation),
+        label: const Text('Directions'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
       ),
     );
   }
@@ -430,64 +413,57 @@ class DetailScreen extends ConsumerWidget {
     );
     final isSelected = existingRating?.rating == ratingType;
 
-    return OutlinedButton(
-      key: ValueKey('detail_rate_${ratingType.name}'),
-      onPressed: () async {
-        final rating = UserRating(
-          placeId: restaurant.placeId,
-          rating: ratingType,
-          ratedAt: DateTime.now(),
-        );
-
-        await StorageService.instance.saveRating(rating);
-
-        // Also save as recent pick
-        final pick = RecentPick(
-          placeId: restaurant.placeId,
-          pickedAt: DateTime.now(),
-        );
-        await StorageService.instance.saveRecentPick(pick);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                ratingType == RatingType.thumbsUp
-                    ? 'Added to your favorites!'
-                    : "Got it! We won't suggest this again.",
-              ),
-              backgroundColor: color,
-            ),
+    return Semantics(
+      label: label,
+      button: true,
+      child: OutlinedButton(
+        key: ValueKey('detail_rate_${ratingType.name}'),
+        onPressed: () async {
+          final rating = UserRating(
+            placeId: restaurant.placeId,
+            rating: ratingType,
+            ratedAt: DateTime.now(),
           );
 
-          // For thumbs down, remove from list; for thumbs up, just go back
-          if (ratingType == RatingType.thumbsDown) {
-            ref
-                .read(discoveryProvider.notifier)
-                .removeRestaurant(
-                  restaurant.placeId,
-                );
+          await StorageService.instance.saveRating(rating);
+
+          // Also save as recent pick
+          final pick = RecentPick(
+            placeId: restaurant.placeId,
+            pickedAt: DateTime.now(),
+          );
+          await StorageService.instance.saveRecentPick(pick);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  ratingType == RatingType.thumbsUp
+                      ? 'Added to your favorites!'
+                      : "Got it! We won't suggest this again.",
+                ),
+                backgroundColor: color,
+              ),
+            );
+
+            // For thumbs down, remove from list; for thumbs up, just go back
+            if (ratingType == RatingType.thumbsDown) {
+              ref
+                  .read(discoveryProvider.notifier)
+                  .removeRestaurant(
+                    restaurant.placeId,
+                  );
+            }
+            context.go(AppRoutes.results);
           }
-          context.go(AppRoutes.results);
-        }
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: isSelected ? Colors.white : color,
-        backgroundColor: isSelected ? color : Colors.transparent,
-        side: BorderSide(color: color, width: 2),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 24),
-          const SizedBox(width: 8),
-          // Flexible + ellipsis so the label shrinks instead of overflowing on
-          // narrow phones (each rating button is a half-width Expanded).
-          Flexible(
-            child: Text(label, overflow: TextOverflow.ellipsis),
-          ),
-        ],
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: isSelected ? Colors.white : color,
+          backgroundColor: isSelected ? color : Colors.transparent,
+          side: BorderSide(color: color, width: 2),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: Icon(icon, size: 28),
       ),
     );
   }

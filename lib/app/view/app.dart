@@ -12,6 +12,7 @@ class App extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       theme: GoogieTheme.light,
       darkTheme: GoogieTheme.dark,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

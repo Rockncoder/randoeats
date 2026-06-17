@@ -54,9 +54,13 @@ void main() {
     await pumpDetail(tester, const Size(390, 844));
     expect(tester.takeException(), isNull);
     expect(find.text('Test Diner'), findsOneWidget);
-    expect(find.text('NAVIGATE'), findsOneWidget);
-    expect(find.text('Good Pick!'), findsOneWidget);
-    expect(find.text('Not For Me'), findsOneWidget);
+    expect(find.text('Directions'), findsOneWidget);
+    // Rating buttons are icon-only now (no "Good Pick!" / "Not For Me" text).
+    expect(find.byKey(const ValueKey('detail_rate_thumbsUp')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('detail_rate_thumbsDown')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('renders on a tablet with semantics forced on', (tester) async {
@@ -65,8 +69,8 @@ void main() {
     final handle = tester.ensureSemantics();
     await pumpDetail(tester, const Size(1024, 1366));
     expect(tester.takeException(), isNull);
-    expect(find.text('NAVIGATE'), findsOneWidget);
-    expect(find.text('Good Pick!'), findsOneWidget);
+    expect(find.text('Directions'), findsOneWidget);
+    expect(find.byKey(const ValueKey('detail_rate_thumbsUp')), findsOneWidget);
     handle.dispose();
   });
 
@@ -102,20 +106,12 @@ void main() {
     expect(find.byKey(const ValueKey('detail_call')), findsNothing);
   });
 
-  testWidgets('both action buttons are flexible (no unbounded-width row)', (
+  testWidgets('Directions is the only action; Abort Mission is gone', (
     tester,
   ) async {
-    // The "Abort Mission" button must be Expanded like NAVIGATE. An inflexible
-    // child in the actions Row is measured by RenderFlex with an unbounded
-    // main-axis width, which on the iPad accessibility layout pass triggers
-    // "BoxConstraints forces an infinite width". Keep it flexible.
     await pumpDetail(tester, const Size(390, 844));
-    final abort = find.byKey(const ValueKey('detail_abort'));
-    expect(abort, findsOneWidget);
-    expect(
-      find.ancestor(of: abort, matching: find.byType(Expanded)),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('detail_navigate')), findsOneWidget);
+    expect(find.byKey(const ValueKey('detail_abort')), findsNothing);
   });
 
   testWidgets('renders wide + scrollable with semantics (no infinite width)', (
@@ -123,11 +119,12 @@ void main() {
   ) async {
     // The exact condition marionette hit on the iPad: wide AND short enough to
     // scroll AND semantics on — the suspected trigger for the
-    // "BoxConstraints forces an infinite width" cascade.
+    // "BoxConstraints forces an infinite width" cascade. The single, width-
+    // bounded Directions button must not reintroduce it.
     final handle = tester.ensureSemantics();
     await pumpDetail(tester, const Size(900, 480));
     expect(tester.takeException(), isNull);
-    expect(find.text('NAVIGATE'), findsOneWidget);
+    expect(find.text('Directions'), findsOneWidget);
     handle.dispose();
   });
 }
