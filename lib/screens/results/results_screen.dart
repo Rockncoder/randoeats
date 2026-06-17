@@ -337,14 +337,23 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            color: GoogieColors.turquoise,
+          // Expressive "scanning" wave instead of a plain spinner.
+          const SizedBox(
+            width: 220,
+            child: WavyLine(
+              secondaryColor: GoogieColors.coral,
+              height: 48,
+              amplitude: 9,
+              wavelength: 46,
+              strokeWidth: 5,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             'Scanning nearby quadrants...',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: GoogieColors.turquoise,
+              color: GoogieColors.deepTeal,
+              fontWeight: FontWeight.w600,
               fontStyle: FontStyle.italic,
             ),
           ),

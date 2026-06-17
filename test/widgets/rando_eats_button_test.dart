@@ -22,8 +22,9 @@ void main() {
         (image.image as AssetImage).assetName,
         'assets/images/rand-o-eats-badge.png',
       );
-      // Two ovals: the logo plus the frosted blur disc behind it.
-      expect(find.byType(ClipOval), findsNWidgets(2));
+      // Logo is the single oval; the frosted blur sits in a scalloped ClipPath.
+      expect(find.byType(ClipOval), findsOneWidget);
+      expect(find.byType(ClipPath), findsOneWidget);
       expect(find.byType(BackdropFilter), findsOneWidget);
       expect(find.text('RAND-O-EATS!'), findsNothing);
     });
@@ -35,8 +36,8 @@ void main() {
         RandoEatsButton(onPressed: () {}, isSpinning: true),
       );
 
-      // Spinning state shows a circular rotating button with image
-      expect(find.byType(RotationTransition), findsOneWidget);
+      // Two rotations now: the always-on scallop and the spinning logo.
+      expect(find.byType(RotationTransition), findsNWidgets(2));
       expect(find.byType(Image), findsOneWidget);
       // No longer shows text or progress indicator
       expect(find.text('SPINNING...'), findsNothing);
@@ -90,7 +91,7 @@ void main() {
       await tester.pump();
       expect(tapped, isFalse);
       expect(find.byType(GestureDetector), findsNothing);
-      expect(find.byType(RotationTransition), findsOneWidget);
+      expect(find.byType(RotationTransition), findsNWidgets(2));
     });
 
     testWidgets('does not call onPressed when onPressed is null', (
@@ -121,7 +122,7 @@ void main() {
       );
 
       // When spinning, shows the rotating badge and is no longer tappable.
-      expect(find.byType(RotationTransition), findsOneWidget);
+      expect(find.byType(RotationTransition), findsNWidgets(2));
       expect(find.byType(Image), findsOneWidget);
       expect(find.byType(GestureDetector), findsNothing);
     });

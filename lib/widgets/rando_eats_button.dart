@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -33,6 +34,10 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
   late Animation<double> _pulseAnimation;
   late AnimationController _spinController;
 
+  /// Slow, continuous rotation for the scalloped "cookie" shape behind the
+  /// badge — a Material 3 Expressive signature. Independent of the logo spin.
+  late AnimationController _scallopController;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +54,12 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+
+    _scallopController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 18),
+    );
+    unawaited(_scallopController.repeat());
   }
 
   @override
@@ -67,6 +78,7 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
   void dispose() {
     _pulseController.dispose();
     _spinController.dispose();
+    _scallopController.dispose();
     super.dispose();
   }
 
@@ -123,16 +135,20 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Static frosted-blur disc behind the logo. It blurs whatever sits
-          // under it (the restaurant cards) within a circle, helping the badge
-          // pop. It is outside the rotation, so it never spins.
-          ClipOval(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                width: discSize,
-                height: discSize,
-                color: GoogieColors.cream.withValues(alpha: 0.3),
+          // Frosted-blur scalloped "cookie" shape behind the logo (Material 3
+          // Expressive signature). It blurs the cards under it so the badge
+          // pops, and slowly rotates on its own — independent of the logo spin.
+          RotationTransition(
+            turns: _scallopController,
+            child: ClipPath(
+              clipper: _ScallopClipper(),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  width: discSize,
+                  height: discSize,
+                  color: GoogieColors.cream.withValues(alpha: 0.3),
+                ),
               ),
             ),
           ),
@@ -141,4 +157,39 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
       ),
     );
   }
+}
+
+/// Clips to a smooth scalloped "cookie" shape — radius gently modulated by a
+/// cosine so the edge ripples into soft lobes (Material 3 Expressive shape).
+class _ScallopClipper extends CustomClipper<Path> {
+  /// Number of lobes around the edge.
+  static const lobes = 12;
+
+  /// How far the lobes bulge, as a fraction of the radius.
+  static const depth = 0.06;
+
+  @override
+  Path getClip(Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final base = size.shortestSide / 2;
+    final path = Path();
+    const steps = 240;
+    for (var i = 0; i <= steps; i++) {
+      final theta = i / steps * 2 * math.pi;
+      final r = base * (1 - depth) + base * depth * math.cos(lobes * theta);
+      final x = cx + r * math.cos(theta);
+      final y = cy + r * math.sin(theta);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant _ScallopClipper old) => false;
 }

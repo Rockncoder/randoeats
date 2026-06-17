@@ -38,17 +38,20 @@ class RestaurantCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 3,
+      elevation: 2,
+      color: GoogieColors.cardTint,
+      surfaceTintColor: GoogieColors.turquoise,
+      shadowColor: GoogieColors.deepTeal.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(
-          color: GoogieColors.chrome,
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: GoogieColors.turquoise.withValues(alpha: 0.35),
           width: 1.5,
         ),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -80,7 +83,7 @@ class RestaurantCard extends StatelessWidget {
     );
 
     final photo = ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
       child: Container(
         height: 80,
         decoration: BoxDecoration(
@@ -184,8 +187,8 @@ class RestaurantCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: restaurant.isOpen!
-                  ? GoogieColors.statusOpen.withValues(alpha: 0.16)
-                  : GoogieColors.statusClosed.withValues(alpha: 0.16),
+                  ? GoogieColors.statusOpenContainer
+                  : GoogieColors.coralContainer,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

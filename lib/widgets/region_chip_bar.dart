@@ -144,7 +144,11 @@ class _ScopeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? GoogieColors.white : GoogieColors.deepTeal;
+    // Scope chips read "warm" (mustard tonal) to set the row apart from the
+    // cool turquoise filter row; the active scope lifts with coral + elevation.
+    final foreground = selected
+        ? GoogieColors.white
+        : GoogieColors.onMustardContainer;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: GestureDetector(
@@ -156,11 +160,18 @@ class _ScopeChip extends StatelessWidget {
           showCheckmark: false,
           labelStyle: TextStyle(
             color: foreground,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
           selectedColor: GoogieColors.coral,
-          backgroundColor: GoogieColors.cream,
-          side: const BorderSide(color: GoogieColors.chrome),
+          backgroundColor: GoogieColors.mustardContainer,
+          elevation: selected ? 3 : 0,
+          pressElevation: 4,
+          shadowColor: GoogieColors.coral.withValues(alpha: 0.5),
+          side: BorderSide(
+            color: selected
+                ? Colors.transparent
+                : GoogieColors.mustard.withValues(alpha: 0.7),
+          ),
           onSelected: (_) => onTap(),
         ),
       ),

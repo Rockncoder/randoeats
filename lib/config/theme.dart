@@ -31,6 +31,34 @@ abstract final class GoogieColors {
   /// than raw `Colors.red`. WCAG AA as text on cream/white (~5:1).
   static const statusClosed = Color(0xFFC4452F);
 
+  // --- M3 tonal "container" roles, drawn from the Googie accents. Used for
+  // tinted surfaces (cards, chips, info pills) so the UI reads colorful and
+  // layered instead of flat white-on-cream. `on*` colors are AA on their fill.
+
+  /// Soft turquoise fill (primaryContainer).
+  static const turquoiseContainer = Color(0xFFCBEFE9);
+
+  /// Text/icon on [turquoiseContainer].
+  static const onTurquoiseContainer = Color(0xFF06423C);
+
+  /// Soft coral fill (secondaryContainer).
+  static const coralContainer = Color(0xFFFFDAD2);
+
+  /// Text/icon on [coralContainer].
+  static const onCoralContainer = Color(0xFF5A160B);
+
+  /// Soft mustard fill (tertiaryContainer).
+  static const mustardContainer = Color(0xFFFAE9B0);
+
+  /// Text/icon on [mustardContainer].
+  static const onMustardContainer = Color(0xFF3F3300);
+
+  /// Soft "open" green fill, paired with [statusOpen] text.
+  static const statusOpenContainer = Color(0xFFCDEBD9);
+
+  /// Slightly cool, turquoise-tinted card surface (vs. flat white).
+  static const cardTint = Color(0xFFF3FBF9);
+
   /// Text color, dark mode background
   static const spaceBlack = Color(0xFF1A1A2E);
 
@@ -144,11 +172,24 @@ abstract final class GoogieTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: GoogieColors.turquoise,
         primary: GoogieColors.turquoise,
+        onPrimary: GoogieColors.spaceBlack,
+        primaryContainer: GoogieColors.turquoiseContainer,
+        onPrimaryContainer: GoogieColors.onTurquoiseContainer,
         secondary: GoogieColors.coral,
+        onSecondary: GoogieColors.white,
+        secondaryContainer: GoogieColors.coralContainer,
+        onSecondaryContainer: GoogieColors.onCoralContainer,
         tertiary: GoogieColors.mustard,
+        onTertiary: GoogieColors.spaceBlack,
+        tertiaryContainer: GoogieColors.mustardContainer,
+        onTertiaryContainer: GoogieColors.onMustardContainer,
         surface: GoogieColors.white,
         onSurface: GoogieColors.spaceBlack,
+        surfaceContainerLowest: GoogieColors.white,
+        surfaceContainerLow: GoogieColors.cardTint,
+        surfaceContainer: GoogieColors.cardTint,
         surfaceContainerHighest: GoogieColors.cream,
+        outlineVariant: GoogieColors.chrome,
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: GoogieColors.cream,

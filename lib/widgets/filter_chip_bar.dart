@@ -160,7 +160,11 @@ class _FacetChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? GoogieColors.white : GoogieColors.deepTeal;
+    // Filter chips read "cool" (turquoise tonal) vs. the scope row's warm
+    // mustard, and the selected state lifts with coral + elevation.
+    final foreground = selected
+        ? GoogieColors.white
+        : GoogieColors.onTurquoiseContainer;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: ChoiceChip(
@@ -168,10 +172,17 @@ class _FacetChip extends StatelessWidget {
         label: Text(label),
         selected: selected,
         showCheckmark: false,
-        labelStyle: TextStyle(color: foreground, fontWeight: FontWeight.w600),
+        labelStyle: TextStyle(color: foreground, fontWeight: FontWeight.w700),
         selectedColor: GoogieColors.coral,
-        backgroundColor: GoogieColors.cream,
-        side: const BorderSide(color: GoogieColors.chrome),
+        backgroundColor: GoogieColors.turquoiseContainer,
+        elevation: selected ? 3 : 0,
+        pressElevation: 4,
+        shadowColor: GoogieColors.coral.withValues(alpha: 0.5),
+        side: BorderSide(
+          color: selected
+              ? Colors.transparent
+              : GoogieColors.turquoise.withValues(alpha: 0.35),
+        ),
         onSelected: (_) => onToggle(),
       ),
     );

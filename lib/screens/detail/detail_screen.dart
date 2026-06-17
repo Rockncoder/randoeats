@@ -24,6 +24,8 @@ class DetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Destination Locked!'),
+        backgroundColor: GoogieColors.turquoiseContainer,
+        foregroundColor: GoogieColors.onTurquoiseContainer,
         leading: IconButton(
           key: const ValueKey('detail_back'),
           icon: const Icon(Icons.arrow_back),
@@ -45,7 +47,17 @@ class DetailScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildInfo(context, theme),
-                    const Divider(height: 24, indent: 16, endIndent: 16),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: WavyLine(
+                        secondaryColor: GoogieColors.coral,
+                        height: 18,
+                        amplitude: 4,
+                        wavelength: 34,
+                        strokeWidth: 3,
+                        speed: 0.5,
+                      ),
+                    ),
                     _buildActions(context, theme),
                     const SizedBox(height: 24),
                     _buildRatingSection(context, ref, theme),
@@ -177,8 +189,10 @@ class DetailScreen extends ConsumerWidget {
               if (restaurant.rating != null)
                 _buildChip(
                   icon: Icons.star,
-                  iconColor: GoogieColors.mustard,
+                  iconColor: GoogieColors.onMustardContainer,
                   label: _formatRating(),
+                  fill: GoogieColors.mustardContainer,
+                  textColor: GoogieColors.onMustardContainer,
                   theme: theme,
                 ),
               // Price level — the "$$" string already reads as price, so no
@@ -186,6 +200,8 @@ class DetailScreen extends ConsumerWidget {
               if (restaurant.priceLevel != null)
                 _buildChip(
                   label: restaurant.priceLevel!,
+                  fill: GoogieColors.turquoiseContainer,
+                  textColor: GoogieColors.onTurquoiseContainer,
                   theme: theme,
                 ),
               // Open status
@@ -196,6 +212,12 @@ class DetailScreen extends ConsumerWidget {
                       ? GoogieColors.statusOpen
                       : GoogieColors.statusClosed,
                   label: restaurant.isOpen! ? 'Open' : 'Closed',
+                  fill: restaurant.isOpen!
+                      ? GoogieColors.statusOpenContainer
+                      : GoogieColors.coralContainer,
+                  textColor: restaurant.isOpen!
+                      ? GoogieColors.statusOpen
+                      : GoogieColors.onCoralContainer,
                   theme: theme,
                 ),
             ],
@@ -256,15 +278,14 @@ class DetailScreen extends ConsumerWidget {
     required ThemeData theme,
     IconData? icon,
     Color? iconColor,
+    Color fill = GoogieColors.white,
+    Color? textColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: fill,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: GoogieColors.chrome,
-        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -277,6 +298,7 @@ class DetailScreen extends ConsumerWidget {
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
         ],
@@ -294,17 +316,16 @@ class DetailScreen extends ConsumerWidget {
 
   Widget _buildCategoryChip(String type, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: GoogieColors.deepTeal.withValues(alpha: 0.12),
+        color: GoogieColors.turquoiseContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: GoogieColors.deepTeal.withValues(alpha: 0.4)),
       ),
       child: Text(
         _prettyType(type),
         style: theme.textTheme.bodySmall?.copyWith(
-          color: GoogieColors.deepTeal,
-          fontWeight: FontWeight.w600,
+          color: GoogieColors.onTurquoiseContainer,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -330,13 +351,26 @@ class DetailScreen extends ConsumerWidget {
     // iPad infinite-width layout assert.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ElevatedButton.icon(
-        key: const ValueKey('detail_navigate'),
-        onPressed: () => _openMaps(context),
-        icon: const Icon(Icons.navigation),
-        label: const Text('Directions'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Pulse(
+        child: FilledButton.icon(
+          key: const ValueKey('detail_navigate'),
+          onPressed: () => _openMaps(context),
+          icon: const Icon(Icons.navigation),
+          label: const Text('Directions'),
+          style: FilledButton.styleFrom(
+            backgroundColor: GoogieColors.coral,
+            foregroundColor: GoogieColors.white,
+            minimumSize: const Size(double.infinity, 56),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
         ),
       ),
     );
@@ -376,7 +410,8 @@ class DetailScreen extends ConsumerWidget {
                   ratingType: RatingType.thumbsUp,
                   icon: Icons.thumb_up,
                   label: 'Good Pick!',
-                  color: Colors.green,
+                  color: GoogieColors.statusOpen,
+                  containerColor: GoogieColors.statusOpenContainer,
                   theme: theme,
                 ),
               ),
@@ -388,7 +423,8 @@ class DetailScreen extends ConsumerWidget {
                   ratingType: RatingType.thumbsDown,
                   icon: Icons.thumb_down,
                   label: 'Not For Me',
-                  color: Colors.red,
+                  color: GoogieColors.statusClosed,
+                  containerColor: GoogieColors.coralContainer,
                   theme: theme,
                 ),
               ),
@@ -406,6 +442,7 @@ class DetailScreen extends ConsumerWidget {
     required IconData icon,
     required String label,
     required Color color,
+    required Color containerColor,
     required ThemeData theme,
   }) {
     final existingRating = StorageService.instance.getRating(
@@ -416,7 +453,7 @@ class DetailScreen extends ConsumerWidget {
     return Semantics(
       label: label,
       button: true,
-      child: OutlinedButton(
+      child: FilledButton.tonal(
         key: ValueKey('detail_rate_${ratingType.name}'),
         onPressed: () async {
           final rating = UserRating(
@@ -457,11 +494,13 @@ class DetailScreen extends ConsumerWidget {
             context.go(AppRoutes.results);
           }
         },
-        style: OutlinedButton.styleFrom(
-          foregroundColor: isSelected ? Colors.white : color,
-          backgroundColor: isSelected ? color : Colors.transparent,
-          side: BorderSide(color: color, width: 2),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+        style: FilledButton.styleFrom(
+          foregroundColor: isSelected ? GoogieColors.white : color,
+          backgroundColor: isSelected ? color : containerColor,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: Icon(icon, size: 28),
       ),
