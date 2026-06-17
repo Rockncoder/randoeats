@@ -327,7 +327,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       onTap: () => ref.read(themeProvider.notifier).select(appTheme),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 104,
+        width: 118,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: p.cream,
@@ -356,7 +356,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _swatchDot(p.mustard),
                 const Spacer(),
                 if (selected)
-                  Icon(Icons.check_circle, size: 18, color: GoogieColors.coral),
+                  Icon(Icons.check_circle, size: 16, color: GoogieColors.coral),
               ],
             ),
             const SizedBox(height: 12),
@@ -375,9 +375,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _swatchDot(Color color) {
     return Container(
-      width: 18,
-      height: 18,
-      margin: const EdgeInsets.only(right: 5),
+      width: 16,
+      height: 16,
+      margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
