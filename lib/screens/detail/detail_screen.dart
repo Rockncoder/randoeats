@@ -23,7 +23,7 @@ class DetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Destination Locked!'),
+        title: const Text('Your Destination'),
         backgroundColor: GoogieColors.turquoiseContainer,
         foregroundColor: GoogieColors.onTurquoiseContainer,
         leading: IconButton(
