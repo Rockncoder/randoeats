@@ -22,7 +22,9 @@ void main() {
         (image.image as AssetImage).assetName,
         'assets/images/rand-o-eats-badge.png',
       );
-      expect(find.byType(ClipOval), findsOneWidget);
+      // Two ovals: the logo plus the frosted blur disc behind it.
+      expect(find.byType(ClipOval), findsNWidgets(2));
+      expect(find.byType(BackdropFilter), findsOneWidget);
       expect(find.text('RAND-O-EATS!'), findsNothing);
     });
 
