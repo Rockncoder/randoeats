@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
@@ -483,7 +482,9 @@ class DetailScreen extends ConsumerWidget {
               ),
             );
 
-            // For thumbs down, remove from list; for thumbs up, just go back
+            // For thumbs down, remove from list; for thumbs up, just go back.
+            // pop() returns to results for both the container-transform route
+            // and the go_router push (winner-celebration) flow.
             if (ratingType == RatingType.thumbsDown) {
               ref
                   .read(discoveryProvider.notifier)
@@ -491,7 +492,7 @@ class DetailScreen extends ConsumerWidget {
                     restaurant.placeId,
                   );
             }
-            context.go(AppRoutes.results);
+            context.pop();
           }
         },
         style: FilledButton.styleFrom(

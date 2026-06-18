@@ -9,6 +9,7 @@ import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
+import 'package:randoeats/screens/detail/detail_screen.dart';
 import 'package:randoeats/services/services.dart';
 import 'package:randoeats/widgets/widgets.dart';
 
@@ -190,11 +191,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   void _onDirectTap(Restaurant restaurant) {
+    // Records the selection only; the card's container transform handles the
+    // navigation into the detail page (see MultiReelSlotMachine.detailBuilder).
     unawaited(
       ref.read(discoveryProvider.notifier).selectRestaurant(restaurant),
     );
-
-    unawaited(context.push<void>(AppRoutes.detail, extra: restaurant));
   }
 
   void _navigateToSettings() {
@@ -520,6 +521,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       restaurants: state.restaurants,
       onRestaurantTap: _onDirectTap,
       onSpinComplete: _onSpinComplete,
+      detailBuilder: (restaurant) => DetailScreen(restaurant: restaurant),
       calmMode: calmMode,
     );
   }
