@@ -36,6 +36,7 @@ dependencies:
   url_launcher: ^6.3.1
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.4
   flutter_test:
     sdk: flutter
@@ -58,10 +59,22 @@ flutter:
 
 flutter_native_splash:
   color: "#F5F0E1"
-  image: assets/images/rand-o-eats.png
+  image: assets/images/rand-o-eats-new.png
   android_12:
     color: "#F5F0E1"
-    image: assets/images/rand-o-eats.png
+    image: assets/images/rand-o-eats-new.png
   web: true
   ios: true
   android: true
+
+flutter_launcher_icons:
+  image_path: "assets/images/rand-o-eats-new.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#F5F0E1"
+  web:
+    generate: true
+    image_path: "assets/images/rand-o-eats-new.png"
+    background_color: "#F5F0E1"
+    theme_color: "#F5F0E1"
