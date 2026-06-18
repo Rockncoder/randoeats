@@ -20,6 +20,9 @@ abstract class AppRoutes {
 
   /// Region draw screen (create a new region).
   static const regionDraw = '/region/draw';
+
+  /// About screen.
+  static const about = '/about';
 }
 
 /// Provider for the app router.
@@ -56,6 +59,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.regionDraw,
         builder: (context, state) => const RegionDrawScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.about,
+        builder: (context, state) => const AboutScreen(),
       ),
     ],
   );
