@@ -43,6 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
 
     final result = await LocationService.instance.getCurrentLocation();
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
