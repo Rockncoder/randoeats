@@ -61,7 +61,7 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
 
   /// How long the winner is held — expanded + announced — before the
   /// celebration/handoff fires, so the result is unmistakable.
-  static const Duration _revealHold = Duration(milliseconds: 650);
+  static const Duration _revealHold = Duration(milliseconds: 1300);
 
   final _random = math.Random();
   final List<GlobalKey<_ReelState>> _reelKeys = [];
@@ -440,16 +440,59 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
                   ),
               ],
             );
-            // The winning cell expands to make the result unmistakable.
-            return AnimatedScale(
-              scale: isWinnerCell ? 1.04 : 1,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutBack,
-              child: cell,
-            );
+            // The winning cell pulses (shrink + grow) with a subtle shake so
+            // the chosen card is unmistakable before the detail screen opens.
+            return isWinnerCell ? _WinnerPulse(child: cell) : cell;
           },
         ),
       ),
+    );
+  }
+}
+
+/// Attention animation for the winning cell: a repeating shrink↔grow pulse with
+/// a subtle rocking shake, so the chosen card stands out before the detail
+/// screen opens.
+class _WinnerPulse extends StatefulWidget {
+  const _WinnerPulse({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_WinnerPulse> createState() => _WinnerPulseState();
+}
+
+class _WinnerPulseState extends State<_WinnerPulse>
+    with SingleTickerProviderStateMixin {
+  // A finite burst (~3 shrink/grow pulses) that decays to rest, so it reads as
+  // a clear "this is your pick!" and still settles (no perpetual animation).
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..forward();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final v = _controller.value;
+        final decay = 1 - v; // fade the emphasis out toward rest
+        final osc = math.sin(v * math.pi * 2 * 3); // 3 grow/shrink cycles
+        final scale = 1 + 0.11 * osc * decay;
+        final angle = 0.03 * osc * decay; // subtle rocking shake
+        return Transform.rotate(
+          angle: angle,
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
     );
   }
 }

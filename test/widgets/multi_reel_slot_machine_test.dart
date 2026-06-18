@@ -124,7 +124,7 @@ void main() {
     expect(machineKey.currentState!.isSpinning, isFalse);
     expect(winner, isNull); // reveal hold not elapsed yet
 
-    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 1400));
     expect(winner, isNotNull);
     expect(restaurants.map((r) => r.placeId), contains(winner!.placeId));
 
