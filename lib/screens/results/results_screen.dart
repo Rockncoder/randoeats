@@ -341,7 +341,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             Column(
               children: [
                 // Top bar with refresh and settings
-                _buildTopBar(isSpinning, canRefresh),
+                _buildTopBar(isSpinning, canRefresh, state.restaurants.length),
                 // One-tap scope picker: Near Me + saved regions + New Area
                 RegionChipBar(
                   regions: _regions,
@@ -460,7 +460,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
-  Widget _buildTopBar(bool isSpinning, bool canRefresh) {
+  Widget _buildTopBar(bool isSpinning, bool canRefresh, int count) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -473,6 +474,23 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               iconSize: 28,
               onPressed: isSpinning ? null : _refreshRestaurants,
               tooltip: 'Find new restaurants',
+            ),
+          // How many spots are in the reel right now.
+          if (canRefresh && count > 0)
+            Container(
+              key: const ValueKey('result_count'),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: GoogieColors.turquoiseContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '$count ${count == 1 ? 'spot' : 'spots'}',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: GoogieColors.deepTeal,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           const Spacer(),
           // Quick tune (radius + price) in an M3 bottom sheet.
