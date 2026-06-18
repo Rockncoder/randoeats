@@ -61,6 +61,10 @@
 		<!-- AdMob App ID (test ID — replace for production) -->
 		<key>GADApplicationIdentifier</key>
 		<string>ca-app-pub-3940256099942544~1458002511</string>
+		<!-- Google Maps SDK key, substituted from Secrets.xcconfig (gitignored)
+		     via the MAPS_API_KEY build setting; read in AppDelegate. -->
+		<key>GMSApiKey</key>
+		<string>$(MAPS_API_KEY)</string>
 		<key>SKAdNetworkItems</key>
 		<array>
 			<dict>

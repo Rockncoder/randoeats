@@ -19,6 +19,12 @@ class Restaurant extends Equatable {
     this.photoReference,
     this.isOpen,
     this.totalRatings,
+    this.servesBeer,
+    this.outdoorSeating,
+    this.goodForGroups,
+    this.hasParking,
+    this.phoneNumber,
+    this.weekdayHours,
   });
 
   /// Creates a [Restaurant] from Places API (New) response.
@@ -40,6 +46,14 @@ class Restaurant extends Equatable {
       photoReference: _extractPhotoName(photos),
       isOpen: openingHours?['openNow'] as bool?,
       totalRatings: json['userRatingCount'] as int?,
+      servesBeer: json['servesBeer'] as bool?,
+      outdoorSeating: json['outdoorSeating'] as bool?,
+      goodForGroups: json['goodForGroups'] as bool?,
+      hasParking: _parseParking(
+        json['parkingOptions'] as Map<String, dynamic>?,
+      ),
+      phoneNumber: json['nationalPhoneNumber'] as String?,
+      weekdayHours: _parseWeekdayHours(openingHours),
     );
   }
 
@@ -87,6 +101,32 @@ class Restaurant extends Equatable {
   @HiveField(10)
   final int? totalRatings;
 
+  /// Serves beer — a Places "atmosphere" field (null = unknown).
+  @HiveField(11)
+  final bool? servesBeer;
+
+  /// Whether the place has outdoor seating / a patio (null = unknown).
+  @HiveField(12)
+  final bool? outdoorSeating;
+
+  /// Whether the place is good for groups (null = unknown).
+  @HiveField(13)
+  final bool? goodForGroups;
+
+  /// Whether the place has any parking option (null = unknown).
+  @HiveField(14)
+  final bool? hasParking;
+
+  /// National-format phone number (e.g. "(415) 555-0123"); null = unknown.
+  @HiveField(15)
+  final String? phoneNumber;
+
+  /// Human-readable opening hours, one localized line per day from Places
+  /// `currentOpeningHours.weekdayDescriptions` (e.g. "Monday: 9:00 AM –
+  /// 5:00 PM"); null/empty = unknown.
+  @HiveField(16)
+  final List<String>? weekdayHours;
+
   /// Parses price level from new API enum string format.
   static String? _parsePriceLevelNew(String? level) {
     if (level == null) return null;
@@ -101,6 +141,20 @@ class Restaurant extends Equatable {
       'PRICE_LEVEL_VERY_EXPENSIVE' => r'$$$$',
       _ => null,
     };
+  }
+
+  /// Pulls the per-day opening-hours strings from a Places opening-hours map.
+  static List<String>? _parseWeekdayHours(Map<String, dynamic>? hours) {
+    final descriptions = hours?['weekdayDescriptions'] as List<dynamic>?;
+    if (descriptions == null || descriptions.isEmpty) return null;
+    return descriptions.map((e) => e.toString()).toList();
+  }
+
+  /// True if any parking option is available (Places `parkingOptions` is a map
+  /// of booleans like freeParkingLot/paidParkingLot/freeStreetParking).
+  static bool? _parseParking(Map<String, dynamic>? parking) {
+    if (parking == null) return null;
+    return parking.values.any((v) => v == true);
   }
 
   /// Extracts photo name from new API photos array.
@@ -145,5 +199,11 @@ class Restaurant extends Equatable {
     photoReference,
     isOpen,
     totalRatings,
+    servesBeer,
+    outdoorSeating,
+    goodForGroups,
+    hasParking,
+    phoneNumber,
+    weekdayHours,
   ];
 }

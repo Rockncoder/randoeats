@@ -19,12 +19,17 @@ class StorageService {
   static const String _recentPicksBox = 'recent_picks';
   static const String _settingsBox = 'settings';
   static const String _visitedPlacesBox = 'visited_places';
+  static const String _savedRegionsBox = 'saved_regions';
+  static const String _prefsBox = 'prefs';
   static const String _settingsKey = 'user_settings';
+  static const String _themeKey = 'theme_id';
 
   late Box<UserRating> _ratings;
   late Box<RecentPick> _recentPicks;
   late Box<UserSettings> _settings;
   late Box<VisitedPlace> _visitedPlaces;
+  late Box<SavedRegion> _regions;
+  late Box<dynamic> _prefs;
 
   bool _isInitialized = false;
 
@@ -38,8 +43,33 @@ class StorageService {
     if (_isInitialized) return;
 
     await Hive.initFlutter();
+    _registerAdapters();
+    await _openBoxes();
 
-    // Register type adapters
+    _isInitialized = true;
+    debugPrint('StorageService initialized');
+  }
+
+  /// Initializes storage against a plain directory ([path]) instead of the
+  /// platform documents directory.
+  ///
+  /// Use only in tests, where `Hive.initFlutter()` (which needs platform
+  /// plugins) is unavailable.
+  @visibleForTesting
+  Future<void> initializeForTest(String path) async {
+    if (_isInitialized) return;
+
+    Hive.init(path);
+    _registerAdapters();
+    await _openBoxes();
+
+    _isInitialized = true;
+  }
+
+  /// Registers all type adapters. Idempotent so it is safe to call from both
+  /// the production and test initializers (and across repeated test runs).
+  void _registerAdapters() {
+    if (Hive.isAdapterRegistered(1)) return;
     Hive
       ..registerAdapter(RatingTypeAdapter())
       ..registerAdapter(UserRatingAdapter())
@@ -47,17 +77,29 @@ class StorageService {
       ..registerAdapter(DistanceUnitAdapter())
       ..registerAdapter(UserSettingsAdapter())
       ..registerAdapter(RestaurantAdapter())
-      ..registerAdapter(VisitedPlaceAdapter());
+      ..registerAdapter(VisitedPlaceAdapter())
+      ..registerAdapter(SavedRegionAdapter())
+      ..registerAdapter(SpotFiltersAdapter());
+  }
 
-    // Open boxes
+  Future<void> _openBoxes() async {
     _ratings = await Hive.openBox<UserRating>(_ratingsBox);
     _recentPicks = await Hive.openBox<RecentPick>(_recentPicksBox);
     _settings = await Hive.openBox<UserSettings>(_settingsBox);
     _visitedPlaces = await Hive.openBox<VisitedPlace>(_visitedPlacesBox);
-
-    _isInitialized = true;
-    debugPrint('StorageService initialized');
+    _regions = await Hive.openBox<SavedRegion>(_savedRegionsBox);
+    _prefs = await Hive.openBox<dynamic>(_prefsBox);
   }
+
+  // ============================================
+  // Preferences (lightweight key/value)
+  // ============================================
+
+  /// The persisted theme id, or null if the user hasn't chosen one.
+  String? getThemeId() => _prefs.get(_themeKey) as String?;
+
+  /// Persists the chosen theme id.
+  Future<void> setThemeId(String id) => _prefs.put(_themeKey, id);
 
   // ============================================
   // User Settings
@@ -235,6 +277,35 @@ class StorageService {
   }
 
   // ============================================
+  // Saved Regions
+  // ============================================
+
+  /// Gets all saved regions, most recently created first.
+  List<SavedRegion> getAllRegions() {
+    final regions = _regions.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return regions;
+  }
+
+  /// Gets a saved region by [id], or `null` if none exists.
+  SavedRegion? getRegion(String id) => _regions.get(id);
+
+  /// Saves (inserts or updates) a region, keyed by its [SavedRegion.id].
+  Future<void> saveRegion(SavedRegion region) async {
+    await _regions.put(region.id, region);
+  }
+
+  /// Deletes the region with the given [id].
+  Future<void> deleteRegion(String id) async {
+    await _regions.delete(id);
+  }
+
+  /// Clears all saved regions.
+  Future<void> clearRegions() async {
+    await _regions.clear();
+  }
+
+  // ============================================
   // Utility Methods
   // ============================================
 
@@ -264,6 +335,7 @@ class StorageService {
       _recentPicks.close(),
       _settings.close(),
       _visitedPlaces.close(),
+      _regions.close(),
     ]);
   }
 }

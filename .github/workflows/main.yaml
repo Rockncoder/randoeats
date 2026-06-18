@@ -11,6 +11,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   semantic-pull-request:
@@ -21,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
@@ -40,6 +41,13 @@ jobs:
 
       - name: 🧪 Run Tests
         run: flutter test --no-pub --coverage
+
+      - name: 📊 Check Coverage
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 40
+          exclude: "**/*.g.dart **/l10n/**"
 
   spell-check:
     if: ${{ github.actor != 'dependabot[bot]' }}

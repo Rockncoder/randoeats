@@ -48,6 +48,12 @@ void main() {
         'photo_ref_123',
         true,
         100,
+        null, // servesBeer
+        null, // outdoorSeating
+        null, // goodForGroups
+        null, // hasParking
+        null, // phoneNumber
+        null, // weekdayHours
       ]);
     });
 
@@ -83,7 +89,19 @@ void main() {
           ],
           'primaryType': 'restaurant',
           'types': ['restaurant', 'food', 'establishment'],
-          'currentOpeningHours': {'openNow': true},
+          'nationalPhoneNumber': '(415) 555-0123',
+          'currentOpeningHours': {
+            'openNow': true,
+            'weekdayDescriptions': [
+              'Monday: 9:00 AM – 5:00 PM',
+              'Tuesday: 9:00 AM – 5:00 PM',
+              'Wednesday: 9:00 AM – 5:00 PM',
+              'Thursday: 9:00 AM – 5:00 PM',
+              'Friday: 9:00 AM – 5:00 PM',
+              'Saturday: Closed',
+              'Sunday: Closed',
+            ],
+          },
         };
 
         final result = Restaurant.fromPlacesApiNew(json);
@@ -99,6 +117,10 @@ void main() {
         expect(result.photoReference, 'places/abc/photos/xyz');
         expect(result.types, contains('restaurant'));
         expect(result.isOpen, true);
+        expect(result.phoneNumber, '(415) 555-0123');
+        expect(result.weekdayHours, hasLength(7));
+        expect(result.weekdayHours?.first, 'Monday: 9:00 AM – 5:00 PM');
+        expect(result.weekdayHours?.last, 'Sunday: Closed');
       });
 
       test('handles missing optional fields', () {
@@ -118,6 +140,7 @@ void main() {
         expect(result.photoReference, isNull);
         expect(result.isOpen, isNull);
         expect(result.totalRatings, isNull);
+        expect(result.phoneNumber, isNull);
       });
 
       test('handles null id', () {

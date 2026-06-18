@@ -1,0 +1,13 @@
+# Spin to a winner, open the detail, and give it a thumbs-up.
+appId: com.tekadept.randoeats
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "spin_button"
+- assertVisible:
+    text: "Destination Locked!"
+    timeout: 20000
+- tapOn: "Good Pick!"
+# Thumbs-up returns to the results screen.
+- assertVisible: "Near Me"

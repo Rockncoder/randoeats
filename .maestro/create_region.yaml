@@ -1,0 +1,15 @@
+# Reach the region draw screen and enter draw mode.
+#
+# LIMITATION: Maestro has no freehand multi-point gesture, and a straight
+# `swipe` collapses to fewer than 3 vertices (so no polygon forms). The actual
+# lasso trace + auto-name + save therefore needs MANUAL verification. This flow
+# confirms the draw screen is reachable and draw mode engages.
+appId: com.tekadept.randoeats
+---
+- launchApp:
+    clearState: true
+- tapOn: "New Area"
+- assertVisible: "Draw an Area"
+- tapOn: "Draw"
+- assertVisible: "Trace a loop around your area, then lift your finger"
+- takeScreenshot: region_draw_mode

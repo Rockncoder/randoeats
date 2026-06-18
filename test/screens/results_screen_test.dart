@@ -57,7 +57,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(WavyLine), findsOneWidget);
       expect(find.text('Scanning nearby quadrants...'), findsOneWidget);
     });
 
@@ -100,7 +100,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(SlotMachineList), findsOneWidget);
+      expect(find.byType(MultiReelSlotMachine), findsOneWidget);
       expect(find.byType(RandoEatsButton), findsOneWidget);
     });
 
@@ -158,7 +158,7 @@ void main() {
         ),
       );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(WavyLine), findsOneWidget);
     });
 
     testWidgets('renders warning icon in error state', (tester) async {

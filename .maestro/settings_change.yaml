@@ -1,0 +1,11 @@
+# Open settings from the results screen and return.
+appId: com.tekadept.randoeats
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "settings_button"
+- assertVisible: "Settings"
+- takeScreenshot: settings_screen
+- back
+- assertVisible: "Near Me"
