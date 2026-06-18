@@ -68,7 +68,10 @@ platform :ios do
 
   desc "Generate App Store screenshots via integration tests on iOS simulators"
   lane :screenshots do
-    sh("mkdir -p fastlane/screenshots/en-US")
+    # Absolute dest (anchored to this Fastfile) so copies don't depend on the
+    # working directory fastlane/Ruby happen to be in.
+    dest_dir = File.join(__dir__, "screenshots", "en-US")
+    FileUtils.mkdir_p(dest_dir)
 
     target = "integration_test/screenshot_test.dart"
     tmp_dir = "/tmp/flutter_screenshots"
@@ -86,7 +89,7 @@ platform :ios do
 
     Dir.glob("#{tmp_dir}/*.png").each do |src|
       name = File.basename(src, ".png")
-      FileUtils.cp(src, "../fastlane/screenshots/en-US/#{name}_iphone.png")
+      FileUtils.cp(src, File.join(dest_dir, "#{name}_iphone.png"))
     end
 
     # --- iPad ---
@@ -102,7 +105,7 @@ platform :ios do
 
     Dir.glob("#{tmp_dir}/*.png").each do |src|
       name = File.basename(src, ".png")
-      FileUtils.cp(src, "../fastlane/screenshots/en-US/#{name}_ipad.png")
+      FileUtils.cp(src, File.join(dest_dir, "#{name}_ipad.png"))
     end
 
     UI.success("Screenshots generated in fastlane/screenshots/en-US/")

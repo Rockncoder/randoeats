@@ -9,16 +9,19 @@ import 'package:integration_test/integration_test.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/screens/screens.dart';
+import 'package:randoeats/services/services.dart';
 
 import 'helpers/mock_providers.dart';
 
 late Directory _screenshotDir;
 
 void main() {
-  setUpAll(() {
+  setUpAll(() async {
     IntegrationTestWidgetsFlutterBinding.ensureInitialized();
     _screenshotDir = Directory('/tmp/flutter_screenshots')
       ..createSync(recursive: true);
+    // Detail/Settings read StorageService directly, so the boxes must exist.
+    await StorageService.instance.initialize();
   });
 
   // ==================== Warm-up ====================

@@ -48,6 +48,15 @@ const List<Restaurant> sampleRestaurants = [
     types: ['restaurant', 'mexican_restaurant'],
     isOpen: true,
     totalRatings: 342,
+    weekdayHours: [
+      'Monday: 11:00 AM – 9:00 PM',
+      'Tuesday: 11:00 AM – 9:00 PM',
+      'Wednesday: 11:00 AM – 9:00 PM',
+      'Thursday: 11:00 AM – 10:00 PM',
+      'Friday: 11:00 AM – 11:00 PM',
+      'Saturday: 10:00 AM – 11:00 PM',
+      'Sunday: 10:00 AM – 9:00 PM',
+    ],
   ),
   Restaurant(
     placeId: '4',
