@@ -219,6 +219,16 @@ class DetailScreen extends ConsumerWidget {
                       : GoogieColors.onCoralContainer,
                   theme: theme,
                 ),
+              // Parking — shown when Google reports a parking option.
+              if (restaurant.hasParking ?? false)
+                _buildChip(
+                  icon: Icons.local_parking,
+                  iconColor: GoogieColors.onTurquoiseContainer,
+                  label: 'Parking',
+                  fill: GoogieColors.turquoiseContainer,
+                  textColor: GoogieColors.onTurquoiseContainer,
+                  theme: theme,
+                ),
             ],
           ),
           // Opening hours — today's line, tap to expand the whole week.

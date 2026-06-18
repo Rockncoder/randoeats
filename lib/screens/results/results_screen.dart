@@ -492,8 +492,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               onPressed: isSpinning ? null : _refreshRestaurants,
               tooltip: 'Find new restaurants',
             ),
-          // How many spots are in the reel right now.
-          if (canRefresh && count > 0)
+          // How many spots are in the reel right now — kept visible during a
+          // spin too (the refresh button hides then, the count shouldn't).
+          if (count > 0)
             Container(
               key: const ValueKey('result_count'),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

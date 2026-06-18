@@ -73,6 +73,9 @@ platform :ios do
     dest_dir = File.join(__dir__, "screenshots", "en-US")
     FileUtils.mkdir_p(dest_dir)
 
+    # Bring the Simulator app up so booted devices register with the toolchain.
+    sh("open -a Simulator")
+
     target = "integration_test/screenshot_test.dart"
     tmp_dir = "/tmp/flutter_screenshots"
 
@@ -81,6 +84,9 @@ platform :ios do
     UI.message("Capturing iPhone screenshots on #{iphone_udid}...")
 
     sh("xcrun simctl boot #{iphone_udid} 2>/dev/null || true")
+    # Block until the device is fully booted — flutter test otherwise launches
+    # against a not-ready sim and hangs after the Xcode build.
+    sh("xcrun simctl bootstatus #{iphone_udid} -b")
     sh("rm -rf #{tmp_dir}")
     Dir.chdir("..") do
       sh("flutter test #{target} --flavor production -d #{iphone_udid}")
@@ -97,6 +103,7 @@ platform :ios do
     UI.message("Capturing iPad screenshots on #{ipad_udid}...")
 
     sh("xcrun simctl boot #{ipad_udid} 2>/dev/null || true")
+    sh("xcrun simctl bootstatus #{ipad_udid} -b")
     sh("rm -rf #{tmp_dir}")
     Dir.chdir("..") do
       sh("flutter test #{target} --flavor production -d #{ipad_udid}")
