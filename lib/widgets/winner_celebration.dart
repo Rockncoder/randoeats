@@ -197,7 +197,7 @@ class _WinnerCelebrationState extends State<WinnerCelebration>
                           ),
                         ],
                       ),
-                      child: const Text(
+                      child: Text(
                         'WINNER!',
                         style: TextStyle(
                           fontSize: 32,

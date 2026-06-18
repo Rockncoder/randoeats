@@ -7,7 +7,11 @@ import 'package:randoeats/services/services.dart';
 /// cell and the detail screen header so the photo flies between them.
 String restaurantPhotoHeroTag(String placeId) => 'restaurant_photo_$placeId';
 
-/// A card displaying restaurant information in Googie style.
+/// A full-bleed restaurant card: the photo fills the card, a dark scrim sits at
+/// the bottom, and the name + metadata are overlaid in white (M3 Expressive).
+///
+/// The inner height ([_innerHeight]) plus the card's vertical margin must equal
+/// the reel's `cardHeight` (176) so slot-machine spin math lands correctly.
 class RestaurantCard extends StatelessWidget {
   /// Creates a [RestaurantCard].
   const RestaurantCard({
@@ -32,43 +36,77 @@ class RestaurantCard extends StatelessWidget {
   /// duplicate Hero tags on the same route.
   final String? heroTag;
 
+  // 176 reel cardHeight - 2 * 8 vertical margin.
+  static const double _innerHeight = 160;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 3,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      // Tonal elevation (surface tint), no hard drop shadow.
+      elevation: 1,
+      color: GoogieColors.cardTint,
+      surfaceTintColor: GoogieColors.turquoise,
+      shadowColor: Colors.transparent,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(
-          color: GoogieColors.chrome,
-          width: 1.5,
+        borderRadius: BorderRadius.circular(28),
+        side: BorderSide(
+          color: GoogieColors.turquoise.withValues(alpha: 0.55),
+          width: 2.5,
         ),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Photo or placeholder
-            _buildPhoto(theme),
-            // Info section
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTitle(theme),
-                  const SizedBox(height: 4),
-                  _buildSubtitle(theme),
-                  const SizedBox(height: 8),
-                  _buildMetadata(theme),
-                ],
+      child: SizedBox(
+        height: _innerHeight,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildPhoto(theme),
+              // Bottom scrim (keeps white type legible) tinted with the theme's
+              // primary so each card carries the theme — warm in Autumn, cool
+              // in Winter, etc.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      const Color(0x00000000),
+                      Color.alphaBlend(
+                        GoogieColors.turquoise.withValues(alpha: 0.18),
+                        const Color(0x40000000),
+                      ),
+                      Color.alphaBlend(
+                        GoogieColors.turquoise.withValues(alpha: 0.55),
+                        const Color(0xE6000000),
+                      ),
+                    ],
+                    stops: const [0.32, 0.6, 1],
+                  ),
+                ),
               ),
-            ),
-          ],
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTitle(theme),
+                    const SizedBox(height: 2),
+                    _buildSubtitle(theme),
+                    const SizedBox(height: 8),
+                    _buildMetadata(theme),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -79,26 +117,21 @@ class RestaurantCard extends StatelessWidget {
       restaurant.photoReference,
     );
 
-    final photo = ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-      child: Container(
-        height: 80,
-        decoration: BoxDecoration(
-          color: GoogieColors.turquoise.withValues(alpha: 0.2),
-        ),
-        child: photoUrl != null
-            ? Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (_, error, stackTrace) => _buildPlaceholder(),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return _buildPlaceholder(isLoading: true);
-                },
-              )
-            : _buildPlaceholder(),
-      ),
+    final photo = ColoredBox(
+      color: GoogieColors.turquoise.withValues(alpha: 0.2),
+      child: photoUrl != null
+          ? Image.network(
+              photoUrl,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (_, error, stackTrace) => _buildPlaceholder(),
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return _buildPlaceholder(isLoading: true);
+              },
+            )
+          : _buildPlaceholder(),
     );
 
     if (heroTag == null) return photo;
@@ -108,13 +141,13 @@ class RestaurantCard extends StatelessWidget {
   Widget _buildPlaceholder({bool isLoading = false}) {
     return Center(
       child: isLoading
-          ? const CircularProgressIndicator(
+          ? CircularProgressIndicator(
               strokeWidth: 2,
               color: GoogieColors.turquoise,
             )
-          : const Icon(
+          : Icon(
               Icons.restaurant,
-              size: 36,
+              size: 44,
               color: GoogieColors.turquoise,
             ),
     );
@@ -123,9 +156,10 @@ class RestaurantCard extends StatelessWidget {
   Widget _buildTitle(ThemeData theme) {
     return Text(
       restaurant.name,
-      style: theme.textTheme.titleMedium?.copyWith(
+      style: theme.textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.bold,
-        color: GoogieColors.coral,
+        color: Colors.white,
+        shadows: const [Shadow(color: Color(0x99000000), blurRadius: 6)],
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -135,10 +169,10 @@ class RestaurantCard extends StatelessWidget {
   Widget _buildSubtitle(ThemeData theme) {
     return Text(
       restaurant.address,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: Colors.white.withValues(alpha: 0.85),
       ),
-      maxLines: 2,
+      maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
   }
@@ -148,12 +182,13 @@ class RestaurantCard extends StatelessWidget {
       children: [
         // Rating
         if (restaurant.rating != null) ...[
-          const Icon(Icons.star, size: 18, color: GoogieColors.mustard),
+          Icon(Icons.star, size: 18, color: GoogieColors.mustard),
           const SizedBox(width: 4),
           Text(
             restaurant.rating!.toStringAsFixed(1),
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
           if (restaurant.totalRatings != null) ...[
@@ -161,11 +196,11 @@ class RestaurantCard extends StatelessWidget {
             Text(
               '(${restaurant.totalRatings})',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Colors.white.withValues(alpha: 0.7),
               ),
             ),
           ],
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
         ],
         // Price level
         if (restaurant.priceLevel != null) ...[
@@ -173,29 +208,34 @@ class RestaurantCard extends StatelessWidget {
             restaurant.priceLevel!,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: GoogieColors.turquoise,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
         ],
-        // Open status
+        // Open status — solid pill so it reads over the photo.
         if (restaurant.isOpen != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
               color: restaurant.isOpen!
-                  ? Colors.green.withValues(alpha: 0.2)
-                  : Colors.red.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+                  ? GoogieColors.statusOpen
+                  : GoogieColors.statusClosed,
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               restaurant.isOpen! ? 'Open' : 'Closed',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: restaurant.isOpen! ? Colors.green : Colors.red,
+                color: Colors.white,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
+        // Phone indicator — this place can be called (tap through to detail).
+        if (restaurant.phoneNumber != null) ...[
+          const Spacer(),
+          const Icon(Icons.phone, size: 16, color: Colors.white),
+        ],
       ],
     );
   }

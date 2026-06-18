@@ -83,7 +83,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: GoogieColors.turquoise),
+            icon: Icon(Icons.settings, color: GoogieColors.turquoise),
             onPressed: () => unawaited(context.push<void>(AppRoutes.settings)),
           ),
         ],
@@ -142,7 +142,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               width: 3,
             ),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.restaurant_menu,
             size: 60,
             color: GoogieColors.turquoise,
@@ -196,7 +196,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         hintStyle: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search,
           color: GoogieColors.turquoise,
         ),
@@ -244,7 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(
+          SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(
@@ -275,7 +275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.location_off,
             color: GoogieColors.coral,
             size: 20,

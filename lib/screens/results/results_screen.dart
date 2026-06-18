@@ -9,6 +9,7 @@ import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
+import 'package:randoeats/screens/detail/detail_screen.dart';
 import 'package:randoeats/services/services.dart';
 import 'package:randoeats/widgets/widgets.dart';
 
@@ -27,6 +28,9 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   final GlobalKey<MultiReelSlotMachineState> _slotMachineKey = GlobalKey();
   bool _showCelebration = false;
+  // Whether the user dismissed the current advisory banner. Reset on each new
+  // search so the banner re-appears for fresh results.
+  bool _noticeDismissed = false;
   List<SavedRegion> _regions = [];
 
   @override
@@ -111,11 +115,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.star, color: GoogieColors.mustard),
-            SizedBox(width: 8),
-            Text('Save Spot'),
+            const SizedBox(width: 8),
+            const Text('Save Spot'),
           ],
         ),
         content: Column(
@@ -190,15 +194,109 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   void _onDirectTap(Restaurant restaurant) {
+    // Records the selection only; the card's container transform handles the
+    // navigation into the detail page (see MultiReelSlotMachine.detailBuilder).
     unawaited(
       ref.read(discoveryProvider.notifier).selectRestaurant(restaurant),
     );
-
-    unawaited(context.push<void>(AppRoutes.detail, extra: restaurant));
   }
 
   void _navigateToSettings() {
     unawaited(context.push<void>(AppRoutes.settings));
+  }
+
+  /// Opens an M3 bottom sheet for quick radius/price tweaks without leaving the
+  /// results screen.
+  Future<void> _openQuickTune() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        var settings = StorageService.instance.getSettings();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick tune',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: GoogieColors.deepTeal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Search radius', style: theme.textTheme.titleSmall),
+                  Text(
+                    settings.distanceUnit.format(
+                      settings.searchRadiusMeters.toDouble(),
+                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: GoogieColors.deepTeal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Slider(
+                    value: settings.searchRadiusMeters.toDouble().clamp(
+                      UserSettings.minSearchRadius.toDouble(),
+                      UserSettings.maxSearchRadius.toDouble(),
+                    ),
+                    min: UserSettings.minSearchRadius.toDouble(),
+                    max: UserSettings.maxSearchRadius.toDouble(),
+                    divisions: 19,
+                    activeColor: GoogieColors.turquoise,
+                    onChanged: (v) => setSheetState(
+                      () => settings = settings.copyWith(
+                        searchRadiusMeters: v.round(),
+                      ),
+                    ),
+                    onChangeEnd: (v) async {
+                      await StorageService.instance.saveSettings(
+                        settings.copyWith(searchRadiusMeters: v.round()),
+                      );
+                      unawaited(ref.read(discoveryProvider.notifier).start());
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Price', style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Consumer(
+                    builder: (context, sheetRef, _) {
+                      final filters = sheetRef.watch(activeFiltersProvider);
+                      return Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final level in const [1, 2, 3])
+                            ChoiceChip(
+                              key: ValueKey('tune_price_$level'),
+                              label: Text(r'$' * level),
+                              selected: filters.priceLevels.contains(level),
+                              showCheckmark: true,
+                              selectedColor: GoogieColors.coral,
+                              backgroundColor: GoogieColors.turquoiseContainer,
+                              shape: const StadiumBorder(),
+                              onSelected: (_) => sheetRef
+                                  .read(activeFiltersProvider.notifier)
+                                  .togglePriceLevel(level),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -215,10 +313,22 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         if (previous != next) {
           unawaited(ref.read(discoveryProvider.notifier).start());
         }
+      })
+      // A new search re-arms the advisory banner (un-dismiss it).
+      ..listen(discoveryProvider, (previous, next) {
+        if (next.status == DiscoveryStatus.loading && _noticeDismissed) {
+          setState(() => _noticeDismissed = false);
+        }
       });
     final isSpinning = state.status == DiscoveryStatus.spinning;
     final canRefresh =
         state.status == DiscoveryStatus.success ||
+        state.status == DiscoveryStatus.selected ||
+        state.status == DiscoveryStatus.winner;
+
+    final showSpinButton =
+        state.status == DiscoveryStatus.success ||
+        state.status == DiscoveryStatus.spinning ||
         state.status == DiscoveryStatus.selected ||
         state.status == DiscoveryStatus.winner;
 
@@ -239,12 +349,37 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 ),
                 // One-tap filters: cuisine + atmosphere + rating/price
                 FilterChipBar(onSaveSpot: _onSaveSpot),
+                // Advisory banner (e.g. most places closed right now), pinned
+                // at the top of the list so it stays visible until dismissed.
+                if (state.notice != null &&
+                    !_noticeDismissed &&
+                    state.status != DiscoveryStatus.loading)
+                  _buildNoticeBanner(context, state.notice!),
                 // Main content
                 Expanded(
                   child: _buildBody(context, state),
                 ),
               ],
             ),
+            // Floating round badge: tap to spin. Floats above the listings so
+            // users can still tap a card directly to skip the game.
+            if (showSpinButton)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 20,
+                child: Center(
+                  child: Semantics(
+                    identifier: 'spin_button',
+                    button: true,
+                    child: RandoEatsButton(
+                      key: const ValueKey('spin_button'),
+                      onPressed: _startSpin,
+                      isSpinning: isSpinning,
+                    ),
+                  ),
+                ),
+              ),
             // Winner celebration overlay
             if (_showCelebration)
               WinnerCelebration(onComplete: _onCelebrationComplete),
@@ -256,6 +391,66 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   void _refreshRestaurants() {
     unawaited(ref.read(discoveryProvider.notifier).refresh());
+  }
+
+  /// Turns off the Open-Only setting and re-runs discovery so closed places
+  /// show too (the banner's "Show all" action).
+  Future<void> _showAllRestaurants() async {
+    final settings = StorageService.instance.getSettings();
+    await StorageService.instance.saveSettings(
+      settings.copyWith(includeOpenOnly: false),
+    );
+    unawaited(ref.read(discoveryProvider.notifier).refresh());
+  }
+
+  Widget _buildNoticeBanner(BuildContext context, String message) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: GoogieColors.mustardContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GoogieColors.mustard),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.nightlight_round,
+            size: 20,
+            color: GoogieColors.onMustardContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: GoogieColors.onMustardContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('notice_show_all'),
+            onPressed: _showAllRestaurants,
+            style: TextButton.styleFrom(
+              foregroundColor: GoogieColors.onMustardContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: const Size(0, 36),
+            ),
+            child: const Text('Show all'),
+          ),
+          IconButton(
+            key: const ValueKey('notice_dismiss'),
+            icon: const Icon(Icons.close, size: 18),
+            color: GoogieColors.onMustardContainer,
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Dismiss',
+            onPressed: () => setState(() => _noticeDismissed = true),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTopBar(bool isSpinning, bool canRefresh) {
@@ -273,6 +468,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               tooltip: 'Find new restaurants',
             ),
           const Spacer(),
+          // Quick tune (radius + price) in an M3 bottom sheet.
+          IconButton(
+            key: const ValueKey('quick_tune_button'),
+            icon: const Icon(Icons.tune),
+            color: GoogieColors.deepTeal,
+            iconSize: 26,
+            onPressed: isSpinning ? null : _openQuickTune,
+            tooltip: 'Quick tune',
+          ),
           // Settings gear (right side)
           Semantics(
             identifier: 'settings_button',
@@ -292,69 +496,52 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   Widget _buildBody(BuildContext context, DiscoveryState state) {
     final theme = Theme.of(context);
-    final isSpinning = state.status == DiscoveryStatus.spinning;
-    final showSpinButton =
-        state.status == DiscoveryStatus.success ||
-        state.status == DiscoveryStatus.spinning ||
-        state.status == DiscoveryStatus.selected ||
-        state.status == DiscoveryStatus.winner;
 
-    return Column(
-      children: [
-        // Restaurant list
-        Expanded(
-          child:
-              state.status == DiscoveryStatus.initial ||
-                  state.status == DiscoveryStatus.loading
-              ? _buildLoading(theme)
-              : state.status == DiscoveryStatus.failure
-              ? _buildError(
-                  context,
-                  theme,
-                  state.errorMessage ?? 'Unknown error',
-                )
-              : _buildSlotMachineList(context, state),
-        ),
-        // Rand-o-Eats button - allows re-spin after returning from details
-        if (showSpinButton)
-          Padding(
-            padding: const EdgeInsets.only(
-              top: 4,
-              bottom: 12,
-              left: 16,
-              right: 16,
-            ),
-            child: Semantics(
-              identifier: 'spin_button',
-              button: true,
-              child: RandoEatsButton(
-                onPressed: _startSpin,
-                isSpinning: isSpinning,
-              ),
-            ),
-          ),
-      ],
-    );
+    // The spin control floats over this body (see build); the list fills the
+    // whole area and scrolls behind it.
+    return state.status == DiscoveryStatus.initial ||
+            state.status == DiscoveryStatus.loading
+        ? _buildLoading(theme)
+        : state.status == DiscoveryStatus.failure
+        ? _buildError(
+            context,
+            theme,
+            state.errorMessage ?? 'Unknown error',
+          )
+        : _buildSlotMachineList(context, state);
   }
 
   Widget _buildLoading(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(
-            color: GoogieColors.turquoise,
+    // M3 shimmer skeletons that mirror the cards, instead of a spinner.
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 120,
+                child: WavyLine(
+                  secondaryColor: GoogieColors.coral,
+                  amplitude: 4,
+                  wavelength: 30,
+                  strokeWidth: 3,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Scanning nearby quadrants...',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: GoogieColors.deepTeal,
+                  fontWeight: FontWeight.w600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Scanning nearby quadrants...',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: GoogieColors.turquoise,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
+        ),
+        const Expanded(child: SkeletonCardList()),
+      ],
     );
   }
 
@@ -365,7 +552,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_rounded,
               size: 64,
               color: GoogieColors.coral,
@@ -409,6 +596,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       restaurants: state.restaurants,
       onRestaurantTap: _onDirectTap,
       onSpinComplete: _onSpinComplete,
+      detailBuilder: (restaurant) => DetailScreen(restaurant: restaurant),
       calmMode: calmMode,
     );
   }

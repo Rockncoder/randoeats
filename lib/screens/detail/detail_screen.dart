@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:randoeats/app/router.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
@@ -23,7 +22,9 @@ class DetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Destination Locked!'),
+        title: const Text('Your Destination'),
+        backgroundColor: GoogieColors.turquoiseContainer,
+        foregroundColor: GoogieColors.onTurquoiseContainer,
         leading: IconButton(
           key: const ValueKey('detail_back'),
           icon: const Icon(Icons.arrow_back),
@@ -34,34 +35,66 @@ class DetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(theme),
-            _buildInfo(context, theme),
-            const Divider(height: 32, indent: 16, endIndent: 16),
-            _buildActions(context, theme),
-            const SizedBox(height: 24),
-            _buildRatingSection(context, ref, theme),
-            const SizedBox(height: 32),
+            // Photo stays full-bleed; everything below is capped to a readable
+            // width and centered so the body doesn't stretch edge-to-edge on
+            // tablets (where it otherwise reads as a blown-up phone layout).
+            _buildHeader(context, theme),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildInfo(context, theme),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: WavyLine(
+                        secondaryColor: GoogieColors.coral,
+                        height: 18,
+                        amplitude: 4,
+                        wavelength: 34,
+                        strokeWidth: 3,
+                        speed: 0.5,
+                      ),
+                    ),
+                    _buildActions(context, theme),
+                    const SizedBox(height: 24),
+                    _buildRatingSection(context, ref, theme),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(ThemeData theme) {
+  Widget _buildHeader(BuildContext context, ThemeData theme) {
     final photoUrl = PlacesService.instance.getPhotoUrl(
       restaurant.photoReference,
       maxWidth: 800,
     );
 
+    // Give the full-bleed photo more presence on wide screens, where a short
+    // strip looked thin above the centered content column.
+    final headerHeight = MediaQuery.sizeOf(context).width >= 640
+        ? 340.0
+        : 220.0;
+
     return Hero(
       tag: restaurantPhotoHeroTag(restaurant.placeId),
       child: Container(
-        height: 200,
+        height: headerHeight,
         decoration: BoxDecoration(
           color: GoogieColors.turquoise.withValues(alpha: 0.2),
         ),
-        child: photoUrl != null
-            ? Image.network(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (photoUrl != null)
+              Image.network(
                 photoUrl,
                 fit: BoxFit.cover,
                 width: double.infinity,
@@ -72,7 +105,22 @@ class DetailScreen extends ConsumerWidget {
                   return _buildPhotoPlaceholder(isLoading: true);
                 },
               )
-            : _buildPhotoPlaceholder(),
+            else
+              _buildPhotoPlaceholder(),
+            // Subtle bottom scrim so the photo transitions into the content
+            // instead of butting hard against it.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0x29000000)],
+                  stops: [0.65, 1],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -80,10 +128,10 @@ class DetailScreen extends ConsumerWidget {
   Widget _buildPhotoPlaceholder({bool isLoading = false}) {
     return Center(
       child: isLoading
-          ? const CircularProgressIndicator(
+          ? CircularProgressIndicator(
               color: GoogieColors.turquoise,
             )
-          : const Icon(
+          : Icon(
               Icons.restaurant,
               size: 80,
               color: GoogieColors.turquoise,
@@ -109,7 +157,7 @@ class DetailScreen extends ConsumerWidget {
           // Address
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on,
                 size: 18,
                 color: GoogieColors.turquoise,
@@ -140,24 +188,35 @@ class DetailScreen extends ConsumerWidget {
               if (restaurant.rating != null)
                 _buildChip(
                   icon: Icons.star,
-                  iconColor: GoogieColors.mustard,
+                  iconColor: GoogieColors.onMustardContainer,
                   label: _formatRating(),
+                  fill: GoogieColors.mustardContainer,
+                  textColor: GoogieColors.onMustardContainer,
                   theme: theme,
                 ),
-              // Price level
+              // Price level — the "$$" string already reads as price, so no
+              // leading dollar-sign icon (it would render as "$ $$").
               if (restaurant.priceLevel != null)
                 _buildChip(
-                  icon: Icons.attach_money,
-                  iconColor: GoogieColors.turquoise,
                   label: restaurant.priceLevel!,
+                  fill: GoogieColors.turquoiseContainer,
+                  textColor: GoogieColors.onTurquoiseContainer,
                   theme: theme,
                 ),
               // Open status
               if (restaurant.isOpen != null)
                 _buildChip(
                   icon: restaurant.isOpen! ? Icons.check_circle : Icons.cancel,
-                  iconColor: restaurant.isOpen! ? Colors.green : Colors.red,
-                  label: restaurant.isOpen! ? 'Open now' : 'Closed',
+                  iconColor: restaurant.isOpen!
+                      ? GoogieColors.statusOpen
+                      : GoogieColors.statusClosed,
+                  label: restaurant.isOpen! ? 'Open' : 'Closed',
+                  fill: restaurant.isOpen!
+                      ? GoogieColors.statusOpenContainer
+                      : GoogieColors.coralContainer,
+                  textColor: restaurant.isOpen!
+                      ? GoogieColors.statusOpen
+                      : GoogieColors.onCoralContainer,
                   theme: theme,
                 ),
             ],
@@ -192,7 +251,7 @@ class DetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.phone,
               size: 18,
               color: GoogieColors.turquoise,
@@ -214,29 +273,31 @@ class DetailScreen extends ConsumerWidget {
   }
 
   Widget _buildChip({
-    required IconData icon,
-    required Color iconColor,
     required String label,
     required ThemeData theme,
+    IconData? icon,
+    Color? iconColor,
+    Color? fill,
+    Color? textColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: fill ?? GoogieColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: GoogieColors.chrome,
-        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: iconColor),
-          const SizedBox(width: 6),
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(width: 6),
+          ],
           Text(
             label,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
         ],
@@ -253,61 +314,63 @@ class DetailScreen extends ConsumerWidget {
   }
 
   Widget _buildCategoryChip(String type, ThemeData theme) {
-    final displayType = type.replaceAll('_', ' ');
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: GoogieColors.turquoise.withValues(alpha: 0.1),
+        color: GoogieColors.turquoiseContainer,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        displayType,
+        _prettyType(type),
         style: theme.textTheme.bodySmall?.copyWith(
-          color: GoogieColors.turquoise,
+          color: GoogieColors.onTurquoiseContainer,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 
+  /// Turns a raw Places type ("mexican_restaurant", "greek restaurant") into a
+  /// friendly, title-cased label ("Mexican", "Greek") for display. A redundant
+  /// trailing "restaurant" is dropped unless it's the only word.
+  String _prettyType(String type) {
+    var words = type.replaceAll('_', ' ').trim().split(RegExp(r'\s+'));
+    if (words.length > 1 && words.last.toLowerCase() == 'restaurant') {
+      words = words.sublist(0, words.length - 1);
+    }
+    return words
+        .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
+  }
+
   Widget _buildActions(BuildContext context, ThemeData theme) {
+    // Single, clearly-labelled action. The app bar's back arrow already covers
+    // "go back," so there's no separate abort button. Width is bounded by the
+    // centered content column, so the button can stretch without hitting the
+    // iPad infinite-width layout assert.
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              key: const ValueKey('detail_navigate'),
-              onPressed: () => _openMaps(context),
-              icon: const Icon(Icons.navigation),
-              label: const Text('NAVIGATE'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+      child: Pulse(
+        child: FilledButton.icon(
+          key: const ValueKey('detail_navigate'),
+          onPressed: () => _openMaps(context),
+          icon: const Icon(Icons.navigation),
+          label: const Text('Directions'),
+          style: FilledButton.styleFrom(
+            backgroundColor: GoogieColors.coral,
+            foregroundColor: GoogieColors.white,
+            minimumSize: const Size(double.infinity, 56),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
           ),
-          const SizedBox(width: 12),
-          // Expanded (flexible) so RenderFlex never measures this Material
-          // button with an unbounded main-axis width — an inflexible child here
-          // triggers "BoxConstraints forces an infinite width" during the iPad
-          // accessibility layout pass (the rating buttons below, both Expanded,
-          // never hit this).
-          Expanded(
-            child: OutlinedButton(
-              key: const ValueKey('detail_abort'),
-              onPressed: () => context.pop(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: GoogieColors.coral,
-                side: const BorderSide(color: GoogieColors.coral, width: 2),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text(
-                'Abort Mission',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -346,7 +409,8 @@ class DetailScreen extends ConsumerWidget {
                   ratingType: RatingType.thumbsUp,
                   icon: Icons.thumb_up,
                   label: 'Good Pick!',
-                  color: Colors.green,
+                  color: GoogieColors.statusOpen,
+                  containerColor: GoogieColors.statusOpenContainer,
                   theme: theme,
                 ),
               ),
@@ -358,7 +422,8 @@ class DetailScreen extends ConsumerWidget {
                   ratingType: RatingType.thumbsDown,
                   icon: Icons.thumb_down,
                   label: 'Not For Me',
-                  color: Colors.red,
+                  color: GoogieColors.statusClosed,
+                  containerColor: GoogieColors.coralContainer,
                   theme: theme,
                 ),
               ),
@@ -376,6 +441,7 @@ class DetailScreen extends ConsumerWidget {
     required IconData icon,
     required String label,
     required Color color,
+    required Color containerColor,
     required ThemeData theme,
   }) {
     final existingRating = StorageService.instance.getRating(
@@ -383,64 +449,61 @@ class DetailScreen extends ConsumerWidget {
     );
     final isSelected = existingRating?.rating == ratingType;
 
-    return OutlinedButton(
-      key: ValueKey('detail_rate_${ratingType.name}'),
-      onPressed: () async {
-        final rating = UserRating(
-          placeId: restaurant.placeId,
-          rating: ratingType,
-          ratedAt: DateTime.now(),
-        );
-
-        await StorageService.instance.saveRating(rating);
-
-        // Also save as recent pick
-        final pick = RecentPick(
-          placeId: restaurant.placeId,
-          pickedAt: DateTime.now(),
-        );
-        await StorageService.instance.saveRecentPick(pick);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                ratingType == RatingType.thumbsUp
-                    ? 'Added to your favorites!'
-                    : "Got it! We won't suggest this again.",
-              ),
-              backgroundColor: color,
-            ),
+    return Semantics(
+      label: label,
+      button: true,
+      child: FilledButton.tonal(
+        key: ValueKey('detail_rate_${ratingType.name}'),
+        onPressed: () async {
+          final rating = UserRating(
+            placeId: restaurant.placeId,
+            rating: ratingType,
+            ratedAt: DateTime.now(),
           );
 
-          // For thumbs down, remove from list; for thumbs up, just go back
-          if (ratingType == RatingType.thumbsDown) {
-            ref
-                .read(discoveryProvider.notifier)
-                .removeRestaurant(
-                  restaurant.placeId,
-                );
+          await StorageService.instance.saveRating(rating);
+
+          // Also save as recent pick
+          final pick = RecentPick(
+            placeId: restaurant.placeId,
+            pickedAt: DateTime.now(),
+          );
+          await StorageService.instance.saveRecentPick(pick);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  ratingType == RatingType.thumbsUp
+                      ? 'Added to your favorites!'
+                      : "Got it! We won't suggest this again.",
+                ),
+                backgroundColor: color,
+              ),
+            );
+
+            // For thumbs down, remove from list; for thumbs up, just go back.
+            // pop() returns to results for both the container-transform route
+            // and the go_router push (winner-celebration) flow.
+            if (ratingType == RatingType.thumbsDown) {
+              ref
+                  .read(discoveryProvider.notifier)
+                  .removeRestaurant(
+                    restaurant.placeId,
+                  );
+            }
+            context.pop();
           }
-          context.go(AppRoutes.results);
-        }
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: isSelected ? Colors.white : color,
-        backgroundColor: isSelected ? color : Colors.transparent,
-        side: BorderSide(color: color, width: 2),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 24),
-          const SizedBox(width: 8),
-          // Flexible + ellipsis so the label shrinks instead of overflowing on
-          // narrow phones (each rating button is a half-width Expanded).
-          Flexible(
-            child: Text(label, overflow: TextOverflow.ellipsis),
+        },
+        style: FilledButton.styleFrom(
+          foregroundColor: isSelected ? GoogieColors.white : color,
+          backgroundColor: isSelected ? color : containerColor,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ],
+        ),
+        child: Icon(icon, size: 28),
       ),
     );
   }
@@ -455,8 +518,8 @@ class DetailScreen extends ConsumerWidget {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to place the call'),
+          SnackBar(
+            content: const Text('Unable to place the call'),
             backgroundColor: GoogieColors.coral,
           ),
         );
@@ -476,8 +539,8 @@ class DetailScreen extends ConsumerWidget {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to open maps'),
+          SnackBar(
+            content: const Text('Unable to open maps'),
             backgroundColor: GoogieColors.coral,
           ),
         );

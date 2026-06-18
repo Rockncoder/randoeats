@@ -189,7 +189,7 @@ class SlotMachineListState extends State<SlotMachineList>
             right: 0,
             child: Container(
               height: 4,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,

@@ -20,13 +20,16 @@ class StorageService {
   static const String _settingsBox = 'settings';
   static const String _visitedPlacesBox = 'visited_places';
   static const String _savedRegionsBox = 'saved_regions';
+  static const String _prefsBox = 'prefs';
   static const String _settingsKey = 'user_settings';
+  static const String _themeKey = 'theme_id';
 
   late Box<UserRating> _ratings;
   late Box<RecentPick> _recentPicks;
   late Box<UserSettings> _settings;
   late Box<VisitedPlace> _visitedPlaces;
   late Box<SavedRegion> _regions;
+  late Box<dynamic> _prefs;
 
   bool _isInitialized = false;
 
@@ -85,7 +88,18 @@ class StorageService {
     _settings = await Hive.openBox<UserSettings>(_settingsBox);
     _visitedPlaces = await Hive.openBox<VisitedPlace>(_visitedPlacesBox);
     _regions = await Hive.openBox<SavedRegion>(_savedRegionsBox);
+    _prefs = await Hive.openBox<dynamic>(_prefsBox);
   }
+
+  // ============================================
+  // Preferences (lightweight key/value)
+  // ============================================
+
+  /// The persisted theme id, or null if the user hasn't chosen one.
+  String? getThemeId() => _prefs.get(_themeKey) as String?;
+
+  /// Persists the chosen theme id.
+  Future<void> setThemeId(String id) => _prefs.put(_themeKey, id);
 
   // ============================================
   // User Settings

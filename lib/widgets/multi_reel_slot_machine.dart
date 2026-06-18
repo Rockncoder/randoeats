@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
@@ -21,6 +22,7 @@ class MultiReelSlotMachine extends StatefulWidget {
     required this.restaurants,
     required this.onRestaurantTap,
     required this.onSpinComplete,
+    this.detailBuilder,
     this.maxColumns = 3,
     this.calmMode = false,
     super.key,
@@ -29,8 +31,14 @@ class MultiReelSlotMachine extends StatefulWidget {
   /// Restaurants to display/spin through (repeated across cells if few).
   final List<Restaurant> restaurants;
 
-  /// Direct tap on a (non-spinning) cell.
+  /// Direct tap on a (non-spinning) cell. Records the selection; navigation to
+  /// the detail screen is handled by the container-transform when
+  /// [detailBuilder] is provided.
   final OnRestaurantTap onRestaurantTap;
+
+  /// Builds the detail page for a tapped restaurant. When non-null, tapping a
+  /// (non-winning) card morphs it into this page via an M3 container transform.
+  final Widget Function(Restaurant)? detailBuilder;
 
   /// Called once all reels stop, with the winning restaurant.
   final OnRestaurantTap onSpinComplete;
@@ -184,6 +192,7 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
                       dimmed: _winnerColumn != null && _winnerColumn != c,
                       spinning: _isSpinning,
                       onCardTap: widget.onRestaurantTap,
+                      detailBuilder: widget.detailBuilder,
                     ),
                   ),
               ],
@@ -217,6 +226,7 @@ class _Reel extends StatefulWidget {
     required this.dimmed,
     required this.spinning,
     required this.onCardTap,
+    this.detailBuilder,
     super.key,
   });
 
@@ -226,6 +236,7 @@ class _Reel extends StatefulWidget {
   final bool dimmed;
   final bool spinning;
   final OnRestaurantTap onCardTap;
+  final Widget Function(Restaurant)? detailBuilder;
 
   @override
   State<_Reel> createState() => _ReelState();
@@ -325,27 +336,60 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
           physics: widget.spinning
               ? const NeverScrollableScrollPhysics()
               : const ClampingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          // Extra bottom padding so the last card can scroll clear of the
+          // floating spin badge that hovers over the bottom of the list.
+          padding: const EdgeInsets.only(top: 4, bottom: 120),
           itemCount: widget.restaurants.length,
           itemBuilder: (context, index) {
             final restaurant = widget.restaurants[index];
             final isWinnerCell =
                 widget.isWinner && index == landedIndex && !widget.spinning;
+            // Non-winning cells morph into the detail page (M3 container
+            // transform). The winner keeps its Hero for the celebration flight.
+            final useContainer =
+                !widget.spinning &&
+                !isWinnerCell &&
+                widget.detailBuilder != null;
+
+            RestaurantCard cardWith(VoidCallback onTap) => RestaurantCard(
+              key: ValueKey('reel_cell_${restaurant.placeId}_$index'),
+              restaurant: restaurant,
+              index: index,
+              // Only the unique winning cell anchors the Hero flight into
+              // the detail screen; repeated cells leave it null.
+              heroTag: isWinnerCell
+                  ? restaurantPhotoHeroTag(restaurant.placeId)
+                  : null,
+              onTap: onTap,
+            );
+
+            final card = useContainer
+                ? OpenContainer<void>(
+                    tappable: false,
+                    transitionType: ContainerTransitionType.fadeThrough,
+                    transitionDuration: const Duration(milliseconds: 420),
+                    closedColor: Colors.transparent,
+                    openColor: Theme.of(context).scaffoldBackgroundColor,
+                    closedElevation: 0,
+                    openElevation: 0,
+                    closedShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    closedBuilder: (ctx, open) => cardWith(() {
+                      widget.onCardTap(restaurant);
+                      open();
+                    }),
+                    openBuilder: (ctx, _) => widget.detailBuilder!(restaurant),
+                  )
+                : cardWith(
+                    widget.spinning
+                        ? () {}
+                        : () => widget.onCardTap(restaurant),
+                  );
+
             final cell = Stack(
               children: [
-                RestaurantCard(
-                  key: ValueKey('reel_cell_${restaurant.placeId}_$index'),
-                  restaurant: restaurant,
-                  index: index,
-                  // Only the unique winning cell anchors the Hero flight into
-                  // the detail screen; repeated cells leave it null.
-                  heroTag: isWinnerCell
-                      ? restaurantPhotoHeroTag(restaurant.placeId)
-                      : null,
-                  onTap: widget.spinning
-                      ? () {}
-                      : () => widget.onCardTap(restaurant),
-                ),
+                card,
                 if (isWinnerCell)
                   Positioned.fill(
                     child: IgnorePointer(

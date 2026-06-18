@@ -4,6 +4,8 @@ import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
 import 'package:randoeats/providers/active_filters_provider.dart';
 import 'package:randoeats/providers/active_region_provider.dart';
+import 'package:randoeats/widgets/chip_row_label.dart';
+import 'package:randoeats/widgets/horizontal_scroll_fade.dart';
 
 /// A horizontal, one-tap scope picker shown on the results screen.
 ///
@@ -40,38 +42,47 @@ class RegionChipBar extends ConsumerWidget {
 
     return SizedBox(
       height: 48,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
         children: [
-          _ScopeChip(
-            key: const ValueKey('region_chip_near_me'),
-            label: 'Near Me',
-            icon: Icons.my_location,
-            selected: active == null,
-            onTap: notifier.clear,
-          ),
-          for (final region in regions)
-            _ScopeChip(
-              key: ValueKey('region_chip_${region.id}'),
-              label: region.name,
-              icon: Icons.place,
-              selected: active?.id == region.id,
-              // Selecting a Spot restores both its area and its filters.
-              onTap: () {
-                notifier.select(region);
-                ref
-                    .read(activeFiltersProvider.notifier)
-                    .set(region.filters ?? const SpotFilters());
-              },
-              onLongPress: () => _showRegionMenu(context, region),
+          const ChipRowLabel(icon: Icons.public, label: 'Area'),
+          Expanded(
+            child: HorizontalScrollFade(
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(left: 4, right: 16),
+                children: [
+                  _ScopeChip(
+                    key: const ValueKey('region_chip_near_me'),
+                    label: 'Near Me',
+                    icon: Icons.my_location,
+                    selected: active == null,
+                    onTap: notifier.clear,
+                  ),
+                  for (final region in regions)
+                    _ScopeChip(
+                      key: ValueKey('region_chip_${region.id}'),
+                      label: region.name,
+                      icon: Icons.place,
+                      selected: active?.id == region.id,
+                      // Selecting a Spot restores its area and filters.
+                      onTap: () {
+                        notifier.select(region);
+                        ref
+                            .read(activeFiltersProvider.notifier)
+                            .set(region.filters ?? const SpotFilters());
+                      },
+                      onLongPress: () => _showRegionMenu(context, region),
+                    ),
+                  _ScopeChip(
+                    key: const ValueKey('region_chip_add'),
+                    label: 'New Area',
+                    icon: Icons.add,
+                    selected: false,
+                    onTap: onCreate,
+                  ),
+                ],
+              ),
             ),
-          _ScopeChip(
-            key: const ValueKey('region_chip_add'),
-            label: 'New Area',
-            icon: Icons.add,
-            selected: false,
-            onTap: onCreate,
           ),
         ],
       ),
@@ -87,13 +98,13 @@ class RegionChipBar extends ConsumerWidget {
           children: [
             ListTile(
               key: const ValueKey('region_menu_rename'),
-              leading: const Icon(Icons.edit, color: GoogieColors.deepTeal),
+              leading: Icon(Icons.edit, color: GoogieColors.deepTeal),
               title: const Text('Rename'),
               onTap: () => Navigator.pop(sheetContext, _RegionAction.rename),
             ),
             ListTile(
               key: const ValueKey('region_menu_delete'),
-              leading: const Icon(Icons.delete, color: GoogieColors.coral),
+              leading: Icon(Icons.delete, color: GoogieColors.coral),
               title: const Text('Delete'),
               onTap: () => Navigator.pop(sheetContext, _RegionAction.delete),
             ),
@@ -133,7 +144,11 @@ class _ScopeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = selected ? GoogieColors.white : GoogieColors.deepTeal;
+    // Scope chips read "warm" (mustard tonal) to set the row apart from the
+    // cool turquoise filter row; the active scope lifts with coral + elevation.
+    final foreground = selected
+        ? GoogieColors.white
+        : GoogieColors.onMustardContainer;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: GestureDetector(
@@ -142,14 +157,23 @@ class _ScopeChip extends StatelessWidget {
           avatar: Icon(icon, size: 18, color: foreground),
           label: Text(label),
           selected: selected,
-          showCheckmark: false,
+          showCheckmark: true,
+          checkmarkColor: foreground,
           labelStyle: TextStyle(
             color: foreground,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
           selectedColor: GoogieColors.coral,
-          backgroundColor: GoogieColors.cream,
-          side: const BorderSide(color: GoogieColors.chrome),
+          backgroundColor: GoogieColors.mustardContainer,
+          elevation: 0,
+          pressElevation: 1,
+          shape: StadiumBorder(
+            side: BorderSide(
+              color: selected
+                  ? Colors.transparent
+                  : GoogieColors.mustard.withValues(alpha: 0.7),
+            ),
+          ),
           onSelected: (_) => onTap(),
         ),
       ),

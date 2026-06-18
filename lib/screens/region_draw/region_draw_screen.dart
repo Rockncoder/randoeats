@@ -280,7 +280,7 @@ class _DrawHint extends StatelessWidget {
             color: GoogieColors.spaceBlack.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(24),
           ),
-          child: const Text(
+          child: Text(
             'Trace a loop around your area, then lift your finger',
             textAlign: TextAlign.center,
             style: TextStyle(color: GoogieColors.white),
