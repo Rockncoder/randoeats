@@ -216,6 +216,30 @@ class GoogiePalette {
     cardTint: Color(0xFFE6EDF3),
     brightness: Brightness.light,
   );
+
+  /// Autumn — cozy parchment with burnt orange, brick red, and golden leaves.
+  static const autumn = GoogiePalette(
+    turquoise: Color(0xFFD9722B),
+    deepTeal: Color(0xFF7A3A1B),
+    coral: Color(0xFFB83A2B),
+    mustard: Color(0xFFE0A126),
+    cream: Color(0xFFF5ECDA),
+    chrome: Color(0xFFCBB89A),
+    spaceBlack: Color(0xFF2E2013),
+    white: Color(0xFFFFFDF7),
+    darkCard: Color(0xFF2D2D44),
+    statusOpen: Color(0xFF4E7A3A),
+    statusClosed: Color(0xFFB23A2E),
+    turquoiseContainer: Color(0xFFF7DEC4),
+    onTurquoiseContainer: Color(0xFF5A2A0E),
+    coralContainer: Color(0xFFF8D6CD),
+    onCoralContainer: Color(0xFF551407),
+    mustardContainer: Color(0xFFF2E3B2),
+    onMustardContainer: Color(0xFF463600),
+    statusOpenContainer: Color(0xFFDDE8C6),
+    cardTint: Color(0xFFFBF3E5),
+    brightness: Brightness.light,
+  );
 }
 
 /// Googie / 60s Retro-Future colors for rand-o-eats.
@@ -287,17 +311,20 @@ abstract final class GoogieColors {
 
 /// A selectable, persisted app theme.
 enum AppTheme {
-  /// The default warm pastel look.
-  spring('spring', 'Spring', GoogiePalette.spring),
-
   /// Crisp, airy light.
   light('light', 'Light', GoogiePalette.light),
 
   /// Atomic-age dark.
   dark('dark', 'Dark', GoogiePalette.dark),
 
+  /// The default warm pastel look.
+  spring('spring', 'Spring', GoogiePalette.spring),
+
   /// Sunny, hot summer.
   summer('summer', 'Summer', GoogiePalette.summer),
+
+  /// Cozy autumn.
+  autumn('autumn', 'Autumn', GoogiePalette.autumn),
 
   /// Finnish midwinter.
   winter('winter', 'Winter', GoogiePalette.winter);
