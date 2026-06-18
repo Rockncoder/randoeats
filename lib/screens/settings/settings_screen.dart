@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:randoeats/config/config.dart';
@@ -46,7 +48,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late UserSettings _settings;
-  bool _hasChanges = false;
 
   @override
   void initState() {
@@ -54,26 +55,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _settings = StorageService.instance.getSettings();
   }
 
-  Future<void> _saveSettings() async {
-    await StorageService.instance.saveSettings(_settings);
-    setState(() {
-      _hasChanges = false;
-    });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Settings saved!'),
-          backgroundColor: GoogieColors.turquoise,
-        ),
-      );
-    }
-  }
-
+  /// Applies a settings change immediately: updates the UI and persists it so a
+  /// subsequent results refresh (which re-reads stored settings) reflects it.
+  /// There is no separate "Save" step — toggles take effect right away.
   void _updateSettings(UserSettings newSettings) {
     setState(() {
       _settings = newSettings;
-      _hasChanges = true;
     });
+    unawaited(StorageService.instance.saveSettings(newSettings));
   }
 
   void _toggleCategory(String category) {
@@ -105,19 +94,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        actions: [
-          if (_hasChanges)
-            TextButton(
-              onPressed: _saveSettings,
-              child: Text(
-                'SAVE',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: GoogieColors.turquoise,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
