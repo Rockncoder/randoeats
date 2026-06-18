@@ -50,13 +50,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       switch (result) {
         case LocationSuccess():
           _locationError = null;
-        case LocationPermissionDenied(isPermanent: final isPermanent):
+        case LocationPermissionDenied(:final isPermanent):
           _locationError = isPermanent
               ? 'Location permission denied. Please enable in settings.'
               : 'Location permission required to find nearby restaurants.';
         case LocationServicesDisabled():
           _locationError = 'Please enable location services on your device.';
-        case LocationError(message: final message):
+        case LocationError(:final message):
           _locationError = 'Location error: $message';
       }
     });
