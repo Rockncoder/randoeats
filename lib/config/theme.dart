@@ -169,27 +169,29 @@ class GoogiePalette {
     brightness: Brightness.dark,
   );
 
-  /// Summer — sunny, hot: sandy background, sea-teal, hot coral, sun gold.
+  /// Summer — hot beach at golden hour: deep tropical sea-teal over warm golden
+  /// sand, with a blazing sunset orange and bold marigold. Pushed warmer and
+  /// more saturated than Spring's pale, fresh aqua so the two read distinctly.
   static const summer = GoogiePalette(
-    turquoise: Color(0xFF00BFA6),
-    deepTeal: Color(0xFF0E6E63),
-    coral: Color(0xFFFF5A4D),
-    mustard: Color(0xFFFFAF14),
-    cream: Color(0xFFFFF4E2),
-    chrome: Color(0xFFE8D4B8),
-    spaceBlack: Color(0xFF3A2A1A),
+    turquoise: Color(0xFF00A896),
+    deepTeal: Color(0xFF00695C),
+    coral: Color(0xFFFF4D2E),
+    mustard: Color(0xFFFF9E1B),
+    cream: Color(0xFFFFE6BE),
+    chrome: Color(0xFFE6C79C),
+    spaceBlack: Color(0xFF3A2615),
     white: Color(0xFFFFFFFF),
     darkCard: Color(0xFF2D2D44),
     statusOpen: Color(0xFF2E7D5B),
     statusClosed: Color(0xFFC4452F),
-    turquoiseContainer: Color(0xFFBFF0E8),
-    onTurquoiseContainer: Color(0xFF06423C),
-    coralContainer: Color(0xFFFFDAD2),
-    onCoralContainer: Color(0xFF5A160B),
-    mustardContainer: Color(0xFFFFE8B0),
-    onMustardContainer: Color(0xFF3F2E00),
+    turquoiseContainer: Color(0xFFAEE9DF),
+    onTurquoiseContainer: Color(0xFF003B34),
+    coralContainer: Color(0xFFFFD8CB),
+    onCoralContainer: Color(0xFF5A1606),
+    mustardContainer: Color(0xFFFFDF9E),
+    onMustardContainer: Color(0xFF402B00),
     statusOpenContainer: Color(0xFFCFEBD9),
-    cardTint: Color(0xFFFFF1DD),
+    cardTint: Color(0xFFFFEFC9),
     brightness: Brightness.light,
   );
 
