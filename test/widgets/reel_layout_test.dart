@@ -41,43 +41,34 @@ void main() {
       ),
     );
 
-    test('fills columns x rows with unique restaurants when enough', () {
-      final reels = ReelLayout.buildReels(
-        makeRestaurants(12),
-        columns: 3,
-        rows: 4,
-      );
+    test('distributes ALL restaurants across columns (strided, no dupes)', () {
+      final reels = ReelLayout.buildReels(makeRestaurants(12), columns: 3);
       expect(reels, hasLength(3));
       expect(reels.every((r) => r.length == 4), isTrue);
-      // 12 distinct across 3x4.
-      final all = reels.expand((r) => r).map((r) => r.placeId).toSet();
-      expect(all, hasLength(12));
+      // Every restaurant present exactly once.
+      final all = reels.expand((r) => r).map((r) => r.placeId).toList();
+      expect(all.toSet(), hasLength(12));
+      // Strided: column c holds restaurants c, c+3, c+6, ...
+      expect(reels[0].map((r) => r.placeId), ['p0', 'p3', 'p6', 'p9']);
+      expect(reels[1].map((r) => r.placeId), ['p1', 'p4', 'p7', 'p10']);
+      expect(reels[2].map((r) => r.placeId), ['p2', 'p5', 'p8', 'p11']);
     });
 
-    test('repeats restaurants to fill when too few (duplicates allowed)', () {
-      final reels = ReelLayout.buildReels(
-        makeRestaurants(2),
-        columns: 3,
-        rows: 2,
-      );
-      // 6 cells filled from 2 restaurants, cycling.
-      final flat = reels.expand((r) => r).map((r) => r.placeId).toList();
-      expect(flat, hasLength(6));
-      expect(flat, ['p0', 'p1', 'p0', 'p1', 'p0', 'p1']);
+    test('fewer restaurants than columns leaves trailing columns empty', () {
+      final reels = ReelLayout.buildReels(makeRestaurants(2), columns: 3);
+      expect(reels.map((r) => r.length), [1, 1, 0]);
+      expect(reels[0].first.placeId, 'p0');
+      expect(reels[1].first.placeId, 'p1');
     });
 
     test('returns empty reels for empty input', () {
-      final reels = ReelLayout.buildReels(const [], columns: 2, rows: 3);
+      final reels = ReelLayout.buildReels(const [], columns: 2);
       expect(reels, hasLength(2));
       expect(reels.every((r) => r.isEmpty), isTrue);
     });
 
-    test('single column (phone) is the current single-reel case', () {
-      final reels = ReelLayout.buildReels(
-        makeRestaurants(5),
-        columns: 1,
-        rows: 5,
-      );
+    test('single column (phone) holds the whole list in order', () {
+      final reels = ReelLayout.buildReels(makeRestaurants(5), columns: 1);
       expect(reels, hasLength(1));
       expect(reels.first.map((r) => r.placeId), ['p0', 'p1', 'p2', 'p3', 'p4']);
     });

@@ -167,6 +167,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   void _startSpin() {
+    // Guard against re-entry during the reveal/celebration sequence.
+    if (_showCelebration) return;
     ref.read(discoveryProvider.notifier).startSpin();
     _slotMachineKey.currentState?.spin();
   }
@@ -339,7 +341,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             Column(
               children: [
                 // Top bar with refresh and settings
-                _buildTopBar(isSpinning, canRefresh),
+                _buildTopBar(isSpinning, canRefresh, state.restaurants.length),
                 // One-tap scope picker: Near Me + saved regions + New Area
                 RegionChipBar(
                   regions: _regions,
@@ -374,7 +376,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     button: true,
                     child: RandoEatsButton(
                       key: const ValueKey('spin_button'),
-                      onPressed: _startSpin,
+                      // Locked for the whole winner sequence: the reel spin
+                      // (status == spinning) through the reveal + celebration,
+                      // re-enabled only once the celebration completes.
+                      onPressed: (isSpinning || _showCelebration)
+                          ? null
+                          : _startSpin,
                       isSpinning: isSpinning,
                     ),
                   ),
@@ -453,7 +460,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
-  Widget _buildTopBar(bool isSpinning, bool canRefresh) {
+  Widget _buildTopBar(bool isSpinning, bool canRefresh, int count) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -466,6 +474,23 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               iconSize: 28,
               onPressed: isSpinning ? null : _refreshRestaurants,
               tooltip: 'Find new restaurants',
+            ),
+          // How many spots are in the reel right now.
+          if (canRefresh && count > 0)
+            Container(
+              key: const ValueKey('result_count'),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: GoogieColors.turquoiseContainer,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '$count ${count == 1 ? 'spot' : 'spots'}',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: GoogieColors.deepTeal,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           const Spacer(),
           // Quick tune (radius + price) in an M3 bottom sheet.

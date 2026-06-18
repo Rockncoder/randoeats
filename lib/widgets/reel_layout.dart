@@ -17,29 +17,27 @@ abstract final class ReelLayout {
     return columns.clamp(1, maxColumns);
   }
 
-  /// Distributes [restaurants] into [columns] reels of [rows] cells each.
+  /// Distributes ALL [restaurants] across [columns] reels, round-robin
+  /// (strided) so every restaurant lands in exactly one column and the columns
+  /// stay balanced. No restaurant is dropped and none is duplicated here — each
+  /// reel repeats its own cells as needed for the visual fill (see the reel
+  /// widget), while selection stays uniform over the distinct restaurants.
   ///
-  /// When there are fewer restaurants than cells, restaurants repeat to fill
-  /// (duplicates across cells are allowed by design). Returns `columns` lists,
-  /// each of length `rows` (empty lists when [restaurants] is empty).
+  /// Restaurant `i` goes to column `i % columns`, so the global index `g` maps
+  /// to `reels[g % columns][g ~/ columns]`. Returns `columns` lists (some may
+  /// be empty when there are fewer restaurants than columns).
   static List<List<Restaurant>> buildReels(
     List<Restaurant> restaurants, {
     required int columns,
-    required int rows,
   }) {
     final reels = List.generate(
       columns,
       (_) => <Restaurant>[],
       growable: false,
     );
-    if (restaurants.isEmpty || columns <= 0 || rows <= 0) return reels;
-
-    var index = 0;
-    for (var c = 0; c < columns; c++) {
-      for (var r = 0; r < rows; r++) {
-        reels[c].add(restaurants[index % restaurants.length]);
-        index++;
-      }
+    if (columns <= 0) return reels;
+    for (var i = 0; i < restaurants.length; i++) {
+      reels[i % columns].add(restaurants[i]);
     }
     return reels;
   }

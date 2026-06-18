@@ -61,13 +61,12 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
 
   /// How long the winner is held — expanded + announced — before the
   /// celebration/handoff fires, so the result is unmistakable.
-  static const Duration _revealHold = Duration(milliseconds: 650);
+  static const Duration _revealHold = Duration(milliseconds: 1300);
 
   final _random = math.Random();
   final List<GlobalKey<_ReelState>> _reelKeys = [];
 
   int _columns = 1;
-  int _rows = 1;
   bool _isSpinning = false;
   int? _winnerColumn;
   int _stoppedCount = 0;
@@ -112,11 +111,18 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
       _stoppedCount = 0;
     });
 
-    final winnerColumn = _random.nextInt(_columns);
+    // Pick the winner uniformly over ALL restaurants, then map the global index
+    // to the strided (column, position) that displays it. Every restaurant is
+    // equally likely — no front-of-list bias, no unreachable tail.
+    final winnerGlobal = _random.nextInt(widget.restaurants.length);
+    final winnerColumn = winnerGlobal % _columns;
+    final winnerPos = winnerGlobal ~/ _columns;
 
     if (widget.calmMode) {
       for (var c = 0; c < _columns; c++) {
-        _reelKeys[c].currentState?.placeInstantly();
+        _reelKeys[c].currentState?.placeInstantly(
+          index: c == winnerColumn ? winnerPos : null,
+        );
       }
       _revealWinner(winnerColumn);
       return;
@@ -125,6 +131,7 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
     for (var c = 0; c < _columns; c++) {
       _reelKeys[c].currentState?.spin(
         duration: _baseSpin + _stagger * c,
+        landIndex: c == winnerColumn ? winnerPos : null,
         onStopped: () => _onReelStopped(winnerColumn),
       );
     }
@@ -142,10 +149,10 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
     final reels = ReelLayout.buildReels(
       widget.restaurants,
       columns: _columns,
-      rows: _rows,
     );
+    final reel = reels[winnerColumn];
     final landed = _reelKeys[winnerColumn].currentState?.landedIndex ?? 0;
-    final winner = reels[winnerColumn][landed];
+    final winner = reel[landed.clamp(0, reel.length - 1)];
 
     setState(() {
       _isSpinning = false;
@@ -168,13 +175,11 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
         final rows = _rowsFor(constraints.maxHeight);
         // Cache derived layout so spin() and the next build agree.
         _columns = columns;
-        _rows = rows;
         _syncReelKeys(columns);
 
         final reels = ReelLayout.buildReels(
           widget.restaurants,
           columns: columns,
-          rows: rows,
         );
 
         return Stack(
@@ -188,6 +193,8 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
                       key: _reelKeys[c],
                       restaurants: reels[c],
                       cardHeight: cardHeight,
+                      minCells: rows,
+                      random: _random,
                       isWinner: _winnerColumn == c,
                       dimmed: _winnerColumn != null && _winnerColumn != c,
                       spinning: _isSpinning,
@@ -222,6 +229,8 @@ class _Reel extends StatefulWidget {
   const _Reel({
     required this.restaurants,
     required this.cardHeight,
+    required this.minCells,
+    required this.random,
     required this.isWinner,
     required this.dimmed,
     required this.spinning,
@@ -230,8 +239,16 @@ class _Reel extends StatefulWidget {
     super.key,
   });
 
+  /// The distinct restaurants this reel can land on.
   final List<Restaurant> restaurants;
   final double cardHeight;
+
+  /// Minimum cells to render so the reel fills the viewport (including the slot
+  /// under the floating spin badge) by repeating [restaurants] as needed.
+  final int minCells;
+
+  /// Shared RNG, so landing indices come from one well-distributed source.
+  final math.Random random;
   final bool isWinner;
   final bool dimmed;
   final bool spinning;
@@ -249,6 +266,11 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
 
   int landedIndex = 0;
 
+  /// While spinning, the reel renders a long repeating strip so the scroll can
+  /// run monotonically without ever hitting the end (no wrap/pause). 0 until the
+  /// first spin; falls back to the finite length in [build].
+  int _spinItemCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -259,51 +281,80 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
   }
 
   @override
+  void didUpdateWidget(_Reel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the spin ends the list returns to its finite length; pin the winner
+    // at the top of that finite list (the strip had it at the top already, so
+    // this is visually seamless).
+    if (oldWidget.spinning && !widget.spinning) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scroll.hasClients) return;
+        final maxExtent = _scroll.position.maxScrollExtent;
+        _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0.0, maxExtent));
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _scroll.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  /// Places this reel at a random cell instantly, with no animation.
-  ///
-  /// Used by calm (reduced-motion) mode.
-  void placeInstantly() {
-    if (widget.restaurants.isEmpty) return;
-    landedIndex = math.Random().nextInt(widget.restaurants.length);
+  /// Places this reel at [index] (or a random distinct cell) instantly, with no
+  /// animation. Used by calm (reduced-motion) mode.
+  void placeInstantly({int? index}) {
+    final n = widget.restaurants.length;
+    if (n == 0) return;
+    landedIndex = index ?? widget.random.nextInt(n);
     if (_scroll.hasClients) {
       final maxExtent = _scroll.position.maxScrollExtent;
       _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0, maxExtent));
     }
   }
 
-  /// Spins this reel for [duration], landing a random cell at the top.
-  void spin({required Duration duration, required VoidCallback onStopped}) {
-    if (widget.restaurants.isEmpty) {
+  /// Spins this reel for [duration], landing [landIndex] (or a random distinct
+  /// cell) at the top.
+  void spin({
+    required Duration duration,
+    required VoidCallback onStopped,
+    int? landIndex,
+  }) {
+    final n = widget.restaurants.length;
+    if (n == 0) {
       onStopped();
       return;
     }
-    landedIndex = math.Random().nextInt(widget.restaurants.length);
+    landedIndex = landIndex ?? widget.random.nextInt(n);
 
-    final cycle = widget.restaurants.length * widget.cardHeight;
-    final target = (cycle * 3) + (landedIndex * widget.cardHeight);
+    // Spin a consistent visual distance regardless of how many cells the column
+    // has (so 1 result spins as smoothly as 12), landing exactly on a card
+    // boundary with the winning cell at the top.
+    const minTravelCells = 24;
+    final loops = math.max(3, (minTravelCells / n).ceil());
+    final endIndex = loops * n + landedIndex;
+    final target = endIndex * widget.cardHeight;
+
+    // Repeating strip long enough that the monotonic scroll never reaches the
+    // end — no modulo wrap, no clamp pause — and with enough cells past the
+    // landing to keep the viewport (incl. under the badge) full.
+    _spinItemCount = endIndex + n + widget.minCells + 2;
 
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _controller
       ..duration = duration
       ..reset();
     _animation = Tween<double>(begin: 0, end: target).animate(
-      CurvedAnimation(parent: _controller, curve: _SlotMachineCurve()),
+      CurvedAnimation(parent: _controller, curve: const _SpinCurve()),
     )..addListener(_tick);
 
     void statusListener(AnimationStatus status) {
       if (status != AnimationStatus.completed) return;
       _animation?.removeListener(_tick);
       _controller.removeStatusListener(statusListener);
-      if (_scroll.hasClients) {
-        final maxExtent = _scroll.position.maxScrollExtent;
-        _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0, maxExtent));
-      }
+      // The winner is already at the top (offset == target). Re-pinning on the
+      // finite list happens in didUpdateWidget once `spinning` flips false.
       onStopped();
     }
 
@@ -314,8 +365,9 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
   void _tick() {
     if (!_scroll.hasClients) return;
     final maxExtent = _scroll.position.maxScrollExtent;
-    final wrapped = _animation!.value % (maxExtent + widget.cardHeight);
-    _scroll.jumpTo(wrapped.clamp(0, maxExtent));
+    // Monotonic, seamless scroll. The strip is long enough that we never reach
+    // the end, so there is no wrap and no pause; clamp is only a safety net.
+    _scroll.jumpTo(_animation!.value.clamp(0.0, maxExtent));
   }
 
   @override
@@ -336,14 +388,20 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
           physics: widget.spinning
               ? const NeverScrollableScrollPhysics()
               : const ClampingScrollPhysics(),
-          // Extra bottom padding so the last card can scroll clear of the
-          // floating spin badge that hovers over the bottom of the list.
-          padding: const EdgeInsets.only(top: 4, bottom: 120),
-          itemCount: widget.restaurants.length,
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          // A repeating strip of the full list: idle it fills the viewport
+          // (incl. the slot under the floating badge) by repeating as needed;
+          // spinning it is long enough to loop seamlessly.
+          itemCount: widget.restaurants.isEmpty
+              ? 0
+              : (widget.spinning && _spinItemCount > 0
+                    ? _spinItemCount
+                    : widget.restaurants.length + widget.minCells),
           itemBuilder: (context, index) {
-            final restaurant = widget.restaurants[index];
+            final n = widget.restaurants.length;
+            final restaurant = widget.restaurants[index % n];
             final isWinnerCell =
-                widget.isWinner && index == landedIndex && !widget.spinning;
+                widget.isWinner && !widget.spinning && index == landedIndex;
             // Non-winning cells morph into the detail page (M3 container
             // transform). The winner keeps its Hero for the celebration flight.
             final useContainer =
@@ -406,13 +464,9 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
                   ),
               ],
             );
-            // The winning cell expands to make the result unmistakable.
-            return AnimatedScale(
-              scale: isWinnerCell ? 1.04 : 1,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutBack,
-              child: cell,
-            );
+            // The winning cell pulses (shrink + grow) with a subtle shake so
+            // the chosen card is unmistakable before the detail screen opens.
+            return isWinnerCell ? _WinnerPulse(child: cell) : cell;
           },
         ),
       ),
@@ -420,13 +474,80 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Slot-machine easing: quick start, full speed, decelerate to a stop.
-class _SlotMachineCurve extends Curve {
+/// Attention animation for the winning cell: a repeating shrink↔grow pulse with
+/// a subtle rocking shake, so the chosen card stands out before the detail
+/// screen opens.
+class _WinnerPulse extends StatefulWidget {
+  const _WinnerPulse({required this.child});
+
+  final Widget child;
+
   @override
-  double transform(double t) {
-    if (t < 0.1) return Curves.easeIn.transform(t * 10) * 0.1;
-    if (t < 0.6) return 0.1 + (t - 0.1) * (0.6 / 0.5);
-    final localT = (t - 0.6) / 0.4;
-    return 0.7 + Curves.easeOutCubic.transform(localT) * 0.3;
+  State<_WinnerPulse> createState() => _WinnerPulseState();
+}
+
+class _WinnerPulseState extends State<_WinnerPulse>
+    with SingleTickerProviderStateMixin {
+  // A finite burst (~3 shrink/grow pulses) that decays to rest, so it reads as
+  // a clear "this is your pick!" and still settles (no perpetual animation).
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..forward();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final v = _controller.value;
+        final decay = 1 - v; // fade the emphasis out toward rest
+        final osc = math.sin(v * math.pi * 2 * 3); // 3 grow/shrink cycles
+        final scale = 1 + 0.11 * osc * decay;
+        final angle = 0.03 * osc * decay; // subtle rocking shake
+        return Transform.rotate(
+          angle: angle,
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
+    );
+  }
+}
+
+/// Smooth trapezoidal spin easing: ramp up (accelerate) → cruise at full speed
+/// → ramp down (decelerate) to a stop. Velocity is continuous (no jerks), and
+/// the deceleration phase is longer than the acceleration for a satisfying
+/// slot-machine slowdown. Position is normalized so transform(1) == 1.
+class _SpinCurve extends Curve {
+  const _SpinCurve();
+
+  static const double _ta = 0.25; // acceleration ends
+  static const double _tb = 0.6; // deceleration begins
+  // Peak velocity that makes the integral (total distance) equal 1.
+  static const double _vMax = 1 / (_ta / 2 + (_tb - _ta) + (1 - _tb) / 2);
+
+  @override
+  double transformInternal(double t) {
+    if (t < _ta) {
+      // Accelerating: area under a linearly rising velocity.
+      return _vMax * t * t / (2 * _ta);
+    }
+    if (t < _tb) {
+      // Cruising at _vMax.
+      return _vMax * (_ta / 2) + _vMax * (t - _ta);
+    }
+    // Decelerating: linearly falling velocity to 0 at t == 1.
+    final d = t - _tb;
+    const dd = 1 - _tb;
+    return _vMax * (_ta / 2) +
+        _vMax * (_tb - _ta) +
+        _vMax * (d - d * d / (2 * dd));
   }
 }
