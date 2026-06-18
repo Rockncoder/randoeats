@@ -128,6 +128,9 @@ jobs:
           FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
           GOOGLE_SERVICE_ACCOUNT_KEY_PATH: firebase-service-account.json
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          # Google Maps SDK key — gradle reads MAPS_API_KEY from the env into the
+          # manifest placeholder. Without it the map view crashes (New Area).
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
         run: bundle exec fastlane android distribute
 
   # ============================================
@@ -164,6 +167,12 @@ jobs:
 
       - name: Create GoogleService-Info.plist
         run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 -d > ios/Runner/GoogleService-Info.plist
+
+      - name: Create Secrets.xcconfig (Google Maps SDK key)
+        # GMSApiKey in Info.plist is $(MAPS_API_KEY) from this gitignored file;
+        # without it GMSServices gets an empty key and the map view crashes
+        # (tapping "New Area"). Empty when the secret is unset (map stays gray).
+        run: echo "MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}" > ios/Flutter/Secrets.xcconfig
 
       - name: Create service account file
         run: |
