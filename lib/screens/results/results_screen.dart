@@ -520,6 +520,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             onPressed: isSpinning ? null : _openQuickTune,
             tooltip: 'Quick tune',
           ),
+          // About (info) — sits between the filters tune and the gear.
+          IconButton(
+            key: const ValueKey('about_button'),
+            icon: const Icon(Icons.info_outline),
+            color: GoogieColors.deepTeal,
+            iconSize: 26,
+            onPressed: isSpinning
+                ? null
+                : () => unawaited(context.push<void>(AppRoutes.about)),
+            tooltip: 'About',
+          ),
           // Settings gear (right side)
           Semantics(
             identifier: 'settings_button',

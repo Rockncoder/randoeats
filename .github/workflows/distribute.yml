@@ -47,25 +47,29 @@ jobs:
           VERSION_LINE=$(grep "^version:" pubspec.yaml)
           echo "Current: $VERSION_LINE"
 
-          # Extract version and build number
-          VERSION=$(echo $VERSION_LINE | sed 's/version: //' | cut -d'+' -f1)
+          # Keep major.minor; the patch tracks the build number so the version
+          # reads major.minor.<build> and increases by one on every push.
+          BASE=$(echo $VERSION_LINE | sed 's/version: //' | cut -d'+' -f1)
+          MAJOR_MINOR=$(echo $BASE | cut -d'.' -f1,2)
           CURRENT_BUILD=$(echo $VERSION_LINE | cut -d'+' -f2)
           NEW_BUILD=$((CURRENT_BUILD + 1))
+          NEW_VERSION="${MAJOR_MINOR}.${NEW_BUILD}+${NEW_BUILD}"
 
-          echo "Version: $VERSION, Build: $CURRENT_BUILD -> $NEW_BUILD"
+          echo "Version: $BASE -> $NEW_VERSION (build $CURRENT_BUILD -> $NEW_BUILD)"
 
           # Update pubspec.yaml
-          sed -i "s/^version: .*/version: ${VERSION}+${NEW_BUILD}/" pubspec.yaml
+          sed -i "s/^version: .*/version: ${NEW_VERSION}/" pubspec.yaml
 
           # Output for other jobs
           echo "build_number=$NEW_BUILD" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit build number
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add pubspec.yaml
-          git diff --staged --quiet || git commit -m "chore: bump build to ${{ steps.bump.outputs.build_number }} [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }} [skip ci]"
           git push
 
   # ============================================
