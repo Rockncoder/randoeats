@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
@@ -70,7 +71,13 @@ class _RegionDrawScreenState extends ConsumerState<RegionDrawScreen> {
       return;
     }
 
-    final ratio = MediaQuery.of(context).devicePixelRatio;
+    // google_maps_flutter wants screen coordinates in PHYSICAL pixels on
+    // Android, but in LOGICAL points on iOS (and CSS pixels on web). Scaling
+    // by devicePixelRatio everywhere triple-scales on iOS, dropping the
+    // polygon far off-screen so the loop looks erased — only scale on Android.
+    final ratio = (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+        ? MediaQuery.of(context).devicePixelRatio
+        : 1.0;
     final vertices = <({double lat, double lng})>[];
     for (final point in _screenPath) {
       final latLng = await controller.getLatLng(

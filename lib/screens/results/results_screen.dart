@@ -203,8 +203,25 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
-  void _navigateToSettings() {
-    unawaited(context.push<void>(AppRoutes.settings));
+  Future<void> _navigateToSettings() async {
+    // Auto-refresh on return, but only if a setting that affects *which*
+    // restaurants come back changed — so display-only tweaks (theme, units,
+    // calm mode) don't needlessly reshuffle the current picks.
+    final before = _resultAffectingSettingsKey();
+    await context.push<void>(AppRoutes.settings);
+    if (!mounted) return;
+    if (_resultAffectingSettingsKey() != before) {
+      unawaited(ref.read(discoveryProvider.notifier).refresh());
+    }
+  }
+
+  /// Fingerprint of the settings that change discovery results (search radius,
+  /// max results, open-only, banned categories, hide-after-pick window).
+  String _resultAffectingSettingsKey() {
+    final s = StorageService.instance.getSettings();
+    final banned = (s.bannedCategories.toList()..sort()).join(',');
+    return '${s.searchRadiusMeters}|${s.maxResults}|${s.includeOpenOnly}|'
+        '${s.hideDaysAfterPick}|$banned';
   }
 
   /// Opens an M3 bottom sheet for quick radius/price tweaks without leaving the

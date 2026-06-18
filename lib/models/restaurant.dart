@@ -24,6 +24,7 @@ class Restaurant extends Equatable {
     this.goodForGroups,
     this.hasParking,
     this.phoneNumber,
+    this.weekdayHours,
   });
 
   /// Creates a [Restaurant] from Places API (New) response.
@@ -52,6 +53,7 @@ class Restaurant extends Equatable {
         json['parkingOptions'] as Map<String, dynamic>?,
       ),
       phoneNumber: json['nationalPhoneNumber'] as String?,
+      weekdayHours: _parseWeekdayHours(openingHours),
     );
   }
 
@@ -119,6 +121,12 @@ class Restaurant extends Equatable {
   @HiveField(15)
   final String? phoneNumber;
 
+  /// Human-readable opening hours, one localized line per day from Places
+  /// `currentOpeningHours.weekdayDescriptions` (e.g. "Monday: 9:00 AM –
+  /// 5:00 PM"); null/empty = unknown.
+  @HiveField(16)
+  final List<String>? weekdayHours;
+
   /// Parses price level from new API enum string format.
   static String? _parsePriceLevelNew(String? level) {
     if (level == null) return null;
@@ -133,6 +141,13 @@ class Restaurant extends Equatable {
       'PRICE_LEVEL_VERY_EXPENSIVE' => r'$$$$',
       _ => null,
     };
+  }
+
+  /// Pulls the per-day opening-hours strings from a Places opening-hours map.
+  static List<String>? _parseWeekdayHours(Map<String, dynamic>? hours) {
+    final descriptions = hours?['weekdayDescriptions'] as List<dynamic>?;
+    if (descriptions == null || descriptions.isEmpty) return null;
+    return descriptions.map((e) => e.toString()).toList();
   }
 
   /// True if any parking option is available (Places `parkingOptions` is a map
@@ -189,5 +204,6 @@ class Restaurant extends Equatable {
     goodForGroups,
     hasParking,
     phoneNumber,
+    weekdayHours,
   ];
 }

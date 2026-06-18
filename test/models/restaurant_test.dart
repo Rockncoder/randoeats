@@ -53,6 +53,7 @@ void main() {
         null, // goodForGroups
         null, // hasParking
         null, // phoneNumber
+        null, // weekdayHours
       ]);
     });
 
@@ -89,7 +90,18 @@ void main() {
           'primaryType': 'restaurant',
           'types': ['restaurant', 'food', 'establishment'],
           'nationalPhoneNumber': '(415) 555-0123',
-          'currentOpeningHours': {'openNow': true},
+          'currentOpeningHours': {
+            'openNow': true,
+            'weekdayDescriptions': [
+              'Monday: 9:00 AM – 5:00 PM',
+              'Tuesday: 9:00 AM – 5:00 PM',
+              'Wednesday: 9:00 AM – 5:00 PM',
+              'Thursday: 9:00 AM – 5:00 PM',
+              'Friday: 9:00 AM – 5:00 PM',
+              'Saturday: Closed',
+              'Sunday: Closed',
+            ],
+          },
         };
 
         final result = Restaurant.fromPlacesApiNew(json);
@@ -106,6 +118,9 @@ void main() {
         expect(result.types, contains('restaurant'));
         expect(result.isOpen, true);
         expect(result.phoneNumber, '(415) 555-0123');
+        expect(result.weekdayHours, hasLength(7));
+        expect(result.weekdayHours?.first, 'Monday: 9:00 AM – 5:00 PM');
+        expect(result.weekdayHours?.last, 'Sunday: Closed');
       });
 
       test('handles missing optional fields', () {
