@@ -28,6 +28,9 @@ class ResultsScreen extends ConsumerStatefulWidget {
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   final GlobalKey<MultiReelSlotMachineState> _slotMachineKey = GlobalKey();
   bool _showCelebration = false;
+  // Whether the user dismissed the current advisory banner. Reset on each new
+  // search so the banner re-appears for fresh results.
+  bool _noticeDismissed = false;
   List<SavedRegion> _regions = [];
 
   @override
@@ -310,6 +313,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         if (previous != next) {
           unawaited(ref.read(discoveryProvider.notifier).start());
         }
+      })
+      // A new search re-arms the advisory banner (un-dismiss it).
+      ..listen(discoveryProvider, (previous, next) {
+        if (next.status == DiscoveryStatus.loading && _noticeDismissed) {
+          setState(() => _noticeDismissed = false);
+        }
       });
     final isSpinning = state.status == DiscoveryStatus.spinning;
     final canRefresh =
@@ -340,8 +349,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 ),
                 // One-tap filters: cuisine + atmosphere + rating/price
                 FilterChipBar(onSaveSpot: _onSaveSpot),
-                // Advisory banner (e.g. most places closed right now).
+                // Advisory banner (e.g. most places closed right now), pinned
+                // at the top of the list so it stays visible until dismissed.
                 if (state.notice != null &&
+                    !_noticeDismissed &&
                     state.status != DiscoveryStatus.loading)
                   _buildNoticeBanner(context, state.notice!),
                 // Main content
@@ -428,6 +439,14 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               minimumSize: const Size(0, 36),
             ),
             child: const Text('Show all'),
+          ),
+          IconButton(
+            key: const ValueKey('notice_dismiss'),
+            icon: const Icon(Icons.close, size: 18),
+            color: GoogieColors.onMustardContainer,
+            visualDensity: VisualDensity.compact,
+            tooltip: 'Dismiss',
+            onPressed: () => setState(() => _noticeDismissed = true),
           ),
         ],
       ),
