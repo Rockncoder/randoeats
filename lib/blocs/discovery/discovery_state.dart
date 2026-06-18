@@ -34,6 +34,7 @@ class DiscoveryState extends Equatable {
     this.selectedRestaurant,
     this.mood,
     this.errorMessage,
+    this.notice,
     this.shownPlaceIds = const {},
   });
 
@@ -52,6 +53,10 @@ class DiscoveryState extends Equatable {
   /// Error message if status is failure.
   final String? errorMessage;
 
+  /// A non-blocking advisory shown as a banner alongside (low) results — e.g.
+  /// "most restaurants are closed right now". Null when there's nothing to say.
+  final String? notice;
+
   /// Set of place IDs that have been shown in this session.
   /// Used to avoid showing the same restaurants on refresh.
   final Set<String> shownPlaceIds;
@@ -63,9 +68,11 @@ class DiscoveryState extends Equatable {
     Restaurant? selectedRestaurant,
     String? mood,
     String? errorMessage,
+    String? notice,
     Set<String>? shownPlaceIds,
     bool clearSelectedRestaurant = false,
     bool clearErrorMessage = false,
+    bool clearNotice = false,
   }) {
     return DiscoveryState(
       status: status ?? this.status,
@@ -77,6 +84,7 @@ class DiscoveryState extends Equatable {
       errorMessage: clearErrorMessage
           ? null
           : (errorMessage ?? this.errorMessage),
+      notice: clearNotice ? null : (notice ?? this.notice),
       shownPlaceIds: shownPlaceIds ?? this.shownPlaceIds,
     );
   }
@@ -88,6 +96,7 @@ class DiscoveryState extends Equatable {
     selectedRestaurant,
     mood,
     errorMessage,
+    notice,
     shownPlaceIds,
   ];
 }

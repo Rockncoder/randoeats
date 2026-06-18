@@ -340,6 +340,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                 ),
                 // One-tap filters: cuisine + atmosphere + rating/price
                 FilterChipBar(onSaveSpot: _onSaveSpot),
+                // Advisory banner (e.g. most places closed right now).
+                if (state.notice != null &&
+                    state.status != DiscoveryStatus.loading)
+                  _buildNoticeBanner(context, state.notice!),
                 // Main content
                 Expanded(
                   child: _buildBody(context, state),
@@ -376,6 +380,58 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   void _refreshRestaurants() {
     unawaited(ref.read(discoveryProvider.notifier).refresh());
+  }
+
+  /// Turns off the Open-Only setting and re-runs discovery so closed places
+  /// show too (the banner's "Show all" action).
+  Future<void> _showAllRestaurants() async {
+    final settings = StorageService.instance.getSettings();
+    await StorageService.instance.saveSettings(
+      settings.copyWith(includeOpenOnly: false),
+    );
+    unawaited(ref.read(discoveryProvider.notifier).refresh());
+  }
+
+  Widget _buildNoticeBanner(BuildContext context, String message) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+      padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: GoogieColors.mustardContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GoogieColors.mustard),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.nightlight_round,
+            size: 20,
+            color: GoogieColors.onMustardContainer,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: GoogieColors.onMustardContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('notice_show_all'),
+            onPressed: _showAllRestaurants,
+            style: TextButton.styleFrom(
+              foregroundColor: GoogieColors.onMustardContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: const Size(0, 36),
+            ),
+            child: const Text('Show all'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTopBar(bool isSpinning, bool canRefresh) {

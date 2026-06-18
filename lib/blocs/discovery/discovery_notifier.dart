@@ -48,6 +48,7 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
       status: DiscoveryStatus.loading,
       mood: mood,
       clearErrorMessage: true,
+      clearNotice: true,
     );
 
     final region = _activeRegion();
@@ -81,7 +82,10 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     if (region != null) {
       restaurants = _filterToPolygon(restaurants, region.vertices);
     }
-    restaurants = _applyFilters(restaurants, settings, filters);
+    // Snapshot before the facet filters so we can tell whether thin results are
+    // due to most places being closed.
+    final candidates = restaurants;
+    restaurants = _applyFilters(candidates, settings, filters);
 
     if (restaurants.isEmpty) {
       state = state.copyWith(
@@ -93,12 +97,38 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
 
     restaurants = _sortByVisits(restaurants);
 
+    final notice = _noticeFor(candidates, restaurants, settings, filters);
     state = state.copyWith(
       status: DiscoveryStatus.success,
       restaurants: restaurants,
       shownPlaceIds: restaurants.map((r) => r.placeId).toSet(),
       clearSelectedRestaurant: true,
+      notice: notice,
+      clearNotice: notice == null,
     );
+  }
+
+  /// Lowest result count we consider "healthy". Below this we may surface an
+  /// advisory banner (the app aims to present ~5 choices).
+  static const int _lowResultThreshold = 5;
+
+  /// Returns an advisory banner message when results are thin *because* most
+  /// nearby places are closed (Open-Only is doing the trimming), else null.
+  String? _noticeFor(
+    List<Restaurant> candidates,
+    List<Restaurant> result,
+    UserSettings settings,
+    SpotFilters filters,
+  ) {
+    final openOnly = settings.includeOpenOnly || filters.openNow;
+    if (!openOnly || result.length >= _lowResultThreshold) return null;
+
+    final closed = candidates.where((r) => r.isOpen == false).length;
+    final open = candidates.where((r) => r.isOpen ?? false).length;
+    if (closed > open) {
+      return 'Most restaurants near you are closed right now.';
+    }
+    return null;
   }
 
   /// The active region, or `null` for GPS ("Near Me"). A region with too few
