@@ -97,7 +97,13 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
 
     restaurants = _sortByVisits(restaurants);
 
-    final notice = _noticeFor(candidates, restaurants, settings, filters);
+    final notice = _noticeFor(
+      candidates,
+      restaurants,
+      settings,
+      filters,
+      region,
+    );
     state = state.copyWith(
       status: DiscoveryStatus.success,
       restaurants: restaurants,
@@ -113,12 +119,15 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
   static const int _lowResultThreshold = 5;
 
   /// Returns an advisory banner message when results are thin *because* most
-  /// nearby places are closed (Open-Only is doing the trimming), else null.
+  /// places in the searched area are closed (Open-Only is doing the trimming),
+  /// else null. The location phrase reflects whether we're searching the user's
+  /// GPS location or a saved [region] that may be far from them.
   String? _noticeFor(
     List<Restaurant> candidates,
     List<Restaurant> result,
     UserSettings settings,
     SpotFilters filters,
+    SavedRegion? region,
   ) {
     final openOnly = settings.includeOpenOnly || filters.openNow;
     if (!openOnly || result.length >= _lowResultThreshold) return null;
@@ -126,7 +135,8 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     final closed = candidates.where((r) => r.isOpen == false).length;
     final open = candidates.where((r) => r.isOpen ?? false).length;
     if (closed > open) {
-      return 'Most restaurants near you are closed right now.';
+      final where = region != null ? 'in ${region.name}' : 'near you';
+      return 'Most restaurants $where are closed right now.';
     }
     return null;
   }
