@@ -218,6 +218,32 @@ class PlacesService {
     return _parseResponse(response);
   }
 
+  /// Fetches parking availability for a single place (Place Details, New).
+  ///
+  /// Called from the detail screen so the parking chip can appear even when the
+  /// search didn't request the (pricier) atmosphere fields — this is one cheap
+  /// lookup per opened place rather than atmosphere fields on every result.
+  /// Returns true/false when Google reports parking, or null if unknown/error.
+  Future<bool?> fetchHasParking(String placeId) async {
+    if (placeId.isEmpty || _apiKey.isEmpty) return null;
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '$_baseUrl/places/$placeId',
+        options: Options(
+          headers: {
+            'X-Goog-Api-Key': _apiKey,
+            'X-Goog-FieldMask': 'parkingOptions',
+          },
+        ),
+      );
+      final parking = response.data?['parkingOptions'] as Map<String, dynamic>?;
+      if (parking == null) return null;
+      return parking.values.any((v) => v == true);
+    } on DioException {
+      return null;
+    }
+  }
+
   /// Parses the API response and returns a list of restaurants.
   List<Restaurant> _parseResponse(Response<Map<String, dynamic>> response) {
     if (response.statusCode != 200) {

@@ -8,5 +8,11 @@ import 'package:randoeats/services/analytics_service.dart';
 /// Initialized eagerly in bootstrap and injected via ProviderScope overrides.
 final analyticsServiceProvider = Provider<AnalyticsService?>((ref) {
   if (kIsWeb) return null;
-  return AnalyticsService();
+  try {
+    return AnalyticsService();
+  } on Exception catch (_) {
+    // Firebase isn't initialized (e.g. Android without google-services config),
+    // so run without analytics instead of crashing the whole app.
+    return null;
+  }
 });
