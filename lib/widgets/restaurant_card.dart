@@ -54,8 +54,8 @@ class RestaurantCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
         side: BorderSide(
-          color: GoogieColors.turquoise.withValues(alpha: 0.25),
-          width: 1.5,
+          color: GoogieColors.turquoise.withValues(alpha: 0.55),
+          width: 2.5,
         ),
       ),
       child: SizedBox(
@@ -66,18 +66,26 @@ class RestaurantCard extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               _buildPhoto(theme),
-              // Bottom scrim so white type stays legible over any photo.
-              const DecoratedBox(
+              // Bottom scrim (keeps white type legible) tinted with the theme's
+              // primary so each card carries the theme — warm in Autumn, cool
+              // in Winter, etc.
+              DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0x00000000),
-                      Color(0x33000000),
-                      Color(0xD9000000),
+                      const Color(0x00000000),
+                      Color.alphaBlend(
+                        GoogieColors.turquoise.withValues(alpha: 0.18),
+                        const Color(0x40000000),
+                      ),
+                      Color.alphaBlend(
+                        GoogieColors.turquoise.withValues(alpha: 0.55),
+                        const Color(0xE6000000),
+                      ),
                     ],
-                    stops: [0.35, 0.6, 1],
+                    stops: const [0.32, 0.6, 1],
                   ),
                 ),
               ),
