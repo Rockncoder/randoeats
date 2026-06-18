@@ -67,7 +67,6 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
   final List<GlobalKey<_ReelState>> _reelKeys = [];
 
   int _columns = 1;
-  int _rows = 1;
   bool _isSpinning = false;
   int? _winnerColumn;
   int _stoppedCount = 0;
@@ -112,11 +111,18 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
       _stoppedCount = 0;
     });
 
-    final winnerColumn = _random.nextInt(_columns);
+    // Pick the winner uniformly over ALL restaurants, then map the global index
+    // to the strided (column, position) that displays it. Every restaurant is
+    // equally likely — no front-of-list bias, no unreachable tail.
+    final winnerGlobal = _random.nextInt(widget.restaurants.length);
+    final winnerColumn = winnerGlobal % _columns;
+    final winnerPos = winnerGlobal ~/ _columns;
 
     if (widget.calmMode) {
       for (var c = 0; c < _columns; c++) {
-        _reelKeys[c].currentState?.placeInstantly();
+        _reelKeys[c].currentState?.placeInstantly(
+          index: c == winnerColumn ? winnerPos : null,
+        );
       }
       _revealWinner(winnerColumn);
       return;
@@ -125,6 +131,7 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
     for (var c = 0; c < _columns; c++) {
       _reelKeys[c].currentState?.spin(
         duration: _baseSpin + _stagger * c,
+        landIndex: c == winnerColumn ? winnerPos : null,
         onStopped: () => _onReelStopped(winnerColumn),
       );
     }
@@ -142,10 +149,10 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
     final reels = ReelLayout.buildReels(
       widget.restaurants,
       columns: _columns,
-      rows: _rows,
     );
+    final reel = reels[winnerColumn];
     final landed = _reelKeys[winnerColumn].currentState?.landedIndex ?? 0;
-    final winner = reels[winnerColumn][landed];
+    final winner = reel[landed.clamp(0, reel.length - 1)];
 
     setState(() {
       _isSpinning = false;
@@ -168,13 +175,11 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
         final rows = _rowsFor(constraints.maxHeight);
         // Cache derived layout so spin() and the next build agree.
         _columns = columns;
-        _rows = rows;
         _syncReelKeys(columns);
 
         final reels = ReelLayout.buildReels(
           widget.restaurants,
           columns: columns,
-          rows: rows,
         );
 
         return Stack(
@@ -188,6 +193,8 @@ class MultiReelSlotMachineState extends State<MultiReelSlotMachine> {
                       key: _reelKeys[c],
                       restaurants: reels[c],
                       cardHeight: cardHeight,
+                      minCells: rows,
+                      random: _random,
                       isWinner: _winnerColumn == c,
                       dimmed: _winnerColumn != null && _winnerColumn != c,
                       spinning: _isSpinning,
@@ -222,6 +229,8 @@ class _Reel extends StatefulWidget {
   const _Reel({
     required this.restaurants,
     required this.cardHeight,
+    required this.minCells,
+    required this.random,
     required this.isWinner,
     required this.dimmed,
     required this.spinning,
@@ -230,8 +239,16 @@ class _Reel extends StatefulWidget {
     super.key,
   });
 
+  /// The distinct restaurants this reel can land on.
   final List<Restaurant> restaurants;
   final double cardHeight;
+
+  /// Minimum cells to render so the reel fills the viewport (including the slot
+  /// under the floating spin badge) by repeating [restaurants] as needed.
+  final int minCells;
+
+  /// Shared RNG, so landing indices come from one well-distributed source.
+  final math.Random random;
   final bool isWinner;
   final bool dimmed;
   final bool spinning;
@@ -285,26 +302,31 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  /// Places this reel at a random cell instantly, with no animation.
-  ///
-  /// Used by calm (reduced-motion) mode.
-  void placeInstantly() {
-    if (widget.restaurants.isEmpty) return;
-    landedIndex = math.Random().nextInt(widget.restaurants.length);
+  /// Places this reel at [index] (or a random distinct cell) instantly, with no
+  /// animation. Used by calm (reduced-motion) mode.
+  void placeInstantly({int? index}) {
+    final n = widget.restaurants.length;
+    if (n == 0) return;
+    landedIndex = index ?? widget.random.nextInt(n);
     if (_scroll.hasClients) {
       final maxExtent = _scroll.position.maxScrollExtent;
       _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0, maxExtent));
     }
   }
 
-  /// Spins this reel for [duration], landing a random cell at the top.
-  void spin({required Duration duration, required VoidCallback onStopped}) {
+  /// Spins this reel for [duration], landing [landIndex] (or a random distinct
+  /// cell) at the top.
+  void spin({
+    required Duration duration,
+    required VoidCallback onStopped,
+    int? landIndex,
+  }) {
     final n = widget.restaurants.length;
     if (n == 0) {
       onStopped();
       return;
     }
-    landedIndex = math.Random().nextInt(n);
+    landedIndex = landIndex ?? widget.random.nextInt(n);
 
     // Spin a consistent visual distance regardless of how many cells the column
     // has (so 1 result spins as smoothly as 12), landing exactly on a card
@@ -315,8 +337,9 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
     final target = endIndex * widget.cardHeight;
 
     // Repeating strip long enough that the monotonic scroll never reaches the
-    // end — no modulo wrap, no clamp pause. Read by [build].
-    _spinItemCount = endIndex + n + 4;
+    // end — no modulo wrap, no clamp pause — and with enough cells past the
+    // landing to keep the viewport (incl. under the badge) full.
+    _spinItemCount = endIndex + n + widget.minCells + 2;
 
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _controller
@@ -365,14 +388,15 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
           physics: widget.spinning
               ? const NeverScrollableScrollPhysics()
               : const ClampingScrollPhysics(),
-          // Extra bottom padding so the last card can scroll clear of the
-          // floating spin badge that hovers over the bottom of the list.
-          padding: const EdgeInsets.only(top: 4, bottom: 120),
-          // Finite list of options when idle; a long repeating strip while
-          // spinning so the scroll loops seamlessly.
-          itemCount: widget.spinning && _spinItemCount > 0
-              ? _spinItemCount
-              : widget.restaurants.length,
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          // A repeating strip of the full list: idle it fills the viewport
+          // (incl. the slot under the floating badge) by repeating as needed;
+          // spinning it is long enough to loop seamlessly.
+          itemCount: widget.restaurants.isEmpty
+              ? 0
+              : (widget.spinning && _spinItemCount > 0
+                    ? _spinItemCount
+                    : widget.restaurants.length + widget.minCells),
           itemBuilder: (context, index) {
             final n = widget.restaurants.length;
             final restaurant = widget.restaurants[index % n];
