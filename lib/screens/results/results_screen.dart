@@ -167,6 +167,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   void _startSpin() {
+    // Guard against re-entry during the reveal/celebration sequence.
+    if (_showCelebration) return;
     ref.read(discoveryProvider.notifier).startSpin();
     _slotMachineKey.currentState?.spin();
   }
@@ -374,7 +376,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     button: true,
                     child: RandoEatsButton(
                       key: const ValueKey('spin_button'),
-                      onPressed: _startSpin,
+                      // Locked for the whole winner sequence: the reel spin
+                      // (status == spinning) through the reveal + celebration,
+                      // re-enabled only once the celebration completes.
+                      onPressed: (isSpinning || _showCelebration)
+                          ? null
+                          : _startSpin,
                       isSpinning: isSpinning,
                     ),
                   ),
