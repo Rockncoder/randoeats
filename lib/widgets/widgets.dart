@@ -10,6 +10,7 @@ export 'rando_eats_button.dart';
 export 'reel_layout.dart';
 export 'region_chip_bar.dart';
 export 'restaurant_card.dart';
+export 'skeleton_loader.dart';
 export 'slot_machine_list.dart';
 export 'wavy_line.dart';
 export 'winner_celebration.dart';

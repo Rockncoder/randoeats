@@ -171,17 +171,19 @@ class _FacetChip extends StatelessWidget {
         avatar: icon == null ? null : Icon(icon, size: 18, color: foreground),
         label: Text(label),
         selected: selected,
-        showCheckmark: false,
+        showCheckmark: true,
+        checkmarkColor: foreground,
         labelStyle: TextStyle(color: foreground, fontWeight: FontWeight.w700),
         selectedColor: GoogieColors.coral,
         backgroundColor: GoogieColors.turquoiseContainer,
-        elevation: selected ? 3 : 0,
-        pressElevation: 4,
-        shadowColor: GoogieColors.coral.withValues(alpha: 0.5),
-        side: BorderSide(
-          color: selected
-              ? Colors.transparent
-              : GoogieColors.turquoise.withValues(alpha: 0.35),
+        elevation: 0,
+        pressElevation: 1,
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: selected
+                ? Colors.transparent
+                : GoogieColors.turquoise.withValues(alpha: 0.35),
+          ),
         ),
         onSelected: (_) => onToggle(),
       ),

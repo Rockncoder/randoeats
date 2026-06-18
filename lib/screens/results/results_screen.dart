@@ -201,6 +201,100 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     unawaited(context.push<void>(AppRoutes.settings));
   }
 
+  /// Opens an M3 bottom sheet for quick radius/price tweaks without leaving the
+  /// results screen.
+  Future<void> _openQuickTune() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        var settings = StorageService.instance.getSettings();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick tune',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: GoogieColors.deepTeal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('Search radius', style: theme.textTheme.titleSmall),
+                  Text(
+                    settings.distanceUnit.format(
+                      settings.searchRadiusMeters.toDouble(),
+                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: GoogieColors.deepTeal,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Slider(
+                    value: settings.searchRadiusMeters.toDouble().clamp(
+                      UserSettings.minSearchRadius.toDouble(),
+                      UserSettings.maxSearchRadius.toDouble(),
+                    ),
+                    min: UserSettings.minSearchRadius.toDouble(),
+                    max: UserSettings.maxSearchRadius.toDouble(),
+                    divisions: 19,
+                    activeColor: GoogieColors.turquoise,
+                    onChanged: (v) => setSheetState(
+                      () => settings = settings.copyWith(
+                        searchRadiusMeters: v.round(),
+                      ),
+                    ),
+                    onChangeEnd: (v) async {
+                      await StorageService.instance.saveSettings(
+                        settings.copyWith(searchRadiusMeters: v.round()),
+                      );
+                      unawaited(ref.read(discoveryProvider.notifier).start());
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Price', style: theme.textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Consumer(
+                    builder: (context, sheetRef, _) {
+                      final filters = sheetRef.watch(activeFiltersProvider);
+                      return Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final level in const [1, 2, 3])
+                            ChoiceChip(
+                              key: ValueKey('tune_price_$level'),
+                              label: Text(r'$' * level),
+                              selected: filters.priceLevels.contains(level),
+                              showCheckmark: true,
+                              selectedColor: GoogieColors.coral,
+                              backgroundColor: GoogieColors.turquoiseContainer,
+                              shape: const StadiumBorder(),
+                              onSelected: (_) => sheetRef
+                                  .read(activeFiltersProvider.notifier)
+                                  .togglePriceLevel(level),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(discoveryProvider);
@@ -298,6 +392,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               tooltip: 'Find new restaurants',
             ),
           const Spacer(),
+          // Quick tune (radius + price) in an M3 bottom sheet.
+          IconButton(
+            key: const ValueKey('quick_tune_button'),
+            icon: const Icon(Icons.tune),
+            color: GoogieColors.deepTeal,
+            iconSize: 26,
+            onPressed: isSpinning ? null : _openQuickTune,
+            tooltip: 'Quick tune',
+          ),
           // Settings gear (right side)
           Semantics(
             identifier: 'settings_button',
@@ -333,32 +436,36 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   }
 
   Widget _buildLoading(ThemeData theme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Expressive "scanning" wave instead of a plain spinner.
-          SizedBox(
-            width: 220,
-            child: WavyLine(
-              secondaryColor: GoogieColors.coral,
-              height: 48,
-              amplitude: 9,
-              wavelength: 46,
-              strokeWidth: 5,
-            ),
+    // M3 shimmer skeletons that mirror the cards, instead of a spinner.
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 120,
+                child: WavyLine(
+                  secondaryColor: GoogieColors.coral,
+                  amplitude: 4,
+                  wavelength: 30,
+                  strokeWidth: 3,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Scanning nearby quadrants...',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: GoogieColors.deepTeal,
+                  fontWeight: FontWeight.w600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Scanning nearby quadrants...',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: GoogieColors.deepTeal,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
+        ),
+        const Expanded(child: SkeletonCardList()),
+      ],
     );
   }
 

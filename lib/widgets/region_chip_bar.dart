@@ -157,20 +157,22 @@ class _ScopeChip extends StatelessWidget {
           avatar: Icon(icon, size: 18, color: foreground),
           label: Text(label),
           selected: selected,
-          showCheckmark: false,
+          showCheckmark: true,
+          checkmarkColor: foreground,
           labelStyle: TextStyle(
             color: foreground,
             fontWeight: FontWeight.w700,
           ),
           selectedColor: GoogieColors.coral,
           backgroundColor: GoogieColors.mustardContainer,
-          elevation: selected ? 3 : 0,
-          pressElevation: 4,
-          shadowColor: GoogieColors.coral.withValues(alpha: 0.5),
-          side: BorderSide(
-            color: selected
-                ? Colors.transparent
-                : GoogieColors.mustard.withValues(alpha: 0.7),
+          elevation: 0,
+          pressElevation: 1,
+          shape: StadiumBorder(
+            side: BorderSide(
+              color: selected
+                  ? Colors.transparent
+                  : GoogieColors.mustard.withValues(alpha: 0.7),
+            ),
           ),
           onSelected: (_) => onTap(),
         ),

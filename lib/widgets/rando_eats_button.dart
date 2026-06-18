@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:randoeats/config/config.dart';
 
 /// A large, Googie-styled button for triggering the slot machine animation.
@@ -124,7 +125,13 @@ class _RandoEatsButtonState extends State<RandoEatsButton>
             button: true,
             label: 'Spin to pick a restaurant',
             child: GestureDetector(
-              onTap: widget.onPressed,
+              onTap: widget.onPressed == null
+                  ? null
+                  : () {
+                      // Tactile, gamified feedback on the spin.
+                      unawaited(HapticFeedback.mediumImpact());
+                      widget.onPressed!();
+                    },
               child: ScaleTransition(scale: _pulseAnimation, child: badge),
             ),
           );
