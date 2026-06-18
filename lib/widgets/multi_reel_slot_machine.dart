@@ -249,6 +249,11 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
 
   int landedIndex = 0;
 
+  /// While spinning, the reel renders a long repeating strip so the scroll can
+  /// run monotonically without ever hitting the end (no wrap/pause). 0 until the
+  /// first spin; falls back to the finite length in [build].
+  int _spinItemCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -256,6 +261,21 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
     // would otherwise run inside dispose() for reels that never spin, doing an
     // ancestor (TickerMode) lookup on a deactivated element → crash.
     _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void didUpdateWidget(_Reel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the spin ends the list returns to its finite length; pin the winner
+    // at the top of that finite list (the strip had it at the top already, so
+    // this is visually seamless).
+    if (oldWidget.spinning && !widget.spinning) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scroll.hasClients) return;
+        final maxExtent = _scroll.position.maxScrollExtent;
+        _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0.0, maxExtent));
+      });
+    }
   }
 
   @override
@@ -279,31 +299,39 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
 
   /// Spins this reel for [duration], landing a random cell at the top.
   void spin({required Duration duration, required VoidCallback onStopped}) {
-    if (widget.restaurants.isEmpty) {
+    final n = widget.restaurants.length;
+    if (n == 0) {
       onStopped();
       return;
     }
-    landedIndex = math.Random().nextInt(widget.restaurants.length);
+    landedIndex = math.Random().nextInt(n);
 
-    final cycle = widget.restaurants.length * widget.cardHeight;
-    final target = (cycle * 3) + (landedIndex * widget.cardHeight);
+    // Spin a consistent visual distance regardless of how many cells the column
+    // has (so 1 result spins as smoothly as 12), landing exactly on a card
+    // boundary with the winning cell at the top.
+    const minTravelCells = 24;
+    final loops = math.max(3, (minTravelCells / n).ceil());
+    final endIndex = loops * n + landedIndex;
+    final target = endIndex * widget.cardHeight;
+
+    // Repeating strip long enough that the monotonic scroll never reaches the
+    // end — no modulo wrap, no clamp pause. Read by [build].
+    _spinItemCount = endIndex + n + 4;
 
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _controller
       ..duration = duration
       ..reset();
     _animation = Tween<double>(begin: 0, end: target).animate(
-      CurvedAnimation(parent: _controller, curve: _SlotMachineCurve()),
+      CurvedAnimation(parent: _controller, curve: const _SpinCurve()),
     )..addListener(_tick);
 
     void statusListener(AnimationStatus status) {
       if (status != AnimationStatus.completed) return;
       _animation?.removeListener(_tick);
       _controller.removeStatusListener(statusListener);
-      if (_scroll.hasClients) {
-        final maxExtent = _scroll.position.maxScrollExtent;
-        _scroll.jumpTo((landedIndex * widget.cardHeight).clamp(0, maxExtent));
-      }
+      // The winner is already at the top (offset == target). Re-pinning on the
+      // finite list happens in didUpdateWidget once `spinning` flips false.
       onStopped();
     }
 
@@ -314,8 +342,9 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
   void _tick() {
     if (!_scroll.hasClients) return;
     final maxExtent = _scroll.position.maxScrollExtent;
-    final wrapped = _animation!.value % (maxExtent + widget.cardHeight);
-    _scroll.jumpTo(wrapped.clamp(0, maxExtent));
+    // Monotonic, seamless scroll. The strip is long enough that we never reach
+    // the end, so there is no wrap and no pause; clamp is only a safety net.
+    _scroll.jumpTo(_animation!.value.clamp(0.0, maxExtent));
   }
 
   @override
@@ -339,11 +368,16 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
           // Extra bottom padding so the last card can scroll clear of the
           // floating spin badge that hovers over the bottom of the list.
           padding: const EdgeInsets.only(top: 4, bottom: 120),
-          itemCount: widget.restaurants.length,
+          // Finite list of options when idle; a long repeating strip while
+          // spinning so the scroll loops seamlessly.
+          itemCount: widget.spinning && _spinItemCount > 0
+              ? _spinItemCount
+              : widget.restaurants.length,
           itemBuilder: (context, index) {
-            final restaurant = widget.restaurants[index];
+            final n = widget.restaurants.length;
+            final restaurant = widget.restaurants[index % n];
             final isWinnerCell =
-                widget.isWinner && index == landedIndex && !widget.spinning;
+                widget.isWinner && !widget.spinning && index == landedIndex;
             // Non-winning cells morph into the detail page (M3 container
             // transform). The winner keeps its Hero for the celebration flight.
             final useContainer =
@@ -420,13 +454,33 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Slot-machine easing: quick start, full speed, decelerate to a stop.
-class _SlotMachineCurve extends Curve {
+/// Smooth trapezoidal spin easing: ramp up (accelerate) → cruise at full speed
+/// → ramp down (decelerate) to a stop. Velocity is continuous (no jerks), and
+/// the deceleration phase is longer than the acceleration for a satisfying
+/// slot-machine slowdown. Position is normalized so transform(1) == 1.
+class _SpinCurve extends Curve {
+  const _SpinCurve();
+
+  static const double _ta = 0.25; // acceleration ends
+  static const double _tb = 0.6; // deceleration begins
+  // Peak velocity that makes the integral (total distance) equal 1.
+  static const double _vMax = 1 / (_ta / 2 + (_tb - _ta) + (1 - _tb) / 2);
+
   @override
-  double transform(double t) {
-    if (t < 0.1) return Curves.easeIn.transform(t * 10) * 0.1;
-    if (t < 0.6) return 0.1 + (t - 0.1) * (0.6 / 0.5);
-    final localT = (t - 0.6) / 0.4;
-    return 0.7 + Curves.easeOutCubic.transform(localT) * 0.3;
+  double transformInternal(double t) {
+    if (t < _ta) {
+      // Accelerating: area under a linearly rising velocity.
+      return _vMax * t * t / (2 * _ta);
+    }
+    if (t < _tb) {
+      // Cruising at _vMax.
+      return _vMax * (_ta / 2) + _vMax * (t - _ta);
+    }
+    // Decelerating: linearly falling velocity to 0 at t == 1.
+    final d = t - _tb;
+    const dd = 1 - _tb;
+    return _vMax * (_ta / 2) +
+        _vMax * (_tb - _ta) +
+        _vMax * (d - d * d / (2 * dd));
   }
 }
