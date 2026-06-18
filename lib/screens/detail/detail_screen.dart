@@ -666,23 +666,71 @@ class _HoursSectionState extends State<_HoursSection> {
   }
 
   Widget _buildWeek(ThemeData theme, int todayIdx) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    TextStyle? styleFor(int i) => theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: i == todayIdx ? FontWeight.bold : FontWeight.normal,
+      color: i == todayIdx
+          ? GoogieColors.coral
+          : theme.colorScheme.onSurface.withValues(alpha: 0.8),
+    );
+
+    // Day | open | "– close": day left, open times right-aligned in their own
+    // column and closing times in the next, so all opens (and all closes) line
+    // up regardless of day-name or time width.
+    return Table(
+      columnWidths: const {
+        0: IntrinsicColumnWidth(),
+        1: IntrinsicColumnWidth(),
+        2: FlexColumnWidth(),
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       children: [
         for (var i = 0; i < widget.weekdayHours.length; i++)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Text(
-              widget.weekdayHours[i],
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: i == todayIdx ? FontWeight.bold : FontWeight.normal,
-                color: i == todayIdx
-                    ? GoogieColors.coral
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.8),
-              ),
-            ),
-          ),
+          _dayRow(widget.weekdayHours[i], styleFor(i)),
       ],
     );
+  }
+
+  TableRow _dayRow(String description, TextStyle? style) {
+    final parsed = _parseLine(description);
+    final hasRange = parsed.open.isNotEmpty;
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16, top: 2, bottom: 2),
+          child: Text(parsed.day, style: style),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 8, top: 2, bottom: 2),
+          child: Text(parsed.open, textAlign: TextAlign.right, style: style),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            hasRange ? '– ${parsed.close}' : parsed.close,
+            style: style,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Splits "Monday: 9:00 AM – 5:00 PM" into day / open / close. Lines without a
+  /// single time range (e.g. "Closed", "Open 24 hours", split lunch/dinner
+  /// hours) keep the whole value in `close` with an empty `open`.
+  ({String day, String open, String close}) _parseLine(String description) {
+    final colon = description.indexOf(': ');
+    final day = colon >= 0 ? description.substring(0, colon) : description;
+    final rest = (colon >= 0 ? description.substring(colon + 2) : '').trim();
+    if (!rest.contains(',')) {
+      final match = RegExp('(.+?)[–—-](.+)').firstMatch(rest);
+      if (match != null) {
+        return (
+          day: day,
+          open: match.group(1)!.trim(),
+          close: match.group(2)!.trim(),
+        );
+      }
+    }
+    return (day: day, open: '', close: rest);
   }
 }
