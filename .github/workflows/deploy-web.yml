@@ -36,7 +36,8 @@ jobs:
         run: |
           flutter build web \
             --release \
-            -t lib/main_production.dart
+            -t lib/main_production.dart \
+            --dart-define=GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
