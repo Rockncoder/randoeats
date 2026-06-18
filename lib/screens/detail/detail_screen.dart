@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -219,16 +221,13 @@ class DetailScreen extends ConsumerWidget {
                       : GoogieColors.onCoralContainer,
                   theme: theme,
                 ),
-              // Parking — shown when Google reports a parking option.
-              if (restaurant.hasParking ?? false)
-                _buildChip(
-                  icon: Icons.local_parking,
-                  iconColor: GoogieColors.onTurquoiseContainer,
-                  label: 'Parking',
-                  fill: GoogieColors.turquoiseContainer,
-                  textColor: GoogieColors.onTurquoiseContainer,
-                  theme: theme,
-                ),
+              // Parking — fetched per-detail-view (Place Details) so it shows
+              // even when the search didn't request the atmosphere fields.
+              _ParkingChip(
+                placeId: restaurant.placeId,
+                initialHasParking: restaurant.hasParking,
+                theme: theme,
+              ),
             ],
           ),
           // Opening hours — today's line, tap to expand the whole week.
@@ -742,5 +741,75 @@ class _HoursSectionState extends State<_HoursSection> {
       }
     }
     return (day: day, open: '', close: rest);
+  }
+}
+
+/// Parking indicator. Shows a "Parking" chip when Google reports a parking
+/// option. If the search didn't already supply it, it fetches once per opened
+/// place (Place Details) so parking is shown on every detail page.
+class _ParkingChip extends StatefulWidget {
+  const _ParkingChip({
+    required this.placeId,
+    required this.initialHasParking,
+    required this.theme,
+  });
+
+  final String placeId;
+  final bool? initialHasParking;
+  final ThemeData theme;
+
+  @override
+  State<_ParkingChip> createState() => _ParkingChipState();
+}
+
+class _ParkingChipState extends State<_ParkingChip> {
+  bool? _hasParking;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasParking = widget.initialHasParking;
+    if (_hasParking == null) {
+      unawaited(_loadParking());
+    }
+  }
+
+  Future<void> _loadParking() async {
+    final result = await PlacesService.instance.fetchHasParking(
+      widget.placeId,
+    );
+    if (!mounted) return;
+    setState(() => _hasParking = result);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasParking != true) return const SizedBox.shrink();
+    final theme = widget.theme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: GoogieColors.turquoiseContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.local_parking,
+            size: 18,
+            color: GoogieColors.onTurquoiseContainer,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Parking',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: GoogieColors.onTurquoiseContainer,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
