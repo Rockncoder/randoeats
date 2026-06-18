@@ -221,6 +221,12 @@ class DetailScreen extends ConsumerWidget {
                 ),
             ],
           ),
+          // Opening hours — today's line, tap to expand the whole week.
+          if (restaurant.weekdayHours != null &&
+              restaurant.weekdayHours!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _HoursSection(weekdayHours: restaurant.weekdayHours!, theme: theme),
+          ],
           // Categories
           if (restaurant.types.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -546,5 +552,185 @@ class DetailScreen extends ConsumerWidget {
         );
       }
     }
+  }
+}
+
+/// Opening hours: shows today's hours, expands to the full week when tapped.
+class _HoursSection extends StatefulWidget {
+  const _HoursSection({required this.weekdayHours, required this.theme});
+
+  /// One localized line per day, e.g. "Monday: 9:00 AM – 5:00 PM".
+  final List<String> weekdayHours;
+  final ThemeData theme;
+
+  @override
+  State<_HoursSection> createState() => _HoursSectionState();
+}
+
+class _HoursSectionState extends State<_HoursSection> {
+  bool _expanded = false;
+
+  static const _dayNames = [
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+    'sunday',
+  ];
+
+  /// Index of today's line. Matches by day name (robust to Monday/Sunday-first
+  /// ordering), falling back to a Monday-first assumption.
+  int get _todayIndex {
+    final today = _dayNames[DateTime.now().weekday - 1];
+    final byName = widget.weekdayHours.indexWhere(
+      (d) => d.toLowerCase().startsWith(today),
+    );
+    if (byName >= 0) return byName;
+    return (DateTime.now().weekday - 1).clamp(
+      0,
+      widget.weekdayHours.length - 1,
+    );
+  }
+
+  /// The hours portion of a "Monday: 9:00 AM – 5:00 PM" line.
+  String _hoursPart(String description) {
+    final i = description.indexOf(': ');
+    return i >= 0 ? description.substring(i + 2) : description;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    final todayIdx = _todayIndex;
+
+    return Semantics(
+      button: true,
+      label: 'Opening hours',
+      child: InkWell(
+        key: const ValueKey('detail_hours'),
+        onTap: () => setState(() => _expanded = !_expanded),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.schedule, size: 18, color: GoogieColors.turquoise),
+              const SizedBox(width: 8),
+              Expanded(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 200),
+                  alignment: Alignment.topCenter,
+                  child: _expanded
+                      ? _buildWeek(theme, todayIdx)
+                      : _buildToday(
+                          theme,
+                          _hoursPart(widget.weekdayHours[todayIdx]),
+                        ),
+                ),
+              ),
+              Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                size: 20,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToday(ThemeData theme, String todayHours) {
+    return Row(
+      children: [
+        Text(
+          'Today',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            todayHours,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeek(ThemeData theme, int todayIdx) {
+    TextStyle? styleFor(int i) => theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: i == todayIdx ? FontWeight.bold : FontWeight.normal,
+      color: i == todayIdx
+          ? GoogieColors.coral
+          : theme.colorScheme.onSurface.withValues(alpha: 0.8),
+    );
+
+    // Day | open | "– close": day left, open times right-aligned in their own
+    // column and closing times in the next, so all opens (and all closes) line
+    // up regardless of day-name or time width.
+    return Table(
+      columnWidths: const {
+        0: IntrinsicColumnWidth(),
+        1: IntrinsicColumnWidth(),
+        2: FlexColumnWidth(),
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        for (var i = 0; i < widget.weekdayHours.length; i++)
+          _dayRow(widget.weekdayHours[i], styleFor(i)),
+      ],
+    );
+  }
+
+  TableRow _dayRow(String description, TextStyle? style) {
+    final parsed = _parseLine(description);
+    final hasRange = parsed.open.isNotEmpty;
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16, top: 2, bottom: 2),
+          child: Text(parsed.day, style: style),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 8, top: 2, bottom: 2),
+          child: Text(parsed.open, textAlign: TextAlign.right, style: style),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            hasRange ? '– ${parsed.close}' : parsed.close,
+            style: style,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Splits "Monday: 9:00 AM – 5:00 PM" into day / open / close. Lines without a
+  /// single time range (e.g. "Closed", "Open 24 hours", split lunch/dinner
+  /// hours) keep the whole value in `close` with an empty `open`.
+  ({String day, String open, String close}) _parseLine(String description) {
+    final colon = description.indexOf(': ');
+    final day = colon >= 0 ? description.substring(0, colon) : description;
+    final rest = (colon >= 0 ? description.substring(colon + 2) : '').trim();
+    if (!rest.contains(',')) {
+      final match = RegExp('(.+?)[–—-](.+)').firstMatch(rest);
+      if (match != null) {
+        return (
+          day: day,
+          open: match.group(1)!.trim(),
+          close: match.group(2)!.trim(),
+        );
+      }
+    }
+    return (day: day, open: '', close: rest);
   }
 }
