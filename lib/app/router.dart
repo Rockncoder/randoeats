@@ -23,6 +23,9 @@ abstract class AppRoutes {
 
   /// About screen.
   static const about = '/about';
+
+  /// Splash screen (initial route).
+  static const splash = '/splash';
 }
 
 /// Provider for the app router.
@@ -40,7 +43,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     observers: observers,
+    initialLocation: AppRoutes.splash,
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: AppRoutes.results,
         builder: (context, state) => const ResultsScreen(),
