@@ -63,13 +63,13 @@ class UserSettings extends Equatable {
   static const int maxSearchRadius = 10000;
 
   /// Default maximum results to show.
-  static const int defaultMaxResults = 20;
+  static const int defaultMaxResults = 40;
 
   /// Minimum results to show.
   static const int minMaxResults = 5;
 
-  /// Maximum results to show.
-  static const int maxMaxResults = 50;
+  /// Maximum results to show (Google's Text Search pagination tops out ~60).
+  static const int maxMaxResults = 60;
 
   /// Number of days to hide a restaurant after picking it.
   @HiveField(0)

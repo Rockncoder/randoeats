@@ -106,28 +106,19 @@ class PlacesService {
           _extractKeyword(mood) ??
           (filters.cuisines.isNotEmpty ? filters.cuisines.join(' ') : null);
       final fieldMask = _fieldMaskFor(filters);
-      final List<Restaurant> restaurants;
 
-      // Use text search if there's a keyword, otherwise use nearby search
-      if (keyword != null && keyword.isNotEmpty) {
-        restaurants = await _textSearchRestaurants(
-          latitude: latitude,
-          longitude: longitude,
-          query: keyword,
-          radiusMeters: radiusMeters,
-          maxResultCount: maxResultCount,
-          fieldMask: fieldMask,
-          filters: filters,
-        );
-      } else {
-        restaurants = await _nearbySearchRestaurants(
-          latitude: latitude,
-          longitude: longitude,
-          radiusMeters: radiusMeters,
-          maxResultCount: maxResultCount,
-          fieldMask: fieldMask,
-        );
-      }
+      // Always use Text Search: it supports pagination (up to ~60 results),
+      // whereas Nearby Search caps at 20 with no page token. An empty keyword
+      // browses all nearby restaurants.
+      final restaurants = await _textSearchRestaurants(
+        latitude: latitude,
+        longitude: longitude,
+        query: keyword ?? '',
+        radiusMeters: radiusMeters,
+        maxResultCount: maxResultCount,
+        fieldMask: fieldMask,
+        filters: filters,
+      );
 
       // Filter out excluded places
       final filtered = restaurants
@@ -150,8 +141,8 @@ class PlacesService {
     required String fieldMask,
     required SpotFilters filters,
   }) async {
-    final data = <String, dynamic>{
-      'textQuery': '$query restaurant',
+    final baseData = <String, dynamic>{
+      'textQuery': query.trim().isEmpty ? 'restaurant' : '$query restaurant',
       'includedType': 'restaurant',
       'locationBias': {
         'circle': {
@@ -159,63 +150,59 @@ class PlacesService {
           'radius': radiusMeters.toDouble(),
         },
       },
-      'pageSize': maxResultCount,
     };
     // Cheap server-side filters supported by Text Search.
-    if (filters.openNow) data['openNow'] = true;
-    if (filters.minRating != null) data['minRating'] = filters.minRating;
+    if (filters.openNow) baseData['openNow'] = true;
+    if (filters.minRating != null) baseData['minRating'] = filters.minRating;
     if (filters.priceLevels.isNotEmpty) {
-      data['priceLevels'] = _priceLevelEnums(filters.priceLevels);
+      baseData['priceLevels'] = _priceLevelEnums(filters.priceLevels);
     }
 
-    final response = await _client.post<Map<String, dynamic>>(
-      '$_baseUrl/places:searchText',
-      options: Options(
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': _apiKey,
-          'X-Goog-FieldMask': fieldMask,
-        },
-      ),
-      data: data,
-    );
-
-    return _parseResponse(response);
-  }
-
-  /// Searches for nearby restaurants via Places API (New).
-  Future<List<Restaurant>> _nearbySearchRestaurants({
-    required double latitude,
-    required double longitude,
-    required int radiusMeters,
-    required int maxResultCount,
-    required String fieldMask,
-  }) async {
-    final response = await _client.post<Map<String, dynamic>>(
-      '$_baseUrl/places:searchNearby',
-      options: Options(
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': _apiKey,
-          'X-Goog-FieldMask': fieldMask,
-        },
-      ),
-      data: {
-        'includedTypes': ['restaurant'],
-        'locationRestriction': {
-          'circle': {
-            'center': {
-              'latitude': latitude,
-              'longitude': longitude,
+    // Text Search returns at most 20 results per page. Page through with
+    // nextPageToken until we have enough or Google stops returning a token
+    // (it allows up to ~60 total). pageSize must stay constant across pages
+    // when a pageToken is supplied, so trim any overflow at the end.
+    final pageSize = maxResultCount.clamp(1, 20);
+    final pagedMask = '$fieldMask,nextPageToken';
+    final results = <Restaurant>[];
+    String? pageToken;
+    var firstPage = true;
+    do {
+      // A freshly issued page token can take a moment to become valid.
+      if (!firstPage) {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      }
+      final data = <String, dynamic>{
+        ...baseData,
+        'pageSize': pageSize,
+        'pageToken': ?pageToken,
+      };
+      try {
+        final response = await _client.post<Map<String, dynamic>>(
+          '$_baseUrl/places:searchText',
+          options: Options(
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': _apiKey,
+              'X-Goog-FieldMask': pagedMask,
             },
-            'radius': radiusMeters.toDouble(),
-          },
-        },
-        'maxResultCount': maxResultCount,
-      },
-    );
+          ),
+          data: data,
+        );
+        results.addAll(_parseResponse(response));
+        pageToken = response.data?['nextPageToken'] as String?;
+      } on Exception {
+        // A failed first page is a real error worth surfacing; a failed later
+        // page just ends pagination with whatever we already collected.
+        if (results.isEmpty) rethrow;
+        break;
+      }
+      firstPage = false;
+    } while (pageToken != null && results.length < maxResultCount);
 
-    return _parseResponse(response);
+    return results.length > maxResultCount
+        ? results.sublist(0, maxResultCount)
+        : results;
   }
 
   /// Fetches parking availability for a single place (Place Details, New).

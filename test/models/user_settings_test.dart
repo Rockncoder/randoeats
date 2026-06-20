@@ -43,9 +43,9 @@ void main() {
       expect(UserSettings.defaultSearchRadius, 1500);
       expect(UserSettings.minSearchRadius, 500);
       expect(UserSettings.maxSearchRadius, 10000);
-      expect(UserSettings.defaultMaxResults, 20);
+      expect(UserSettings.defaultMaxResults, 40);
       expect(UserSettings.minMaxResults, 5);
-      expect(UserSettings.maxMaxResults, 50);
+      expect(UserSettings.maxMaxResults, 60);
     });
 
     group('copyWith', () {
