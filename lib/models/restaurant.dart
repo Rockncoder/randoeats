@@ -17,6 +17,7 @@ class Restaurant extends Equatable {
     this.priceLevel,
     this.types = const [],
     this.photoReference,
+    this.photoReferences = const [],
     this.isOpen,
     this.totalRatings,
     this.servesBeer,
@@ -44,6 +45,7 @@ class Restaurant extends Equatable {
       priceLevel: _parsePriceLevelNew(json['priceLevel'] as String?),
       types: _parseTypes(json),
       photoReference: _extractPhotoName(photos),
+      photoReferences: _extractPhotoNames(photos),
       isOpen: openingHours?['openNow'] as bool?,
       totalRatings: json['userRatingCount'] as int?,
       servesBeer: json['servesBeer'] as bool?,
@@ -127,6 +129,11 @@ class Restaurant extends Equatable {
   @HiveField(16)
   final List<String>? weekdayHours;
 
+  /// All photo references for the place (Places `photos[].name`), in Google's
+  /// order, for the swipeable gallery. [photoReference] is the first of these.
+  @HiveField(17)
+  final List<String> photoReferences;
+
   /// Parses price level from new API enum string format.
   static String? _parsePriceLevelNew(String? level) {
     if (level == null) return null;
@@ -164,6 +171,16 @@ class Restaurant extends Equatable {
     return firstPhoto?['name'] as String?;
   }
 
+  /// Extracts all photo names (capped at 10) from the new API photos array.
+  static List<String> _extractPhotoNames(List<dynamic>? photos) {
+    if (photos == null) return const [];
+    return photos
+        .take(10)
+        .map((p) => (p as Map<String, dynamic>?)?['name'] as String?)
+        .whereType<String>()
+        .toList();
+  }
+
   /// Parses types from new API response.
   static List<String> _parseTypes(Map<String, dynamic> json) {
     // New API has primaryType and types array
@@ -197,6 +214,7 @@ class Restaurant extends Equatable {
     priceLevel,
     types,
     photoReference,
+    photoReferences,
     isOpen,
     totalRatings,
     servesBeer,

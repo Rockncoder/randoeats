@@ -46,6 +46,7 @@ void main() {
         r'$$',
         ['restaurant', 'cafe'],
         'photo_ref_123',
+        <String>[], // photoReferences
         true,
         100,
         null, // servesBeer

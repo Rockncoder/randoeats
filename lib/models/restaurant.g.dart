@@ -31,13 +31,14 @@ class RestaurantAdapter extends TypeAdapter<Restaurant> {
       hasParking: fields[14] as bool?,
       phoneNumber: fields[15] as String?,
       weekdayHours: (fields[16] as List?)?.cast<String>(),
+      photoReferences: (fields[17] as List?)?.cast<String>() ?? const [],
     );
   }
 
   @override
   void write(BinaryWriter writer, Restaurant obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.placeId)
       ..writeByte(1)
@@ -71,7 +72,9 @@ class RestaurantAdapter extends TypeAdapter<Restaurant> {
       ..writeByte(15)
       ..write(obj.phoneNumber)
       ..writeByte(16)
-      ..write(obj.weekdayHours);
+      ..write(obj.weekdayHours)
+      ..writeByte(17)
+      ..write(obj.photoReferences);
   }
 
   @override
