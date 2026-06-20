@@ -74,10 +74,19 @@ class DetailScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, ThemeData theme) {
-    final photoUrl = PlacesService.instance.getPhotoUrl(
-      restaurant.photoReference,
-      maxWidth: 800,
-    );
+    // Google returns the whole photos array, so build a URL for each and let
+    // the user swipe through them. Fall back to the single reference.
+    final urls = <String>[
+      for (final ref in restaurant.photoReferences)
+        ?PlacesService.instance.getPhotoUrl(ref, maxWidth: 800),
+    ];
+    if (urls.isEmpty) {
+      final single = PlacesService.instance.getPhotoUrl(
+        restaurant.photoReference,
+        maxWidth: 800,
+      );
+      if (single != null) urls.add(single);
+    }
 
     // Give the full-bleed photo more presence on wide screens, where a short
     // strip looked thin above the centered content column.
@@ -92,37 +101,9 @@ class DetailScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: GoogieColors.turquoise.withValues(alpha: 0.2),
         ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (photoUrl != null)
-              Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (_, error, stackTrace) =>
-                    _buildPhotoPlaceholder(),
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return _buildPhotoPlaceholder(isLoading: true);
-                },
-              )
-            else
-              _buildPhotoPlaceholder(),
-            // Subtle bottom scrim so the photo transitions into the content
-            // instead of butting hard against it.
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x29000000)],
-                  stops: [0.65, 1],
-                ),
-              ),
-            ),
-          ],
-        ),
+        child: urls.isEmpty
+            ? _buildPhotoPlaceholder()
+            : _PhotoCarousel(photoUrls: urls),
       ),
     );
   }
@@ -810,6 +791,98 @@ class _ParkingChipState extends State<_ParkingChip> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Swipeable photo gallery for the detail header, with page dots.
+class _PhotoCarousel extends StatefulWidget {
+  const _PhotoCarousel({required this.photoUrls});
+
+  final List<String> photoUrls;
+
+  @override
+  State<_PhotoCarousel> createState() => _PhotoCarouselState();
+}
+
+class _PhotoCarouselState extends State<_PhotoCarousel> {
+  final _controller = PageController();
+  int _index = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _placeholder({bool isLoading = false}) {
+    return Center(
+      child: isLoading
+          ? CircularProgressIndicator(color: GoogieColors.turquoise)
+          : Icon(Icons.restaurant, size: 80, color: GoogieColors.turquoise),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final urls = widget.photoUrls;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          key: const ValueKey('detail_photo_carousel'),
+          controller: _controller,
+          itemCount: urls.length,
+          onPageChanged: (i) => setState(() => _index = i),
+          itemBuilder: (context, i) => Image.network(
+            urls[i],
+            fit: BoxFit.cover,
+            width: double.infinity,
+            errorBuilder: (_, _, _) => _placeholder(),
+            loadingBuilder: (context, child, progress) =>
+                progress == null ? child : _placeholder(isLoading: true),
+          ),
+        ),
+        // Subtle bottom scrim so the photo transitions into the content
+        // instead of butting hard against it.
+        const IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0x29000000)],
+                stops: [0.65, 1],
+              ),
+            ),
+          ),
+        ),
+        // Page dots (only when there's more than one photo).
+        if (urls.length > 1)
+          Positioned(
+            bottom: 10,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < urls.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: i == _index ? 9 : 7,
+                    height: i == _index ? 9 : 7,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: GoogieColors.white.withValues(
+                        alpha: i == _index ? 1 : 0.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
