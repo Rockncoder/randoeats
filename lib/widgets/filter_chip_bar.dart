@@ -117,6 +117,29 @@ class FilterChipBar extends ConsumerWidget {
             ),
           ),
           // Pinned trailing action (outside the scroll/fade so it stays fully
+          // visible): clear every active filter in one tap. Shown only when a
+          // filter is set, so an empty bar stays uncluttered.
+          if (!filters.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: ActionChip(
+                key: const ValueKey('filter_clear_all'),
+                avatar: Icon(
+                  Icons.filter_alt_off,
+                  size: 18,
+                  color: GoogieColors.coral,
+                ),
+                label: const Text('Clear'),
+                labelStyle: TextStyle(
+                  color: GoogieColors.coral,
+                  fontWeight: FontWeight.w600,
+                ),
+                backgroundColor: GoogieColors.white,
+                side: BorderSide(color: GoogieColors.coral),
+                onPressed: notifier.clear,
+              ),
+            ),
+          // Pinned trailing action (outside the scroll/fade so it stays fully
           // visible): save the current ad-hoc filters as a named Spot.
           if (onSaveSpot != null && !filters.isEmpty)
             Padding(
