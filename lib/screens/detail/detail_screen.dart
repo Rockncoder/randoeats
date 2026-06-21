@@ -47,6 +47,7 @@ class DetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    _buildDescription(theme),
                     _buildInfo(context, theme),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -119,6 +120,23 @@ class DetailScreen extends ConsumerWidget {
               size: 80,
               color: GoogieColors.turquoise,
             ),
+    );
+  }
+
+  Widget _buildDescription(ThemeData theme) {
+    final summary = restaurant.editorialSummary;
+    if (summary == null || summary.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      key: const ValueKey('detail_description'),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Text(
+        summary,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+          fontStyle: FontStyle.italic,
+          height: 1.35,
+        ),
+      ),
     );
   }
 

@@ -26,6 +26,7 @@ class Restaurant extends Equatable {
     this.hasParking,
     this.phoneNumber,
     this.weekdayHours,
+    this.editorialSummary,
   });
 
   /// Creates a [Restaurant] from Places API (New) response.
@@ -56,6 +57,9 @@ class Restaurant extends Equatable {
       ),
       phoneNumber: json['nationalPhoneNumber'] as String?,
       weekdayHours: _parseWeekdayHours(openingHours),
+      editorialSummary:
+          (json['editorialSummary'] as Map<String, dynamic>?)?['text']
+              as String?,
     );
   }
 
@@ -133,6 +137,11 @@ class Restaurant extends Equatable {
   /// order, for the swipeable gallery. [photoReference] is the first of these.
   @HiveField(17)
   final List<String> photoReferences;
+
+  /// Short editorial description of the place from Places `editorialSummary`;
+  /// null when Google has none.
+  @HiveField(18)
+  final String? editorialSummary;
 
   /// Parses price level from new API enum string format.
   static String? _parsePriceLevelNew(String? level) {
@@ -223,5 +232,6 @@ class Restaurant extends Equatable {
     hasParking,
     phoneNumber,
     weekdayHours,
+    editorialSummary,
   ];
 }
