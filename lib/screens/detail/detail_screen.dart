@@ -23,53 +23,69 @@ class DetailScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Destination'),
-        backgroundColor: GoogieColors.turquoiseContainer,
-        foregroundColor: GoogieColors.onTurquoiseContainer,
-        leading: IconButton(
-          key: const ValueKey('detail_back'),
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Photo stays full-bleed; everything below is capped to a readable
-            // width and centered so the body doesn't stretch edge-to-edge on
-            // tablets (where it otherwise reads as a blown-up phone layout).
-            _buildHeader(context, theme),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildDescription(theme),
-                    _buildInfo(context, theme),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                      child: WavyLine(
-                        secondaryColor: GoogieColors.coral,
-                        height: 18,
-                        amplitude: 4,
-                        wavelength: 34,
-                        strokeWidth: 3,
-                        speed: 0.5,
-                      ),
+      // No app bar: the photo runs full-bleed to the very top of the screen
+      // (behind the status bar) and the back button floats over it.
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Photo is full-bleed; the rest is capped to a readable width
+                // and centered so it doesn't stretch edge-to-edge on tablets.
+                _buildHeader(context, theme),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildDescription(theme),
+                        _buildInfo(context, theme),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                          child: WavyLine(
+                            secondaryColor: GoogieColors.coral,
+                            height: 18,
+                            amplitude: 4,
+                            wavelength: 34,
+                            strokeWidth: 3,
+                            speed: 0.5,
+                          ),
+                        ),
+                        _buildActions(context, theme),
+                        const SizedBox(height: 24),
+                        _buildRatingSection(context, ref, theme),
+                        const SizedBox(height: 32),
+                      ],
                     ),
-                    _buildActions(context, theme),
-                    const SizedBox(height: 24),
-                    _buildRatingSection(context, ref, theme),
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          // Back button floats over the photo, nudged below the status bar.
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 4,
+            left: 8,
+            child: _buildBackButton(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackButton(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.4),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(
+        key: const ValueKey('detail_back'),
+        icon: const Icon(Icons.arrow_back),
+        color: GoogieColors.white,
+        onPressed: () => context.pop(),
+        tooltip: 'Back',
       ),
     );
   }
@@ -90,10 +106,11 @@ class DetailScreen extends ConsumerWidget {
     }
 
     // Give the full-bleed photo more presence on wide screens, where a short
-    // strip looked thin above the centered content column.
-    final headerHeight = MediaQuery.sizeOf(context).width >= 640
-        ? 340.0
-        : 220.0;
+    // strip looked thin above the centered content column. Add the top inset so
+    // the photo fills the space behind the status bar too.
+    final topInset = MediaQuery.paddingOf(context).top;
+    final headerHeight =
+        (MediaQuery.sizeOf(context).width >= 640 ? 340.0 : 220.0) + topInset;
 
     return Hero(
       tag: restaurantPhotoHeroTag(restaurant.placeId),
@@ -871,6 +888,25 @@ class _PhotoCarouselState extends State<_PhotoCarousel> {
                 end: Alignment.bottomCenter,
                 colors: [Colors.transparent, Color(0x29000000)],
                 stops: [0.65, 1],
+              ),
+            ),
+          ),
+        ),
+        // Top scrim keeps the status bar + floating back button legible over
+        // bright photos.
+        const Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 120,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x59000000), Colors.transparent],
+                ),
               ),
             ),
           ),
