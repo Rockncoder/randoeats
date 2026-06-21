@@ -34,13 +34,14 @@ key actually works from a browser (CORS + restrictions).
 
 ---
 
-## Step 1 — Create a web-restricted Places API key
+## Step 1 — Create one web-restricted API key
 
 In the [Google Cloud Console](https://console.cloud.google.com/) for the
 randoeats project:
 
-1. **APIs & Services → Library** → enable **Places API (New)** (and **Maps
-   JavaScript API** if the web app renders maps).
+1. **APIs & Services → Library** → enable **both**:
+   - **Places API (New)** — restaurant search
+   - **Maps JavaScript API** — the web map
 2. **APIs & Services → Credentials → Create credentials → API key**.
 3. Edit the new key:
    - **Application restrictions → Websites (HTTP referrers)** and add:
@@ -48,45 +49,36 @@ randoeats project:
      - `https://*.randoeats.com/*`
      - `https://<your-cloudflare-pages-subdomain>.pages.dev/*` (for preview)
      - `http://localhost:*/*` (for local `flutter run -d chrome`)
-   - **API restrictions → Restrict key** → select **Places API (New)** (and
-     Maps JavaScript API if used).
+   - **API restrictions → Restrict key** → select **Places API (New)** **and**
+     **Maps JavaScript API**.
 4. Copy the key value.
 
-> Keep this **separate** from the mobile/server key. It's a public, referrer-
-> locked, web-only key.
+> Keep this **separate** from the mobile keys. It's a public, referrer-locked,
+> web-only key that serves **both** the map and Places search.
 
-## Step 2 — Add the key as a GitHub Actions secret
+## Step 2 — Add it as the `WEB_API_KEY` secret
 
 The deploy workflow runs in the `production` environment, so add the secret
 there (or as a repo secret).
 
-**Via the GitHub UI:** Repo → **Settings → Secrets and variables → Actions** →
-(Environment `production`) → **New secret**:
-- Name: `GOOGLE_PLACES_API_KEY`
-- Value: *the web key from Step 1*
-
-**Or via the CLI** (run it yourself so the value isn't logged — in this session
-prefix with `!`):
-
 ```bash
-gh secret set GOOGLE_PLACES_API_KEY --env production
+gh secret set WEB_API_KEY --env production
 # paste the key when prompted
 ```
 
-## Step 3 — Inject the key into the web build
+(Or GitHub UI: **Settings → Secrets and variables → Actions** → environment
+`production` → **New secret** named `WEB_API_KEY`.)
 
-Edit `.github/workflows/deploy-web.yml` so the build step passes the key:
+## Step 3 — How the key is used (already wired)
 
-```yaml
-      - name: Build Flutter Web
-        run: |
-          flutter build web \
-            --release \
-            -t lib/main_production.dart \
-            --dart-define=GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
-```
+`.github/workflows/deploy-web.yml` injects `WEB_API_KEY` two ways at build time,
+so nothing secret is committed:
 
-(That's the only change — add the trailing `--dart-define` line.)
+- **Maps JS:** a `sed` step substitutes the `YOUR_GOOGLE_MAPS_API_KEY`
+  placeholder in `web/index.html`.
+- **Places:** `--dart-define=GOOGLE_PLACES_API_KEY=${{ secrets.WEB_API_KEY }}`.
+
+No further edits needed — just set the secret and redeploy.
 
 ## Step 4 — Redeploy
 

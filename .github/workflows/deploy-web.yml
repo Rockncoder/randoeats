@@ -32,12 +32,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Inject the web API key (referrer-restricted to randoeats.com) into the
+      # Maps JS <script> tag. The key is never committed — index.html keeps the
+      # YOUR_GOOGLE_MAPS_API_KEY placeholder and it's substituted only at build.
+      - name: Inject web Maps JS API key
+        run: |
+          sed -i "s|YOUR_GOOGLE_MAPS_API_KEY|${{ secrets.WEB_API_KEY }}|g" web/index.html
+
       - name: Build Flutter Web
         run: |
           flutter build web \
             --release \
             -t lib/main_production.dart \
-            --dart-define=GOOGLE_PLACES_API_KEY=${{ secrets.GOOGLE_PLACES_API_KEY }}
+            --dart-define=GOOGLE_PLACES_API_KEY=${{ secrets.WEB_API_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
