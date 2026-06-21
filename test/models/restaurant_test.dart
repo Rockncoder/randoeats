@@ -55,6 +55,7 @@ void main() {
         null, // hasParking
         null, // phoneNumber
         null, // weekdayHours
+        null, // editorialSummary
       ]);
     });
 

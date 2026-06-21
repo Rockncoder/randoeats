@@ -54,7 +54,8 @@ class PlacesService {
       'places.photos,'
       'places.primaryType,'
       'places.nationalPhoneNumber,'
-      'places.currentOpeningHours';
+      'places.currentOpeningHours,'
+      'places.editorialSummary';
 
   /// Extra ("atmosphere") fields, requested only when an atmosphere filter is
   /// active — these push the request into Google's pricier SKU.
