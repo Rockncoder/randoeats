@@ -59,17 +59,14 @@ flutter:
     - assets/images/
 
 flutter_native_splash:
+  # The native (OS) splash is intentionally just the cream background — the logo
+  # is shown large by the in-app SplashScreen, so we avoid a small-logo native
+  # splash flashing before it. splash_blank.png is fully transparent.
   color: "#F5F0E1"
-  image: assets/images/rand-o-eats-new.png
-  # iOS isn't circle-masked — scale the sign to fit the screen so it's large on
-  # both iPhone and iPad (Android 12+ stays a fixed circular icon, OS-limited).
-  ios_content_mode: scaleAspectFit
+  image: assets/images/splash_blank.png
   android_12:
     color: "#F5F0E1"
-    # Android 12+ masks the splash icon to a circle, so use a padded copy of
-    # the sign that fits inside that circle (uncropped) instead of the full,
-    # edge-to-edge image.
-    image: assets/images/splash.png
+    image: assets/images/splash_blank.png
   web: true
   ios: true
   android: true
