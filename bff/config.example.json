@@ -1,0 +1,14 @@
+{
+  "places_api_key": "YOUR_GOOGLE_PLACES_API_KEY",
+  "port": 8848,
+  "threads": 1,
+  "cache_max_entries": 2000,
+  "nearby_ttl_seconds": 3600,
+  "details_ttl_seconds": 21600,
+  "metrics_log_path": "/var/log/randoeats/metrics.jsonl",
+  "allowed_origins": [
+    "https://randoeats.com",
+    "https://www.randoeats.com",
+    "http://localhost:8080"
+  ]
+}
