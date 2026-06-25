@@ -1,6 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:randoeats/models/models.dart';
 
+/// Atmosphere flags fetched for a single place on its detail view. Each is
+/// true/false when Google reports it, or null when unknown.
+typedef PlaceAtmosphere = ({
+  bool? hasParking,
+  bool? servesBeer,
+  bool? servesWine,
+});
+
 /// Result types for Places API operations.
 sealed class PlacesResult {
   const PlacesResult();
@@ -61,6 +69,7 @@ class PlacesService {
   /// active — these push the request into Google's pricier SKU.
   static const _atmosphereFields =
       'places.servesBeer,'
+      'places.servesWine,'
       'places.outdoorSeating,'
       'places.goodForGroups,'
       'places.parkingOptions';
@@ -121,12 +130,29 @@ class PlacesService {
         filters: filters,
       );
 
-      // Filter out excluded places
-      final filtered = restaurants
-          .where((r) => !excludePlaceIds.contains(r.placeId))
-          .toList();
+      // Filter out excluded places, then apply the atmosphere facets
+      // client-side — the Places API can't filter these server-side, so we
+      // keep only places it confirms match (a null/unknown value is excluded).
+      var filtered = restaurants.where(
+        (r) => !excludePlaceIds.contains(r.placeId),
+      );
+      if (filters.servesBeer) {
+        filtered = filtered.where((r) => r.servesBeer ?? false);
+      }
+      if (filters.servesWine) {
+        filtered = filtered.where((r) => r.servesWine ?? false);
+      }
+      if (filters.outdoorSeating) {
+        filtered = filtered.where((r) => r.outdoorSeating ?? false);
+      }
+      if (filters.goodForGroups) {
+        filtered = filtered.where((r) => r.goodForGroups ?? false);
+      }
+      if (filters.hasParking) {
+        filtered = filtered.where((r) => r.hasParking ?? false);
+      }
 
-      return PlacesSuccess(filtered);
+      return PlacesSuccess(filtered.toList());
     } on Exception catch (e) {
       return PlacesError('Failed to fetch restaurants: $e');
     }
@@ -206,29 +232,34 @@ class PlacesService {
         : results;
   }
 
-  /// Fetches parking availability for a single place (Place Details, New).
+  /// Fetches atmosphere flags (parking, beer, wine) for a single place via
+  /// Place Details (New).
   ///
-  /// Called from the detail screen so the parking chip can appear even when the
-  /// search didn't request the (pricier) atmosphere fields — this is one cheap
-  /// lookup per opened place rather than atmosphere fields on every result.
-  /// Returns true/false when Google reports parking, or null if unknown/error.
-  Future<bool?> fetchHasParking(String placeId) async {
-    if (placeId.isEmpty || _apiKey.isEmpty) return null;
+  /// Called from the detail screen so those chips appear even when the search
+  /// didn't request the (pricier) atmosphere fields — one cheap lookup per
+  /// opened place rather than atmosphere fields on every result.
+  Future<PlaceAtmosphere> fetchAtmosphere(String placeId) async {
+    const empty = (hasParking: null, servesBeer: null, servesWine: null);
+    if (placeId.isEmpty || _apiKey.isEmpty) return empty;
     try {
       final response = await _client.get<Map<String, dynamic>>(
         '$_baseUrl/places/$placeId',
         options: Options(
           headers: {
             'X-Goog-Api-Key': _apiKey,
-            'X-Goog-FieldMask': 'parkingOptions',
+            'X-Goog-FieldMask': 'parkingOptions,servesBeer,servesWine',
           },
         ),
       );
-      final parking = response.data?['parkingOptions'] as Map<String, dynamic>?;
-      if (parking == null) return null;
-      return parking.values.any((v) => v == true);
+      final data = response.data;
+      final parking = data?['parkingOptions'] as Map<String, dynamic>?;
+      return (
+        hasParking: parking?.values.any((v) => v == true),
+        servesBeer: data?['servesBeer'] as bool?,
+        servesWine: data?['servesWine'] as bool?,
+      );
     } on DioException {
-      return null;
+      return empty;
     }
   }
 

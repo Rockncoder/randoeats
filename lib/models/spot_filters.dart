@@ -15,6 +15,7 @@ class SpotFilters extends Equatable {
   const SpotFilters({
     this.cuisines = const {},
     this.servesBeer = false,
+    this.servesWine = false,
     this.outdoorSeating = false,
     this.goodForGroups = false,
     this.hasParking = false,
@@ -30,6 +31,10 @@ class SpotFilters extends Equatable {
   /// Only places that serve beer (atmosphere field).
   @HiveField(1)
   final bool servesBeer;
+
+  /// Only places that serve wine (atmosphere field).
+  @HiveField(8)
+  final bool servesWine;
 
   /// Only places with outdoor seating / a patio (atmosphere field).
   @HiveField(2)
@@ -59,6 +64,7 @@ class SpotFilters extends Equatable {
   bool get isEmpty =>
       cuisines.isEmpty &&
       !servesBeer &&
+      !servesWine &&
       !outdoorSeating &&
       !goodForGroups &&
       !hasParking &&
@@ -69,7 +75,7 @@ class SpotFilters extends Equatable {
   /// Whether any atmosphere filter is active (these need the pricier Places
   /// field mask — request those fields only when this is true).
   bool get usesAtmosphere =>
-      servesBeer || outdoorSeating || goodForGroups || hasParking;
+      servesBeer || servesWine || outdoorSeating || goodForGroups || hasParking;
 
   /// Display labels for known cuisine codes; unknown codes are title-cased.
   static const _cuisineLabels = <String, String>{
@@ -90,6 +96,7 @@ class SpotFilters extends Equatable {
         _cuisineLabels[c] ??
             (c.isEmpty ? c : '${c[0].toUpperCase()}${c.substring(1)}'),
       if (servesBeer) 'Beer',
+      if (servesWine) 'Wine',
       if (outdoorSeating) 'Patio',
       if (hasParking) 'Parking',
       if (goodForGroups) 'Group',
@@ -105,6 +112,7 @@ class SpotFilters extends Equatable {
     var n = 0;
     if (cuisines.isNotEmpty) n++;
     if (servesBeer) n++;
+    if (servesWine) n++;
     if (outdoorSeating) n++;
     if (goodForGroups) n++;
     if (hasParking) n++;
@@ -119,6 +127,7 @@ class SpotFilters extends Equatable {
   SpotFilters copyWith({
     Set<String>? cuisines,
     bool? servesBeer,
+    bool? servesWine,
     bool? outdoorSeating,
     bool? goodForGroups,
     bool? hasParking,
@@ -130,6 +139,7 @@ class SpotFilters extends Equatable {
     return SpotFilters(
       cuisines: cuisines ?? this.cuisines,
       servesBeer: servesBeer ?? this.servesBeer,
+      servesWine: servesWine ?? this.servesWine,
       outdoorSeating: outdoorSeating ?? this.outdoorSeating,
       goodForGroups: goodForGroups ?? this.goodForGroups,
       hasParking: hasParking ?? this.hasParking,
@@ -143,6 +153,7 @@ class SpotFilters extends Equatable {
   List<Object?> get props => [
     cuisines,
     servesBeer,
+    servesWine,
     outdoorSeating,
     goodForGroups,
     hasParking,

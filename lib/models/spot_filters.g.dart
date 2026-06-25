@@ -22,13 +22,14 @@ class SpotFiltersAdapter extends TypeAdapter<SpotFilters> {
       openNow: fields[5] as bool? ?? false,
       minRating: fields[6] as double?,
       priceLevels: (fields[7] as List?)?.cast<int>().toSet() ?? const {},
+      servesWine: fields[8] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, SpotFilters obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.cuisines.toList())
       ..writeByte(1)
@@ -44,7 +45,9 @@ class SpotFiltersAdapter extends TypeAdapter<SpotFilters> {
       ..writeByte(6)
       ..write(obj.minRating)
       ..writeByte(7)
-      ..write(obj.priceLevels.toList());
+      ..write(obj.priceLevels.toList())
+      ..writeByte(8)
+      ..write(obj.servesWine);
   }
 
   @override
