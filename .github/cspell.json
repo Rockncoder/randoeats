@@ -23,9 +23,22 @@
     "**/Pods/**",
     "lib/l10n/gen/",
     "**/*.g.dart",
-    "**/*.freezed.dart"
+    "**/*.freezed.dart",
+    "RANDOEATS_PROJECT.md"
   ],
   "words": [
+    "Drogon",
+    "drogon",
+    "jsoncpp",
+    "trantor",
+    "Nanode",
+    "Linode",
+    "googleusercontent",
+    "buildx",
+    "nproc",
+    "logrotate",
+    "copytruncate",
+    "systemd",
     "appbundle",
     "appname",
     "Appfile",

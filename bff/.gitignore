@@ -1,0 +1,9 @@
+# Build output
+build/
+
+# Runtime config holds the API key — never commit it.
+config.json
+
+# Local logs
+*.log
+*.jsonl
