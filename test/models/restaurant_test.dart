@@ -50,6 +50,7 @@ void main() {
         true,
         100,
         null, // servesBeer
+        null, // servesWine
         null, // outdoorSeating
         null, // goodForGroups
         null, // hasParking

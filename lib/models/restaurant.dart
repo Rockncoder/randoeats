@@ -21,6 +21,7 @@ class Restaurant extends Equatable {
     this.isOpen,
     this.totalRatings,
     this.servesBeer,
+    this.servesWine,
     this.outdoorSeating,
     this.goodForGroups,
     this.hasParking,
@@ -50,6 +51,7 @@ class Restaurant extends Equatable {
       isOpen: openingHours?['openNow'] as bool?,
       totalRatings: json['userRatingCount'] as int?,
       servesBeer: json['servesBeer'] as bool?,
+      servesWine: json['servesWine'] as bool?,
       outdoorSeating: json['outdoorSeating'] as bool?,
       goodForGroups: json['goodForGroups'] as bool?,
       hasParking: _parseParking(
@@ -110,6 +112,10 @@ class Restaurant extends Equatable {
   /// Serves beer — a Places "atmosphere" field (null = unknown).
   @HiveField(11)
   final bool? servesBeer;
+
+  /// Serves wine — a Places "atmosphere" field (null = unknown).
+  @HiveField(19)
+  final bool? servesWine;
 
   /// Whether the place has outdoor seating / a patio (null = unknown).
   @HiveField(12)
@@ -227,6 +233,7 @@ class Restaurant extends Equatable {
     isOpen,
     totalRatings,
     servesBeer,
+    servesWine,
     outdoorSeating,
     goodForGroups,
     hasParking,

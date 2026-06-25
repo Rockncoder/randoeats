@@ -237,11 +237,31 @@ class DetailScreen extends ConsumerWidget {
                       : GoogieColors.onCoralContainer,
                   theme: theme,
                 ),
-              // Parking — fetched per-detail-view (Place Details) so it shows
-              // even when the search didn't request the atmosphere fields.
-              _ParkingChip(
+              // Atmosphere chips — parking/beer/wine. Fetched per-detail-view
+              // (one Place Details call, shared) so they show even when the
+              // search didn't request the atmosphere fields.
+              _AtmosphereChip(
                 placeId: restaurant.placeId,
-                initialHasParking: restaurant.hasParking,
+                known: restaurant.hasParking,
+                select: (a) => a.hasParking,
+                icon: Icons.local_parking,
+                label: 'Parking',
+                theme: theme,
+              ),
+              _AtmosphereChip(
+                placeId: restaurant.placeId,
+                known: restaurant.servesBeer,
+                select: (a) => a.servesBeer,
+                icon: Icons.sports_bar,
+                label: 'Beer',
+                theme: theme,
+              ),
+              _AtmosphereChip(
+                placeId: restaurant.placeId,
+                known: restaurant.servesWine,
+                select: (a) => a.servesWine,
+                icon: Icons.wine_bar,
+                label: 'Wine',
                 theme: theme,
               ),
             ],
@@ -760,48 +780,41 @@ class _HoursSectionState extends State<_HoursSection> {
   }
 }
 
-/// Parking indicator. Shows a "Parking" chip when Google reports a parking
-/// option. If the search didn't already supply it, it fetches once per opened
-/// place (Place Details) so parking is shown on every detail page.
-class _ParkingChip extends StatefulWidget {
-  const _ParkingChip({
+/// One Place Details lookup per opened place for the atmosphere chips
+/// (parking/beer/wine), shared + cached by placeId so the chips fetch once.
+// ignore: specify_nonobvious_property_types
+final _atmosphereProvider = FutureProvider.family<PlaceAtmosphere, String>(
+  (ref, placeId) => PlacesService.instance.fetchAtmosphere(placeId),
+);
+
+/// An atmosphere indicator chip (parking/beer/wine). Uses the value from the
+/// search if present, otherwise the shared per-detail [_atmosphereProvider].
+/// Renders nothing unless Google confirms the amenity.
+class _AtmosphereChip extends ConsumerWidget {
+  const _AtmosphereChip({
     required this.placeId,
-    required this.initialHasParking,
+    required this.known,
+    required this.select,
+    required this.icon,
+    required this.label,
     required this.theme,
   });
 
   final String placeId;
-  final bool? initialHasParking;
+  final bool? known;
+  final bool? Function(PlaceAtmosphere) select;
+  final IconData icon;
+  final String label;
   final ThemeData theme;
 
   @override
-  State<_ParkingChip> createState() => _ParkingChipState();
-}
-
-class _ParkingChipState extends State<_ParkingChip> {
-  bool? _hasParking;
-
-  @override
-  void initState() {
-    super.initState();
-    _hasParking = widget.initialHasParking;
-    if (_hasParking == null) {
-      unawaited(_loadParking());
+  Widget build(BuildContext context, WidgetRef ref) {
+    var value = known;
+    if (value == null) {
+      final atmo = ref.watch(_atmosphereProvider(placeId)).asData?.value;
+      if (atmo != null) value = select(atmo);
     }
-  }
-
-  Future<void> _loadParking() async {
-    final result = await PlacesService.instance.fetchHasParking(
-      widget.placeId,
-    );
-    if (!mounted) return;
-    setState(() => _hasParking = result);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_hasParking != true) return const SizedBox.shrink();
-    final theme = widget.theme;
+    if (value != true) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
@@ -811,14 +824,10 @@ class _ParkingChipState extends State<_ParkingChip> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.local_parking,
-            size: 18,
-            color: GoogieColors.onTurquoiseContainer,
-          ),
+          Icon(icon, size: 18, color: GoogieColors.onTurquoiseContainer),
           const SizedBox(width: 6),
           Text(
-            'Parking',
+            label,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: GoogieColors.onTurquoiseContainer,

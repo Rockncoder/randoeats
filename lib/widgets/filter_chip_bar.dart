@@ -60,6 +60,15 @@ class FilterChipBar extends ConsumerWidget {
                     ),
                   ),
                   _FacetChip(
+                    key: const ValueKey('filter_wine'),
+                    label: 'Wine',
+                    icon: Icons.wine_bar,
+                    selected: filters.servesWine,
+                    onToggle: () => notifier.update(
+                      (f) => f.copyWith(servesWine: !f.servesWine),
+                    ),
+                  ),
+                  _FacetChip(
                     key: const ValueKey('filter_patio'),
                     label: 'Patio',
                     icon: Icons.deck,
