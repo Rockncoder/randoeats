@@ -28,14 +28,16 @@ call documents its billing SKU tier in a comment.
 
 | Method | Path | Notes |
 |--------|------|-------|
-| GET | `/restaurants/nearby` | `lat`,`lng` (required), `radius` (m, default 5000, max 50000), `type` (default `restaurant`), `max` (default/clamped 20). → `{ "restaurants": [...] }` |
-| GET | `/restaurants/{place_id}` | Single normalized restaurant. 404 if not found. |
+| GET | `/restaurants/nearby` | **List view.** `lat`,`lng` (required); `q` (keyword/cuisine/mood; empty = browse); `radius` (m, default 5000, max 50000); `max` (default 20, max 60 — paginated); filters: `open=true`, `min_rating`, `price` (CSV of 1–4), and atmosphere `beer`/`wine`/`patio`/`group`/`parking` (`=true`). → `{ "restaurants": [...] }` |
+| GET | `/restaurants/{place_id}` | **Detail view** — single normalized restaurant with the full field set. 404 if not found. |
 | GET | `/restaurants/{place_id}/photo` | `photo_ref` (required), `max_width` (default 400, max 1600). Proxies image **bytes**. |
 | GET | `/health` | `{"status":"ok","version":"..."}` |
 
-Normalized restaurant: `id, name, address, location{lat,lng}, rating, ratingCount,
-priceLevel (0–4), type, openNow, phone, website, photoRefs[]` (missing fields omitted;
-`photoRefs` always present).
+**Normalization** (missing fields omitted; `photoRefs` always present):
+- **List** (`/nearby`, lean/Enterprise): `id, name, address, location{lat,lng}, rating, ratingCount, priceLevel (0–4), type, openNow, photoRefs[]`. Atmosphere fields are also fetched + returned **only when an atmosphere filter is active** (it's then filtered client-side, since Places can't filter these upstream).
+- **Detail** (`/{id}`, full/Enterprise+Atmosphere): the above **plus** `phone, website, weekdayHours[], editorialSummary, servesBeer, servesWine, outdoorSeating, goodForGroups, hasParking`.
+
+Server-side filters (`open`/`min_rating`/`price`) and pagination (up to ~60 via `nextPageToken`) are handled in the BFF, mirroring the Flutter client it replaces.
 
 ## Configuration
 

@@ -4,6 +4,7 @@
 #include <json/json.h>
 
 #include <string>
+#include <vector>
 
 /// Result of an upstream JSON call to Google.
 struct UpstreamResult {
@@ -20,20 +21,33 @@ struct PhotoResult {
   long upstreamMs = 0;
 };
 
+/// Inputs for a restaurant Text Search.
+struct SearchParams {
+  std::string query;             // empty → browse all ("restaurant")
+  double lat = 0;
+  double lng = 0;
+  int radius = 5000;
+  int maxResults = 20;           // total wanted; paginated up to ~60
+  bool openNow = false;
+  double minRating = 0;          // <= 0 → no minimum
+  std::vector<int> priceLevels;  // 1..4; empty → any
+  bool includeAtmosphere = false;  // add the pricier atmosphere fields
+};
+
 /// §0 — The ONLY component permitted to make upstream calls to Google Places
-/// (New). All controllers/services go through here, so every outbound call is
-/// auditable in one file. Each method documents the billing SKU tier it
-/// triggers via its field mask.
+/// (New). Every method documents the billing SKU tier it triggers.
 class GooglePlacesClient {
  public:
   explicit GooglePlacesClient(std::string apiKey);
 
-  /// Nearby Search. SKU: ENTERPRISE (mask includes rating/userRatingCount/
-  /// priceLevel). Upstream: POST /v1/places:searchNearby.
-  drogon::Task<UpstreamResult> searchNearby(double lat, double lng, int radius,
-                                            std::string type, int maxResults);
+  /// Text Search with pagination. SKU: ENTERPRISE (+ ATMOSPHERE when
+  /// params.includeAtmosphere). Upstream: POST /v1/places:searchText, paged via
+  /// nextPageToken. Returns a merged {"places":[...]} across pages.
+  drogon::Task<UpstreamResult> searchText(SearchParams params);
 
-  /// Place Details. SKU: ENTERPRISE. Upstream: GET /v1/places/{placeId}.
+  /// Place Details (full). SKU: ENTERPRISE + ATMOSPHERE — includes
+  /// editorialSummary, hours, phone/website, and the atmosphere flags.
+  /// Upstream: GET /v1/places/{placeId}.
   drogon::Task<UpstreamResult> getDetails(std::string placeId);
 
   /// Place Photo. SKU: PHOTO. Upstream: GET /v1/{photoName}/media, then the
