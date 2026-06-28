@@ -1,6 +1,7 @@
 #include "RestaurantController.h"
 
 #include <algorithm>
+#include <sstream>
 #include <string>
 
 #include "../services/AppContext.h"
@@ -50,19 +51,38 @@ drogon::Task<HttpResponsePtr> RestaurantController::nearby(
     co_return errorResponse(400, "lat and lng are required");
   }
 
-  const double lat = std::stod(req->getParameter("lat"));
-  const double lng = std::stod(req->getParameter("lng"));
-  int radius =
-      params.count("radius") ? std::stoi(req->getParameter("radius")) : 5000;
-  radius = std::clamp(radius, 1, 50000);
-  std::string type =
-      params.count("type") ? req->getParameter("type") : "restaurant";
-  int maxResults =
-      params.count("max") ? std::stoi(req->getParameter("max")) : 20;
-  maxResults = std::clamp(maxResults, 1, 20);
+  const auto boolParam = [&](const char* name) {
+    return params.count(name) && req->getParameter(name) == "true";
+  };
 
-  const ServiceResult result = co_await AppContext::instance().places->nearby(
-      lat, lng, radius, std::move(type), maxResults);
+  NearbyQuery q;
+  q.lat = std::stod(req->getParameter("lat"));
+  q.lng = std::stod(req->getParameter("lng"));
+  q.radius = std::clamp(
+      params.count("radius") ? std::stoi(req->getParameter("radius")) : 5000, 1,
+      50000);
+  q.maxResults = std::clamp(
+      params.count("max") ? std::stoi(req->getParameter("max")) : 20, 1, 60);
+  if (params.count("q")) q.query = req->getParameter("q");
+  q.openNow = boolParam("open");
+  if (params.count("min_rating")) {
+    q.minRating = std::stod(req->getParameter("min_rating"));
+  }
+  if (params.count("price")) {  // CSV of 1..4, e.g. "1,2,3"
+    std::stringstream ss(req->getParameter("price"));
+    std::string tok;
+    while (std::getline(ss, tok, ',')) {
+      if (!tok.empty()) q.priceLevels.push_back(std::stoi(tok));
+    }
+  }
+  q.beer = boolParam("beer");
+  q.wine = boolParam("wine");
+  q.patio = boolParam("patio");
+  q.group = boolParam("group");
+  q.parking = boolParam("parking");
+
+  const ServiceResult result =
+      co_await AppContext::instance().places->nearby(std::move(q));
   recordMetrics(req, result.cache, result.upstreamMs, "nearby_search");
   co_return jsonResponse(result);
 }

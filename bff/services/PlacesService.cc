@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdio>
+#include <string>
 
 namespace {
 
@@ -24,6 +25,20 @@ std::string errorBody(const std::string& message) {
   Json::Value e;
   e["error"] = message;
   return serializeCompact(e);
+}
+
+// True only when Google affirmatively reports the flag (null/absent → false),
+// matching the app's strict client-side atmosphere filtering.
+bool flagTrue(const Json::Value& place, const char* field) {
+  return place.isMember(field) && place[field].asBool();
+}
+
+bool hasParking(const Json::Value& place) {
+  if (!place.isMember("parkingOptions")) return false;
+  for (const auto& v : place["parkingOptions"]) {
+    if (v.isBool() && v.asBool()) return true;
+  }
+  return false;
 }
 
 }  // namespace
@@ -64,9 +79,15 @@ Json::Value PlacesService::normalize(const Json::Value& place) {
   if (place.isMember("primaryType")) {
     out["type"] = place["primaryType"].asString();
   }
-  if (place.isMember("currentOpeningHours") &&
-      place["currentOpeningHours"].isMember("openNow")) {
-    out["openNow"] = place["currentOpeningHours"]["openNow"].asBool();
+  if (place.isMember("currentOpeningHours")) {
+    const auto& hours = place["currentOpeningHours"];
+    if (hours.isMember("openNow")) out["openNow"] = hours["openNow"].asBool();
+    if (hours.isMember("weekdayDescriptions")) {
+      out["weekdayHours"] = Json::Value(Json::arrayValue);
+      for (const auto& line : hours["weekdayDescriptions"]) {
+        out["weekdayHours"].append(line.asString());
+      }
+    }
   }
   if (place.isMember("nationalPhoneNumber")) {
     out["phone"] = place["nationalPhoneNumber"].asString();
@@ -74,7 +95,20 @@ Json::Value PlacesService::normalize(const Json::Value& place) {
   if (place.isMember("websiteUri")) {
     out["website"] = place["websiteUri"].asString();
   }
-  // photoRefs is always present (possibly empty) so the client can rely on it.
+  if (place.isMember("editorialSummary")) {
+    out["editorialSummary"] = place["editorialSummary"].get("text", "").asString();
+  }
+  // Atmosphere flags are included only when present (i.e. requested upstream).
+  if (place.isMember("servesBeer")) out["servesBeer"] = place["servesBeer"].asBool();
+  if (place.isMember("servesWine")) out["servesWine"] = place["servesWine"].asBool();
+  if (place.isMember("outdoorSeating")) {
+    out["outdoorSeating"] = place["outdoorSeating"].asBool();
+  }
+  if (place.isMember("goodForGroups")) {
+    out["goodForGroups"] = place["goodForGroups"].asBool();
+  }
+  if (place.isMember("parkingOptions")) out["hasParking"] = hasParking(place);
+  // photoRefs always present (possibly empty) so the client can rely on it.
   out["photoRefs"] = Json::Value(Json::arrayValue);
   if (place.isMember("photos")) {
     for (const auto& photo : place["photos"]) {
@@ -84,23 +118,38 @@ Json::Value PlacesService::normalize(const Json::Value& place) {
   return out;
 }
 
-drogon::Task<ServiceResult> PlacesService::nearby(double lat, double lng,
-                                                  int radius, std::string type,
-                                                  int maxResults) {
-  // Round lat/lng to ~110 m so nearby searches in the same vicinity share a
-  // cache entry.
-  std::array<char, 128> key{};
-  std::snprintf(key.data(), key.size(), "nearby:%.3f:%.3f:%d:%s", lat, lng,
-                radius, type.c_str());
+drogon::Task<ServiceResult> PlacesService::nearby(NearbyQuery q) {
+  const bool usesAtmosphere =
+      q.beer || q.wine || q.patio || q.group || q.parking;
+
+  // Cache key covers every input that changes the result set.
+  std::string priceKey;
+  for (int level : q.priceLevels) priceKey += std::to_string(level);
+  std::array<char, 256> key{};
+  std::snprintf(key.data(), key.size(),
+                "nearby:%.3f:%.3f:%d:%d:%s:o%d:r%.1f:p%s:%d%d%d%d%d", q.lat,
+                q.lng, q.radius, q.maxResults, q.query.c_str(),
+                q.openNow ? 1 : 0, q.minRating, priceKey.c_str(),
+                q.beer ? 1 : 0, q.wine ? 1 : 0, q.patio ? 1 : 0,
+                q.group ? 1 : 0, q.parking ? 1 : 0);
   const std::string cacheKey(key.data());
 
   if (auto cached = cache_->get(cacheKey)) {
     co_return ServiceResult{200, *cached, "HIT", 0, nearbyTtl_};
   }
 
-  const UpstreamResult up =
-      co_await client_->searchNearby(lat, lng, radius, type, maxResults);
+  SearchParams sp;
+  sp.query = q.query;
+  sp.lat = q.lat;
+  sp.lng = q.lng;
+  sp.radius = q.radius;
+  sp.maxResults = q.maxResults;
+  sp.openNow = q.openNow;
+  sp.minRating = q.minRating;
+  sp.priceLevels = q.priceLevels;
+  sp.includeAtmosphere = usesAtmosphere;
 
+  const UpstreamResult up = co_await client_->searchText(sp);
   if (up.status == 0) {
     co_return ServiceResult{502, errorBody("upstream unavailable"), "MISS",
                             up.upstreamMs, 0};
@@ -112,11 +161,16 @@ drogon::Task<ServiceResult> PlacesService::nearby(double lat, double lng,
 
   Json::Value out;
   out["restaurants"] = Json::Value(Json::arrayValue);
-  if (up.json.isMember("places")) {
-    for (const auto& place : up.json["places"]) {
-      out["restaurants"].append(normalize(place));
-    }
+  for (const auto& place : up.json["places"]) {
+    // Client-side atmosphere filtering (Places can't do it server-side).
+    if (q.beer && !flagTrue(place, "servesBeer")) continue;
+    if (q.wine && !flagTrue(place, "servesWine")) continue;
+    if (q.patio && !flagTrue(place, "outdoorSeating")) continue;
+    if (q.group && !flagTrue(place, "goodForGroups")) continue;
+    if (q.parking && !hasParking(place)) continue;
+    out["restaurants"].append(normalize(place));
   }
+
   const std::string body = serialize(out);
   cache_->set(cacheKey, body, nearbyTtl_);
   co_return ServiceResult{200, body, "MISS", up.upstreamMs, nearbyTtl_};
@@ -130,7 +184,6 @@ drogon::Task<ServiceResult> PlacesService::details(std::string placeId) {
   }
 
   const UpstreamResult up = co_await client_->getDetails(placeId);
-
   if (up.status == 0) {
     co_return ServiceResult{502, errorBody("upstream unavailable"), "MISS",
                             up.upstreamMs, 0};
