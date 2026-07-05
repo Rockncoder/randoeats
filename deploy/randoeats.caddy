@@ -1,0 +1,6 @@
+# randoeats — Drogon BFF proxying Google Places (in-memory cache, no DB).
+# Shipped to tekadept-bff at /etc/caddy/conf.d/randoeats.caddy by deploy.yml.
+# The Google Places key lives in the mounted config.json, never in the image.
+api.randoeats.com {
+    reverse_proxy localhost:8848
+}
