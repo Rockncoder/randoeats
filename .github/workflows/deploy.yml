@@ -36,6 +36,9 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +82,11 @@ jobs:
              chmod 600 /etc/randoeats/config-${{ steps.p.outputs.environment }}.json" <<'CFGEOF'
           ${{ secrets.RANDOEATS_CONFIG_JSON }}
           CFGEOF
+
+      - name: Log box into GHCR (ephemeral token; images stay private)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@${{ steps.p.outputs.host }} \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u ${{ github.repository_owner }} --password-stdin"
 
       - name: Deploy container
         run: |
