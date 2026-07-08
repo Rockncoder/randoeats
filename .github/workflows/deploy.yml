@@ -1,0 +1,99 @@
+name: deploy
+
+# Deploys the RandoEats BFF to the shared tekadept-bff host. Runs after
+# build-push succeeds on main (auto → prod), or manually via dispatch.
+# Independent of the other BFFs — rolls only the randoeats-bff container.
+#
+# RandoEats takes a config FILE (not env vars): its entrypoint is
+# `randoeats_bff /app/config.json`. The config (with the Google Places key) is
+# written from the RANDOEATS_CONFIG_JSON secret and mounted read-only — it is
+# never baked into the image.
+#
+# Required repo secrets:
+#   BFF_HOST / BFF_STAGING_HOST — box IPs
+#   LINODE_SSH_KEY              — tekadept-linode private key
+#   RANDOEATS_CONFIG_JSON       — full config.json contents (Places key, cache, CORS)
+
+on:
+  workflow_run:
+    workflows: ["build-push"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "prod or staging"
+        default: "prod"
+      image_tag:
+        description: "image tag to deploy (default = latest)"
+        default: "latest"
+
+concurrency:
+  group: deploy-randoeats-${{ github.event.inputs.environment || 'prod' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve params
+        id: p
+        run: |
+          ENVIRONMENT="${{ github.event.inputs.environment || 'prod' }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.image_tag }}"
+          else
+            TAG="${{ github.event.workflow_run.head_sha }}"
+          fi
+          echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if [ "$ENVIRONMENT" = "staging" ]; then
+            echo "host=${{ secrets.BFF_STAGING_HOST }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "host=${{ secrets.BFF_HOST }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: SSH setup
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.LINODE_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ steps.p.outputs.host }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Ship Caddy fragment
+        run: |
+          scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new \
+            deploy/randoeats.caddy \
+            root@${{ steps.p.outputs.host }}:/etc/caddy/conf.d/randoeats.caddy
+          ssh -i ~/.ssh/id_ed25519 root@${{ steps.p.outputs.host }} \
+            'caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || systemctl reload caddy'
+
+      - name: Write config.json (Places key) + log dir
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@${{ steps.p.outputs.host }} \
+            "mkdir -p /etc/randoeats /var/log/randoeats && \
+             cat > /etc/randoeats/config-${{ steps.p.outputs.environment }}.json && \
+             chmod 600 /etc/randoeats/config-${{ steps.p.outputs.environment }}.json" <<'CFGEOF'
+          ${{ secrets.RANDOEATS_CONFIG_JSON }}
+          CFGEOF
+
+      - name: Log box into GHCR (ephemeral token; images stay private)
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@${{ steps.p.outputs.host }} \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u ${{ github.repository_owner }} --password-stdin"
+
+      - name: Deploy container
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@${{ steps.p.outputs.host }} \
+            "tekadept-deploy \
+              APP=randoeats-bff-${{ steps.p.outputs.environment }} \
+              IMAGE=ghcr.io/rockncoder/randoeats-bff:${{ steps.p.outputs.tag }} \
+              HOST_PORT=8848 CONTAINER_PORT=8848 \
+              MOUNTS='/etc/randoeats/config-${{ steps.p.outputs.environment }}.json:/app/config.json:ro /var/log/randoeats:/var/log/randoeats' \
+              HEALTH_PATH=/api/v1/health"
