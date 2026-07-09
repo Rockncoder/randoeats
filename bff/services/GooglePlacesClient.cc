@@ -8,10 +8,13 @@ namespace {
 constexpr char kPlacesHost[] = "https://places.googleapis.com";
 
 // SKU: ENTERPRISE — list view. rating/userRatingCount/priceLevel set the tier.
+// weekdayDescriptions rides along inside the already-billed currentOpeningHours
+// field, so the detail view can show hours without a separate details call.
 constexpr char kNearbyMask[] =
     "places.id,places.displayName,places.formattedAddress,places.location,"
     "places.rating,places.userRatingCount,places.priceLevel,"
-    "places.primaryType,places.currentOpeningHours.openNow,places.photos";
+    "places.primaryType,places.currentOpeningHours.openNow,"
+    "places.currentOpeningHours.weekdayDescriptions,places.photos";
 
 // Added to the list mask only when an atmosphere filter is active. SKU bumps to
 // ENTERPRISE + ATMOSPHERE for that request.
