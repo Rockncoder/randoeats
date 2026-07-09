@@ -96,6 +96,9 @@ drogon::Task<UpstreamResult> GooglePlacesClient::searchText(SearchParams p) {
       auto req = drogon::HttpRequest::newHttpRequest();
       req->setMethod(drogon::Post);
       req->setPath("/v1/places:searchText");
+      // Google's endpoint needs the literal ':' — Drogon would otherwise
+      // percent-encode it to %3A, which the API answers with 404.
+      req->setPathEncode(false);
       req->addHeader("X-Goog-Api-Key", apiKey_);
       req->addHeader("X-Goog-FieldMask", mask);
       req->setContentTypeCode(drogon::CT_APPLICATION_JSON);
