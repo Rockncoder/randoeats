@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:randoeats/blocs/blocs.dart';
 import 'package:randoeats/config/config.dart';
 import 'package:randoeats/models/models.dart';
@@ -578,25 +579,14 @@ class DetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openMaps(BuildContext context) async {
-    final url = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1'
-      '&destination=${restaurant.latitude},${restaurant.longitude}'
-      '&destination_place_id=${restaurant.placeId}',
+  Future<void> _openMaps(BuildContext context) {
+    // Show the location in an in-app map sheet rather than jumping out to the
+    // external Maps app, which is disorienting to return from.
+    return RestaurantMapSheet.show(
+      context,
+      coordinates: LatLng(restaurant.latitude, restaurant.longitude),
+      name: restaurant.name,
     );
-
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Unable to open maps'),
-            backgroundColor: GoogieColors.coral,
-          ),
-        );
-      }
-    }
   }
 }
 
