@@ -784,7 +784,7 @@ class _HoursSectionState extends State<_HoursSection> {
 /// (parking/beer/wine), shared + cached by placeId so the chips fetch once.
 // ignore: specify_nonobvious_property_types
 final _atmosphereProvider = FutureProvider.family<PlaceAtmosphere, String>(
-  (ref, placeId) => PlacesService.instance.fetchAtmosphere(placeId),
+  (ref, placeId) => ref.watch(placesServiceProvider).fetchAtmosphere(placeId),
 );
 
 /// An atmosphere indicator chip (parking/beer/wine). Uses the value from the

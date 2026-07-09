@@ -65,6 +65,47 @@ class Restaurant extends Equatable {
     );
   }
 
+  /// Creates a [Restaurant] from the RandoEats BFF's normalized shape.
+  ///
+  /// The BFF already flattens Google's response (e.g. `location.lat`,
+  /// `ratingCount`, integer `priceLevel`, a single `type`, and `photoRefs`),
+  /// so this factory is a straight field map. Atmosphere flags, phone, hours
+  /// and editorial text are present only when the BFF requested them (nearby vs
+  /// details), and are null otherwise.
+  factory Restaurant.fromBff(Map<String, dynamic> json) {
+    final location = json['location'] as Map<String, dynamic>?;
+    final photoRefs =
+        (json['photoRefs'] as List<dynamic>?)?.whereType<String>().toList() ??
+        const <String>[];
+    final type = json['type'] as String?;
+    final weekday = (json['weekdayHours'] as List<dynamic>?)
+        ?.map((e) => e.toString())
+        .toList();
+
+    return Restaurant(
+      placeId: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? 'Unknown',
+      address: json['address'] as String? ?? '',
+      latitude: (location?['lat'] as num?)?.toDouble() ?? 0,
+      longitude: (location?['lng'] as num?)?.toDouble() ?? 0,
+      rating: (json['rating'] as num?)?.toDouble(),
+      priceLevel: _priceLevelLabel((json['priceLevel'] as num?)?.toInt()),
+      types: type == null ? const [] : [type],
+      photoReference: photoRefs.isEmpty ? null : photoRefs.first,
+      photoReferences: photoRefs,
+      isOpen: json['openNow'] as bool?,
+      totalRatings: (json['ratingCount'] as num?)?.toInt(),
+      servesBeer: json['servesBeer'] as bool?,
+      servesWine: json['servesWine'] as bool?,
+      outdoorSeating: json['outdoorSeating'] as bool?,
+      goodForGroups: json['goodForGroups'] as bool?,
+      hasParking: json['hasParking'] as bool?,
+      phoneNumber: json['phone'] as String?,
+      weekdayHours: (weekday == null || weekday.isEmpty) ? null : weekday,
+      editorialSummary: json['editorialSummary'] as String?,
+    );
+  }
+
   /// Unique identifier from Google Places.
   @HiveField(0)
   final String placeId;
@@ -164,6 +205,17 @@ class Restaurant extends Equatable {
       _ => null,
     };
   }
+
+  /// Maps the BFF's integer price level (0–4) to the same display string used
+  /// by [_parsePriceLevelNew].
+  static String? _priceLevelLabel(int? level) => switch (level) {
+    0 => 'Free',
+    1 => r'$',
+    2 => r'$$',
+    3 => r'$$$',
+    4 => r'$$$$',
+    _ => null,
+  };
 
   /// Pulls the per-day opening-hours strings from a Places opening-hours map.
   static List<String>? _parseWeekdayHours(Map<String, dynamic>? hours) {

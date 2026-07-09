@@ -11,6 +11,15 @@ import 'package:randoeats/services/services.dart';
 /// constructs it) to catch layout/semantics regressions — e.g. the
 /// "BoxConstraints forces an infinite width" + parentDataDirty flood seen on
 /// the iPad simulator under marionette.
+
+/// Stands in for [PlacesService] so rendering the screen doesn't make a live
+/// atmosphere lookup (which would leave a pending timer in the test).
+class _NoNetworkPlacesService extends PlacesService {
+  @override
+  Future<PlaceAtmosphere> fetchAtmosphere(String placeId) async =>
+      (hasParking: null, servesBeer: null, servesWine: null);
+}
+
 void main() {
   late Directory tempDir;
 
@@ -43,8 +52,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: DetailScreen(restaurant: restaurant)),
+      ProviderScope(
+        overrides: [
+          placesServiceProvider.overrideWithValue(_NoNetworkPlacesService()),
+        ],
+        child: const MaterialApp(home: DetailScreen(restaurant: restaurant)),
       ),
     );
     await tester.pump();
@@ -91,8 +103,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: DetailScreen(restaurant: withPhone)),
+      ProviderScope(
+        overrides: [
+          placesServiceProvider.overrideWithValue(_NoNetworkPlacesService()),
+        ],
+        child: const MaterialApp(home: DetailScreen(restaurant: withPhone)),
       ),
     );
     await tester.pump();

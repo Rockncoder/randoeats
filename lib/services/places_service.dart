@@ -1,5 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:randoeats/models/models.dart';
+
+/// Provides the shared [PlacesService]. Injected (rather than referenced as a
+/// singleton) so widgets/providers can be given a fake in tests and avoid live
+/// network calls.
+final placesServiceProvider = Provider<PlacesService>(
+  (ref) => PlacesService.instance,
+);
 
 /// Atmosphere flags fetched for a single place on its detail view. Each is
 /// true/false when Google reports it, or null when unknown.
@@ -32,7 +40,12 @@ class PlacesError extends PlacesResult {
   final String message;
 }
 
-/// Service for interacting with Google Places API (New).
+/// Client for the RandoEats BFF (`api.randoeats.com`).
+///
+/// The app no longer talks to Google Places directly: the BFF holds the
+/// (IP-restricted) API key, requests the right field masks, normalizes the
+/// response, and caches nearby/details lookups. This class just shapes the
+/// query, calls the BFF, and maps its normalized JSON back into [Restaurant]s.
 class PlacesService {
   /// Creates a [PlacesService] with optional custom Dio client.
   PlacesService({Dio? client}) : _client = client ?? Dio();
@@ -44,48 +57,12 @@ class PlacesService {
 
   final Dio _client;
 
-  /// Google Places API key from dart-define.
-  static const _apiKey = String.fromEnvironment('GOOGLE_PLACES_API_KEY');
-
-  /// Base URL for Places API (New).
-  static const _baseUrl = 'https://places.googleapis.com/v1';
-
-  /// Field mask for restaurant search - Pro tier fields.
-  static const _fieldMask =
-      'places.id,'
-      'places.displayName,'
-      'places.formattedAddress,'
-      'places.location,'
-      'places.rating,'
-      'places.userRatingCount,'
-      'places.priceLevel,'
-      'places.photos,'
-      'places.primaryType,'
-      'places.nationalPhoneNumber,'
-      'places.currentOpeningHours,'
-      'places.editorialSummary';
-
-  /// Extra ("atmosphere") fields, requested only when an atmosphere filter is
-  /// active — these push the request into Google's pricier SKU.
-  static const _atmosphereFields =
-      'places.servesBeer,'
-      'places.servesWine,'
-      'places.outdoorSeating,'
-      'places.goodForGroups,'
-      'places.parkingOptions';
-
-  static String _fieldMaskFor(SpotFilters filters) =>
-      filters.usesAtmosphere ? '$_fieldMask,$_atmosphereFields' : _fieldMask;
-
-  static List<String> _priceLevelEnums(Set<int> levels) {
-    const names = {
-      1: 'PRICE_LEVEL_INEXPENSIVE',
-      2: 'PRICE_LEVEL_MODERATE',
-      3: 'PRICE_LEVEL_EXPENSIVE',
-      4: 'PRICE_LEVEL_VERY_EXPENSIVE',
-    };
-    return levels.map((l) => names[l]).whereType<String>().toList();
-  }
+  /// Base URL for the RandoEats BFF restaurant routes. Overridable at build
+  /// time (e.g. for staging) via `--dart-define=RANDOEATS_API_URL=...`.
+  static const _baseUrl = String.fromEnvironment(
+    'RANDOEATS_API_URL',
+    defaultValue: 'https://api.randoeats.com/api/v1/restaurants',
+  );
 
   /// Fetches nearby restaurants based on location and optional mood.
   ///
@@ -94,6 +71,10 @@ class PlacesService {
   /// [excludePlaceIds] are places to exclude from results.
   /// [radiusMeters] is the search radius in meters (default 5000).
   /// [maxResultCount] is the maximum number of results to return (default 50).
+  ///
+  /// The BFF applies the server-side facets (open now, rating, price) and the
+  /// pricier atmosphere facets (beer/wine/patio/groups/parking); only
+  /// [excludePlaceIds] is applied here, since it's driven by local history.
   Future<PlacesResult> getNearbyRestaurants({
     required double latitude,
     required double longitude,
@@ -103,187 +84,79 @@ class PlacesService {
     int maxResultCount = 50,
     SpotFilters filters = const SpotFilters(),
   }) async {
-    if (_apiKey.isEmpty) {
-      return const PlacesError(
-        'Google Places API key not configured. '
-        'Please set GOOGLE_PLACES_API_KEY.',
-      );
-    }
-
     try {
       // Cuisine chips drive the text query when there's no typed mood.
       final keyword =
           _extractKeyword(mood) ??
           (filters.cuisines.isNotEmpty ? filters.cuisines.join(' ') : null);
-      final fieldMask = _fieldMaskFor(filters);
 
-      // Always use Text Search: it supports pagination (up to ~60 results),
-      // whereas Nearby Search caps at 20 with no page token. An empty keyword
-      // browses all nearby restaurants.
-      final restaurants = await _textSearchRestaurants(
-        latitude: latitude,
-        longitude: longitude,
-        query: keyword ?? '',
-        radiusMeters: radiusMeters,
-        maxResultCount: maxResultCount,
-        fieldMask: fieldMask,
-        filters: filters,
+      final query = <String, dynamic>{
+        'lat': latitude,
+        'lng': longitude,
+        'radius': radiusMeters,
+        'max': maxResultCount,
+        if (keyword != null && keyword.trim().isNotEmpty) 'q': keyword.trim(),
+        if (filters.openNow) 'open': 'true',
+        if (filters.minRating != null) 'min_rating': filters.minRating,
+        if (filters.priceLevels.isNotEmpty)
+          'price': (filters.priceLevels.toList()..sort()).join(','),
+        if (filters.servesBeer) 'beer': 'true',
+        if (filters.servesWine) 'wine': 'true',
+        if (filters.outdoorSeating) 'patio': 'true',
+        if (filters.goodForGroups) 'group': 'true',
+        if (filters.hasParking) 'parking': 'true',
+      };
+
+      final response = await _client.get<Map<String, dynamic>>(
+        '$_baseUrl/nearby',
+        queryParameters: query,
       );
 
-      // Filter out excluded places, then apply the atmosphere facets
-      // client-side — the Places API can't filter these server-side, so we
-      // keep only places it confirms match (a null/unknown value is excluded).
-      var filtered = restaurants.where(
-        (r) => !excludePlaceIds.contains(r.placeId),
-      );
-      if (filters.servesBeer) {
-        filtered = filtered.where((r) => r.servesBeer ?? false);
+      if (response.statusCode != 200) {
+        return PlacesError('HTTP ${response.statusCode}: ${response.data}');
       }
-      if (filters.servesWine) {
-        filtered = filtered.where((r) => r.servesWine ?? false);
+      final data = response.data;
+      if (data == null) {
+        return const PlacesError('Empty response from server.');
       }
-      if (filters.outdoorSeating) {
-        filtered = filtered.where((r) => r.outdoorSeating ?? false);
-      }
-      if (filters.goodForGroups) {
-        filtered = filtered.where((r) => r.goodForGroups ?? false);
-      }
-      if (filters.hasParking) {
-        filtered = filtered.where((r) => r.hasParking ?? false);
+      if (data.containsKey('error')) {
+        return PlacesError('Server error: ${data['error']}');
       }
 
-      return PlacesSuccess(filtered.toList());
+      final restaurants = (data['restaurants'] as List<dynamic>? ?? [])
+          .map((e) => Restaurant.fromBff(e as Map<String, dynamic>))
+          .where((r) => !excludePlaceIds.contains(r.placeId))
+          .toList();
+      return PlacesSuccess(restaurants);
+    } on DioException catch (e) {
+      return PlacesError('Failed to fetch restaurants: ${e.message}');
     } on Exception catch (e) {
       return PlacesError('Failed to fetch restaurants: $e');
     }
   }
 
-  /// Searches for restaurants using text query via Places API (New).
-  Future<List<Restaurant>> _textSearchRestaurants({
-    required double latitude,
-    required double longitude,
-    required String query,
-    required int radiusMeters,
-    required int maxResultCount,
-    required String fieldMask,
-    required SpotFilters filters,
-  }) async {
-    final baseData = <String, dynamic>{
-      'textQuery': query.trim().isEmpty ? 'restaurant' : '$query restaurant',
-      'includedType': 'restaurant',
-      'locationBias': {
-        'circle': {
-          'center': {'latitude': latitude, 'longitude': longitude},
-          'radius': radiusMeters.toDouble(),
-        },
-      },
-    };
-    // Cheap server-side filters supported by Text Search.
-    if (filters.openNow) baseData['openNow'] = true;
-    if (filters.minRating != null) baseData['minRating'] = filters.minRating;
-    if (filters.priceLevels.isNotEmpty) {
-      baseData['priceLevels'] = _priceLevelEnums(filters.priceLevels);
-    }
-
-    // Text Search returns at most 20 results per page. Page through with
-    // nextPageToken until we have enough or Google stops returning a token
-    // (it allows up to ~60 total). pageSize must stay constant across pages
-    // when a pageToken is supplied, so trim any overflow at the end.
-    final pageSize = maxResultCount.clamp(1, 20);
-    final pagedMask = '$fieldMask,nextPageToken';
-    final results = <Restaurant>[];
-    String? pageToken;
-    var firstPage = true;
-    do {
-      // A freshly issued page token can take a moment to become valid.
-      if (!firstPage) {
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-      }
-      final data = <String, dynamic>{
-        ...baseData,
-        'pageSize': pageSize,
-        'pageToken': ?pageToken,
-      };
-      try {
-        final response = await _client.post<Map<String, dynamic>>(
-          '$_baseUrl/places:searchText',
-          options: Options(
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': _apiKey,
-              'X-Goog-FieldMask': pagedMask,
-            },
-          ),
-          data: data,
-        );
-        results.addAll(_parseResponse(response));
-        pageToken = response.data?['nextPageToken'] as String?;
-      } on Exception {
-        // A failed first page is a real error worth surfacing; a failed later
-        // page just ends pagination with whatever we already collected.
-        if (results.isEmpty) rethrow;
-        break;
-      }
-      firstPage = false;
-    } while (pageToken != null && results.length < maxResultCount);
-
-    return results.length > maxResultCount
-        ? results.sublist(0, maxResultCount)
-        : results;
-  }
-
-  /// Fetches atmosphere flags (parking, beer, wine) for a single place via
-  /// Place Details (New).
+  /// Fetches atmosphere flags (parking, beer, wine) for a single place.
   ///
   /// Called from the detail screen so those chips appear even when the search
-  /// didn't request the (pricier) atmosphere fields — one cheap lookup per
-  /// opened place rather than atmosphere fields on every result.
+  /// didn't request the atmosphere fields — one cheap BFF details lookup per
+  /// opened place. The BFF caches details, so repeat opens are free.
   Future<PlaceAtmosphere> fetchAtmosphere(String placeId) async {
     const empty = (hasParking: null, servesBeer: null, servesWine: null);
-    if (placeId.isEmpty || _apiKey.isEmpty) return empty;
+    if (placeId.isEmpty) return empty;
     try {
       final response = await _client.get<Map<String, dynamic>>(
-        '$_baseUrl/places/$placeId',
-        options: Options(
-          headers: {
-            'X-Goog-Api-Key': _apiKey,
-            'X-Goog-FieldMask': 'parkingOptions,servesBeer,servesWine',
-          },
-        ),
+        '$_baseUrl/$placeId',
       );
       final data = response.data;
-      final parking = data?['parkingOptions'] as Map<String, dynamic>?;
+      if (data == null || data.containsKey('error')) return empty;
       return (
-        hasParking: parking?.values.any((v) => v == true),
-        servesBeer: data?['servesBeer'] as bool?,
-        servesWine: data?['servesWine'] as bool?,
+        hasParking: data['hasParking'] as bool?,
+        servesBeer: data['servesBeer'] as bool?,
+        servesWine: data['servesWine'] as bool?,
       );
     } on DioException {
       return empty;
     }
-  }
-
-  /// Parses the API response and returns a list of restaurants.
-  List<Restaurant> _parseResponse(Response<Map<String, dynamic>> response) {
-    if (response.statusCode != 200) {
-      throw Exception(
-        'HTTP ${response.statusCode}: ${response.data}',
-      );
-    }
-
-    final data = response.data!;
-
-    // Check for API errors
-    if (data.containsKey('error')) {
-      final error = data['error'] as Map<String, dynamic>;
-      throw Exception('Places API error: ${error['message']}');
-    }
-
-    final places = data['places'] as List<dynamic>? ?? [];
-
-    return places
-        .map((p) => Restaurant.fromPlacesApiNew(p as Map<String, dynamic>))
-        .toList();
   }
 
   /// Extracts a search keyword from mood input.
@@ -323,18 +196,31 @@ class PlacesService {
     return null;
   }
 
-  /// Builds a photo URL for a given photo name (new API format).
+  /// Builds a BFF photo URL for a given photo name.
   ///
-  /// [photoName] is the full resource name from the API response,
-  /// e.g., "places/ChIJ.../photos/AWU5..."
+  /// [photoName] is the full Places resource name from a [Restaurant], e.g.
+  /// "places/ChIJ.../photos/AWU5...". The BFF proxies the image bytes (and
+  /// holds the API key), so this URL can be loaded directly by the UI.
   ///
-  /// Returns null if no API key or photo name.
+  /// Returns null when there's no photo name.
   String? getPhotoUrl(String? photoName, {int maxWidth = 400}) {
-    if (_apiKey.isEmpty || photoName == null) return null;
+    if (photoName == null || photoName.isEmpty) return null;
 
-    return '$_baseUrl/$photoName/media'
-        '?maxWidthPx=$maxWidth'
-        '&key=$_apiKey';
+    // photoName is "places/{placeId}/photos/{ref}"; the BFF photo route lives
+    // under the place and takes the full name as the photo_ref query param.
+    final segments = photoName.split('/');
+    final placeId = segments.length > 1 && segments.first == 'places'
+        ? segments[1]
+        : 'x';
+
+    return Uri.parse('$_baseUrl/$placeId/photo')
+        .replace(
+          queryParameters: {
+            'photo_ref': photoName,
+            'max_width': '$maxWidth',
+          },
+        )
+        .toString();
   }
 
   /// Disposes the Dio client.
