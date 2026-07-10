@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -579,13 +580,38 @@ class DetailScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openMaps(BuildContext context) {
-    // Show the location in an in-app map sheet rather than jumping out to the
-    // external Maps app, which is disorienting to return from.
-    return RestaurantMapSheet.show(
+  Future<void> _openMaps(BuildContext context) async {
+    final destination = LatLng(restaurant.latitude, restaurant.longitude);
+    // Full Maps URL for the "Open in Google Maps" handoff (and for web, where
+    // an in-app WebView isn't available — a new tab keeps our app open).
+    final externalUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1'
+      '&destination=${restaurant.latitude},${restaurant.longitude}'
+      '&destination_place_id=${restaurant.placeId}',
+    );
+
+    if (kIsWeb) {
+      await launchUrl(externalUrl);
+      return;
+    }
+
+    // Origin = the user's location so the sheet can draw a route. Discovery has
+    // usually already fetched it; fall back to the OS's last-known fix. If we
+    // have neither, the sheet just shows the restaurant.
+    final position =
+        LocationService.instance.lastKnownPosition ??
+        await LocationService.instance.getLastKnownPosition();
+    final origin = position == null
+        ? null
+        : LatLng(position.latitude, position.longitude);
+
+    if (!context.mounted) return;
+    await RestaurantDirectionsSheet.show(
       context,
-      coordinates: LatLng(restaurant.latitude, restaurant.longitude),
+      destination: destination,
+      origin: origin,
       name: restaurant.name,
+      externalUrl: externalUrl,
     );
   }
 }
