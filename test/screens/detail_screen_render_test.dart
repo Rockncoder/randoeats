@@ -68,9 +68,12 @@ void main() {
     expect(find.text('Test Diner'), findsOneWidget);
     expect(find.text('Directions'), findsOneWidget);
     // Rating buttons are icon-only now (no "Good Pick!" / "Not For Me" text).
-    expect(find.byKey(const ValueKey('detail_rate_thumbsUp')), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('detail_rate_thumbsDown')),
+      find.byKey(const ValueKey('restaurantDetailRatethumbsUpBtn1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('restaurantDetailRatethumbsDownBtn1')),
       findsOneWidget,
     );
   });
@@ -82,7 +85,10 @@ void main() {
     await pumpDetail(tester, const Size(1024, 1366));
     expect(tester.takeException(), isNull);
     expect(find.text('Directions'), findsOneWidget);
-    expect(find.byKey(const ValueKey('detail_rate_thumbsUp')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('restaurantDetailRatethumbsUpBtn1')),
+      findsOneWidget,
+    );
     handle.dispose();
   });
 
@@ -111,22 +117,34 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byKey(const ValueKey('detail_call')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('restaurantDetailCallTap1')),
+      findsOneWidget,
+    );
     expect(find.text('(415) 555-0123'), findsOneWidget);
   });
 
   testWidgets('hides the phone row when no number is present', (tester) async {
     // The module-level `restaurant` has no phoneNumber.
     await pumpDetail(tester, const Size(390, 844));
-    expect(find.byKey(const ValueKey('detail_call')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('restaurantDetailCallTap1')),
+      findsNothing,
+    );
   });
 
   testWidgets('Directions is the only action; Abort Mission is gone', (
     tester,
   ) async {
     await pumpDetail(tester, const Size(390, 844));
-    expect(find.byKey(const ValueKey('detail_navigate')), findsOneWidget);
-    expect(find.byKey(const ValueKey('detail_abort')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('restaurantDetailNavigateBtn1')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('restaurantDetailAbortBtn1')),
+      findsNothing,
+    );
   });
 
   testWidgets('renders wide + scrollable with semantics (no infinite width)', (

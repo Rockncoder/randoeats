@@ -148,7 +148,7 @@ class _RegionDrawScreenState extends ConsumerState<RegionDrawScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Name this area'),
         content: TextField(
-          key: const ValueKey('region_name_field'),
+          key: const ValueKey<String>('regionDrawNameInput1'),
           controller: controller,
           autofocus: true,
           decoration: const InputDecoration(hintText: 'e.g. Orange Circle'),
@@ -159,7 +159,7 @@ class _RegionDrawScreenState extends ConsumerState<RegionDrawScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            key: const ValueKey('region_save_confirm'),
+            key: const ValueKey<String>('regionDrawSaveConfirmBtn1'),
             onPressed: () => Navigator.pop(dialogContext, controller.text),
             child: const Text('Save'),
           ),
@@ -190,7 +190,7 @@ class _RegionDrawScreenState extends ConsumerState<RegionDrawScreen> {
           AnimatedBuilder(
             animation: _draw,
             builder: (context, _) => TextButton(
-              key: const ValueKey('region_save_button'),
+              key: const ValueKey<String>('regionDrawSaveBtn1'),
               onPressed: _draw.canSave && !_drawMode ? _save : null,
               child: const Text('Save'),
             ),
@@ -231,7 +231,7 @@ class _RegionDrawScreenState extends ConsumerState<RegionDrawScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        key: const ValueKey('region_draw_fab'),
+        key: const ValueKey<String>('regionDrawDrawBtn1'),
         onPressed: _toggleDrawMode,
         backgroundColor: _drawMode ? GoogieColors.chrome : GoogieColors.coral,
         icon: Icon(_drawMode ? Icons.close : Icons.gesture),

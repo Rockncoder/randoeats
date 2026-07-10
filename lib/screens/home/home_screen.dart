@@ -84,6 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            key: const ValueKey<String>('homeSettingsBtn1'),
             icon: Icon(Icons.settings, color: GoogieColors.turquoise),
             onPressed: () => unawaited(context.push<void>(AppRoutes.settings)),
           ),
@@ -152,6 +153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height: 16),
         Text(
           'rand-o-eats',
+          key: const ValueKey<String>('homeWordmarkText1'),
           style: theme.textTheme.displaySmall?.copyWith(
             color: GoogieColors.coral,
             fontWeight: FontWeight.bold,
@@ -191,6 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildMoodInput(ThemeData theme) {
     return TextField(
+      key: const ValueKey<String>('homeMoodInput1'),
       controller: _moodController,
       decoration: InputDecoration(
         hintText: 'e.g., "I want tacos" or "No fast food"',
@@ -203,6 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         suffixIcon: _moodController.text.isNotEmpty
             ? IconButton(
+                key: const ValueKey<String>('homeClearBtn1'),
                 icon: const Icon(Icons.clear),
                 onPressed: () {
                   _moodController.clear();
@@ -221,6 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final hasLocation = _locationError == null && !_isLoading;
 
     return ElevatedButton(
+      key: const ValueKey<String>('homeEngageBtn1'),
       onPressed: hasLocation ? _onEngagePressed : null,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -291,6 +296,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           TextButton(
+            key: const ValueKey<String>('homeRetryBtn1'),
             onPressed: _checkLocation,
             child: const Text('RETRY'),
           ),

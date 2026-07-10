@@ -83,7 +83,7 @@ class DetailScreen extends ConsumerWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: IconButton(
-        key: const ValueKey('detail_back'),
+        key: const ValueKey('restaurantDetailBackBtn1'),
         icon: const Icon(Icons.arrow_back),
         color: GoogieColors.white,
         onPressed: () => context.pop(),
@@ -146,7 +146,7 @@ class DetailScreen extends ConsumerWidget {
     final summary = restaurant.editorialSummary;
     if (summary == null || summary.isEmpty) return const SizedBox.shrink();
     return Padding(
-      key: const ValueKey('detail_description'),
+      key: const ValueKey('restaurantDetailDescriptionText1'),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
         summary,
@@ -167,6 +167,7 @@ class DetailScreen extends ConsumerWidget {
         children: [
           // Name
           Text(
+            key: const ValueKey('restaurantDetailNameText1'),
             restaurant.name,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
@@ -185,6 +186,7 @@ class DetailScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
+                  key: const ValueKey('restaurantDetailAddressText1'),
                   restaurant.address,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
@@ -207,6 +209,7 @@ class DetailScreen extends ConsumerWidget {
               // Rating
               if (restaurant.rating != null)
                 _buildChip(
+                  key: const ValueKey('restaurantDetailRatingText1'),
                   icon: Icons.star,
                   iconColor: GoogieColors.onMustardContainer,
                   label: _formatRating(),
@@ -218,6 +221,7 @@ class DetailScreen extends ConsumerWidget {
               // leading dollar-sign icon (it would render as "$ $$").
               if (restaurant.priceLevel != null)
                 _buildChip(
+                  key: const ValueKey('restaurantDetailPriceText1'),
                   label: restaurant.priceLevel!,
                   fill: GoogieColors.turquoiseContainer,
                   textColor: GoogieColors.onTurquoiseContainer,
@@ -226,6 +230,7 @@ class DetailScreen extends ConsumerWidget {
               // Open status
               if (restaurant.isOpen != null)
                 _buildChip(
+                  key: const ValueKey('restaurantDetailOpenStatusText1'),
                   icon: restaurant.isOpen! ? Icons.check_circle : Icons.cancel,
                   iconColor: restaurant.isOpen!
                       ? GoogieColors.statusOpen
@@ -243,6 +248,7 @@ class DetailScreen extends ConsumerWidget {
               // (one Place Details call, shared) so they show even when the
               // search didn't request the atmosphere fields.
               _AtmosphereChip(
+                key: const ValueKey('restaurantDetailParkingText1'),
                 placeId: restaurant.placeId,
                 known: restaurant.hasParking,
                 select: (a) => a.hasParking,
@@ -251,6 +257,7 @@ class DetailScreen extends ConsumerWidget {
                 theme: theme,
               ),
               _AtmosphereChip(
+                key: const ValueKey('restaurantDetailBeerText1'),
                 placeId: restaurant.placeId,
                 known: restaurant.servesBeer,
                 select: (a) => a.servesBeer,
@@ -259,6 +266,7 @@ class DetailScreen extends ConsumerWidget {
                 theme: theme,
               ),
               _AtmosphereChip(
+                key: const ValueKey('restaurantDetailWineText1'),
                 placeId: restaurant.placeId,
                 known: restaurant.servesWine,
                 select: (a) => a.servesWine,
@@ -280,10 +288,10 @@ class DetailScreen extends ConsumerWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: restaurant.types
-                  .take(5)
-                  .map((type) => _buildCategoryChip(type, theme))
-                  .toList(),
+              children: [
+                for (final (i, type) in restaurant.types.take(5).indexed)
+                  _buildCategoryChip(type, theme, i),
+              ],
             ),
           ],
         ],
@@ -297,7 +305,7 @@ class DetailScreen extends ConsumerWidget {
     String phoneNumber,
   ) {
     return InkWell(
-      key: const ValueKey('detail_call'),
+      key: const ValueKey('restaurantDetailCallTap1'),
       onTap: () => _callPhone(context, phoneNumber),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -328,12 +336,14 @@ class DetailScreen extends ConsumerWidget {
   Widget _buildChip({
     required String label,
     required ThemeData theme,
+    Key? key,
     IconData? icon,
     Color? iconColor,
     Color? fill,
     Color? textColor,
   }) {
     return Container(
+      key: key,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: fill ?? GoogieColors.white,
@@ -366,8 +376,9 @@ class DetailScreen extends ConsumerWidget {
     return rating;
   }
 
-  Widget _buildCategoryChip(String type, ThemeData theme) {
+  Widget _buildCategoryChip(String type, ThemeData theme, int index) {
     return Container(
+      key: ValueKey('restaurantDetailCategoryText${index + 1}'),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: GoogieColors.turquoiseContainer,
@@ -405,7 +416,7 @@ class DetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Pulse(
         child: FilledButton.icon(
-          key: const ValueKey('detail_navigate'),
+          key: const ValueKey('restaurantDetailNavigateBtn1'),
           onPressed: () => _openMaps(context),
           icon: const Icon(Icons.navigation),
           label: const Text('Directions'),
@@ -506,7 +517,7 @@ class DetailScreen extends ConsumerWidget {
       label: label,
       button: true,
       child: FilledButton.tonal(
-        key: ValueKey('detail_rate_${ratingType.name}'),
+        key: ValueKey('restaurantDetailRate${ratingType.name}Btn1'),
         onPressed: () async {
           final rating = UserRating(
             placeId: restaurant.placeId,
@@ -670,7 +681,7 @@ class _HoursSectionState extends State<_HoursSection> {
       button: true,
       label: 'Opening hours',
       child: InkWell(
-        key: const ValueKey('detail_hours'),
+        key: const ValueKey('restaurantDetailHoursText1'),
         onTap: () => setState(() => _expanded = !_expanded),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -814,6 +825,7 @@ class _AtmosphereChip extends ConsumerWidget {
     required this.icon,
     required this.label,
     required this.theme,
+    super.key,
   });
 
   final String placeId;
@@ -890,11 +902,12 @@ class _PhotoCarouselState extends State<_PhotoCarousel> {
       fit: StackFit.expand,
       children: [
         PageView.builder(
-          key: const ValueKey('detail_photo_carousel'),
+          key: const ValueKey('restaurantDetailPhotoCarousel1'),
           controller: _controller,
           itemCount: urls.length,
           onPageChanged: (i) => setState(() => _index = i),
           itemBuilder: (context, i) => Image.network(
+            key: ValueKey('restaurantDetailPhoto${i + 1}'),
             urls[i],
             fit: BoxFit.cover,
             width: double.infinity,

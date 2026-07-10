@@ -71,15 +71,18 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Rename area'),
         content: TextField(
+          key: const ValueKey('resultsRenameAreaInput1'),
           controller: controller,
           autofocus: true,
         ),
         actions: [
           TextButton(
+            key: const ValueKey('resultsRenameAreaCancelBtn1'),
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           FilledButton(
+            key: const ValueKey('resultsRenameAreaSaveBtn1'),
             onPressed: () => Navigator.pop(dialogContext, controller.text),
             child: const Text('Save'),
           ),
@@ -127,7 +130,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
-              key: const ValueKey('spot_name_field'),
+              key: const ValueKey('resultsSpotNameInput1'),
               controller: controller,
               autofocus: true,
               decoration: const InputDecoration(labelText: 'Name'),
@@ -140,11 +143,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         ),
         actions: [
           TextButton(
+            key: const ValueKey('resultsSpotSaveCancelBtn1'),
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            key: const ValueKey('spot_save_confirm'),
+            key: const ValueKey('resultsSpotSaveConfirmBtn1'),
             onPressed: () => Navigator.pop(dialogContext, controller.text),
             child: const Text('Save'),
           ),
@@ -294,7 +298,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         children: [
                           for (final level in const [1, 2, 3])
                             ChoiceChip(
-                              key: ValueKey('tune_price_$level'),
+                              key: ValueKey('resultsTunePriceChip_$level'),
                               label: Text(r'$' * level),
                               selected: filters.priceLevels.contains(level),
                               showCheckmark: true,
@@ -392,7 +396,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     identifier: 'spin_button',
                     button: true,
                     child: RandoEatsButton(
-                      key: const ValueKey('spin_button'),
+                      key: const ValueKey('resultsSpinBtn1'),
                       // Locked for the whole winner sequence: the reel spin
                       // (status == spinning) through the reveal + celebration,
                       // re-enabled only once the celebration completes.
@@ -455,7 +459,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
           ),
           TextButton(
-            key: const ValueKey('notice_show_all'),
+            key: const ValueKey('resultsNoticeShowAllBtn1'),
             onPressed: _showAllRestaurants,
             style: TextButton.styleFrom(
               foregroundColor: GoogieColors.onMustardContainer,
@@ -465,7 +469,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             child: const Text('Show all'),
           ),
           IconButton(
-            key: const ValueKey('notice_dismiss'),
+            key: const ValueKey('resultsNoticeDismissBtn1'),
             icon: const Icon(Icons.close, size: 18),
             color: GoogieColors.onMustardContainer,
             visualDensity: VisualDensity.compact,
@@ -486,6 +490,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           // Refresh button (left side)
           if (canRefresh)
             IconButton(
+              key: const ValueKey('resultsRefreshBtn1'),
               icon: const Icon(Icons.refresh),
               color: GoogieColors.deepTeal,
               iconSize: 28,
@@ -496,7 +501,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           // spin too (the refresh button hides then, the count shouldn't).
           if (count > 0)
             Container(
-              key: const ValueKey('result_count'),
+              key: const ValueKey('resultsResultCountText1'),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: GoogieColors.turquoiseContainer,
@@ -513,7 +518,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           const Spacer(),
           // Quick tune (radius + price) in an M3 bottom sheet.
           IconButton(
-            key: const ValueKey('quick_tune_button'),
+            key: const ValueKey('resultsQuickTuneBtn1'),
             icon: const Icon(Icons.tune),
             color: GoogieColors.deepTeal,
             iconSize: 26,
@@ -522,7 +527,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           ),
           // About (info) — sits between the filters tune and the gear.
           IconButton(
-            key: const ValueKey('about_button'),
+            key: const ValueKey('resultsAboutBtn1'),
             icon: const Icon(Icons.info_outline),
             color: GoogieColors.deepTeal,
             iconSize: 26,
@@ -536,6 +541,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             identifier: 'settings_button',
             button: true,
             child: IconButton(
+              key: const ValueKey('resultsSettingsBtn1'),
               icon: const Icon(Icons.settings),
               color: GoogieColors.deepTeal,
               iconSize: 28,
@@ -622,6 +628,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             const SizedBox(height: 8),
             Text(
               message,
+              key: const ValueKey('resultsErrorText1'),
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
@@ -629,6 +636,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
+              key: const ValueKey('resultsTryAgainBtn1'),
               onPressed: () {
                 unawaited(ref.read(discoveryProvider.notifier).start());
               },

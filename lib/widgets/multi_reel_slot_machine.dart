@@ -383,7 +383,7 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
           borderRadius: BorderRadius.circular(12),
         ),
         child: ListView.builder(
-          key: const ValueKey('reel_list'),
+          key: const ValueKey('resultsReelList1'),
           controller: _scroll,
           physics: widget.spinning
               ? const NeverScrollableScrollPhysics()
@@ -410,7 +410,7 @@ class _ReelState extends State<_Reel> with SingleTickerProviderStateMixin {
                 widget.detailBuilder != null;
 
             RestaurantCard cardWith(VoidCallback onTap) => RestaurantCard(
-              key: ValueKey('reel_cell_${restaurant.placeId}_$index'),
+              key: ValueKey('resultsReelCell_${restaurant.placeId}_$index'),
               restaurant: restaurant,
               index: index,
               // Only the unique winning cell anchors the Hero flight into
