@@ -133,6 +133,9 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 
+# Local scratch screenshots (device captures, manual test runs)
+/screenshots/
+
 # Firebase local cache
 .firebase/
 
