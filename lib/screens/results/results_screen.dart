@@ -234,6 +234,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      // Content can exceed the default 9/16 height (e.g. landscape/short
+      // screens), so allow it to size to content and scroll if needed.
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -244,76 +247,158 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
           child: StatefulBuilder(
             builder: (context, setSheetState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quick tune',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: GoogieColors.deepTeal,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Search radius', style: theme.textTheme.titleSmall),
-                  Text(
-                    settings.distanceUnit.format(
-                      settings.searchRadiusMeters.toDouble(),
-                    ),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: GoogieColors.deepTeal,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Slider(
-                    value: settings.searchRadiusMeters.toDouble().clamp(
-                      UserSettings.minSearchRadius.toDouble(),
-                      UserSettings.maxSearchRadius.toDouble(),
-                    ),
-                    min: UserSettings.minSearchRadius.toDouble(),
-                    max: UserSettings.maxSearchRadius.toDouble(),
-                    divisions: 19,
-                    activeColor: GoogieColors.turquoise,
-                    onChanged: (v) => setSheetState(
-                      () => settings = settings.copyWith(
-                        searchRadiusMeters: v.round(),
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Quick tune',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: GoogieColors.deepTeal,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    onChangeEnd: (v) async {
-                      await StorageService.instance.saveSettings(
-                        settings.copyWith(searchRadiusMeters: v.round()),
-                      );
-                      unawaited(ref.read(discoveryProvider.notifier).start());
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Price', style: theme.textTheme.titleSmall),
-                  const SizedBox(height: 8),
-                  Consumer(
-                    builder: (context, sheetRef, _) {
-                      final filters = sheetRef.watch(activeFiltersProvider);
-                      return Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final level in const [1, 2, 3])
+                    const SizedBox(height: 12),
+                    Text('Search radius', style: theme.textTheme.titleSmall),
+                    Text(
+                      settings.distanceUnit.format(
+                        settings.searchRadiusMeters.toDouble(),
+                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: GoogieColors.deepTeal,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Slider(
+                      value: settings.searchRadiusMeters.toDouble().clamp(
+                        UserSettings.minSearchRadius.toDouble(),
+                        UserSettings.maxSearchRadius.toDouble(),
+                      ),
+                      min: UserSettings.minSearchRadius.toDouble(),
+                      max: UserSettings.maxSearchRadius.toDouble(),
+                      divisions: 19,
+                      activeColor: GoogieColors.turquoise,
+                      onChanged: (v) => setSheetState(
+                        () => settings = settings.copyWith(
+                          searchRadiusMeters: v.round(),
+                        ),
+                      ),
+                      onChangeEnd: (v) async {
+                        await StorageService.instance.saveSettings(
+                          settings.copyWith(searchRadiusMeters: v.round()),
+                        );
+                        unawaited(ref.read(discoveryProvider.notifier).start());
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Price', style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (context, sheetRef, _) {
+                        final filters = sheetRef.watch(activeFiltersProvider);
+                        return Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final level in const [1, 2, 3])
+                              ChoiceChip(
+                                key: ValueKey('resultsTunePriceChip_$level'),
+                                label: Text(r'$' * level),
+                                selected: filters.priceLevels.contains(level),
+                                showCheckmark: true,
+                                selectedColor: GoogieColors.coral,
+                                backgroundColor:
+                                    GoogieColors.turquoiseContainer,
+                                shape: const StadiumBorder(),
+                                onSelected: (_) => sheetRef
+                                    .read(activeFiltersProvider.notifier)
+                                    .togglePriceLevel(level),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Serves', style: theme.textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (context, sheetRef, _) {
+                        final servesBeer = sheetRef.watch(
+                          activeFiltersProvider.select((f) => f.servesBeer),
+                        );
+                        return Wrap(
+                          spacing: 8,
+                          children: [
                             ChoiceChip(
-                              key: ValueKey('resultsTunePriceChip_$level'),
-                              label: Text(r'$' * level),
-                              selected: filters.priceLevels.contains(level),
+                              key: const ValueKey('resultsTuneBeerChip1'),
+                              avatar: Icon(
+                                Icons.sports_bar,
+                                size: 18,
+                                color: servesBeer
+                                    ? GoogieColors.white
+                                    : GoogieColors.deepTeal,
+                              ),
+                              label: const Text('Beer'),
+                              selected: servesBeer,
                               showCheckmark: true,
                               selectedColor: GoogieColors.coral,
                               backgroundColor: GoogieColors.turquoiseContainer,
                               shape: const StadiumBorder(),
                               onSelected: (_) => sheetRef
                                   .read(activeFiltersProvider.notifier)
-                                  .togglePriceLevel(level),
+                                  .update(
+                                    (f) =>
+                                        f.copyWith(servesBeer: !f.servesBeer),
+                                  ),
                             ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Open-only mirrors the Settings toggle: turn it off to see
+                    // places that aren't open yet (e.g. a breakfast spot before
+                    // opening time).
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Open now only',
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              Text(
+                                settings.includeOpenOnly
+                                    ? 'Hiding places that are closed'
+                                    : "Showing places that aren't open yet",
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: GoogieColors.deepTeal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          key: const ValueKey('resultsTuneOpenOnlyToggle1'),
+                          value: settings.includeOpenOnly,
+                          activeTrackColor: GoogieColors.turquoise,
+                          onChanged: (value) async {
+                            final updated = settings.copyWith(
+                              includeOpenOnly: value,
+                            );
+                            setSheetState(() => settings = updated);
+                            await StorageService.instance.saveSettings(updated);
+                            unawaited(
+                              ref.read(discoveryProvider.notifier).start(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               );
             },
           ),

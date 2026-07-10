@@ -126,6 +126,8 @@ list/carousel.
 | FilledButton (rename-area save) | — | `resultsRenameAreaSaveBtn1` |
 | TextButton (rename-area cancel) | — | `resultsRenameAreaCancelBtn1` |
 | ChoiceChip (quick-tune price, loop) | `tune_price_$level` | `resultsTunePriceChip_$level` |
+| ChoiceChip (quick-tune beer) | — | `resultsTuneBeerChip1` |
+| Switch (quick-tune open-only) | — | `resultsTuneOpenOnlyToggle1` |
 | _FacetChip (cuisine, loop) | `filter_cuisine_${c.code}` | `resultsCuisineChip_${c.code}` |
 | _FacetChip (price, loop) | `filter_price_$level` | `resultsPriceChip_$level` |
 | _FacetChip (beer) | `filter_beer` | `resultsFilterBeerTap1` |
