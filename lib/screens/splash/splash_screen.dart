@@ -70,6 +70,7 @@ class _SplashScreenState extends State<SplashScreen>
             scale: _scale,
             child: Image.asset(
               'assets/images/splash_logo.png',
+              key: const ValueKey<String>('splashLogoImg1'),
               width: logoWidth,
             ),
           ),

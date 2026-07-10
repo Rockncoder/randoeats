@@ -191,7 +191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ? 'Reduced motion — winner revealed without spinning'
                 : 'Full slot-machine spin animation',
             child: Switch(
-              key: const ValueKey('setting_calm_mode'),
+              key: const ValueKey<String>('settingsCalmModeToggle1'),
               value: _settings.calmMode,
               activeTrackColor: GoogieColors.turquoise,
               onChanged: (value) {
@@ -299,7 +299,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     final p = appTheme.palette;
     return GestureDetector(
-      key: ValueKey('theme_swatch_${appTheme.id}'),
+      key: ValueKey<String>('settingsThemeSwatch_${appTheme.id}'),
       onTap: () => ref.read(themeProvider.notifier).select(appTheme),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

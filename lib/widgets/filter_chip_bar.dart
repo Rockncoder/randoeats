@@ -44,14 +44,14 @@ class FilterChipBar extends ConsumerWidget {
                 children: [
                   for (final c in _cuisines)
                     _FacetChip(
-                      key: ValueKey('filter_cuisine_${c.code}'),
+                      key: ValueKey('resultsCuisineChip_${c.code}'),
                       label: c.label,
                       icon: c.icon,
                       selected: filters.cuisines.contains(c.code),
                       onToggle: () => notifier.toggleCuisine(c.code),
                     ),
                   _FacetChip(
-                    key: const ValueKey('filter_beer'),
+                    key: const ValueKey('resultsFilterBeerTap1'),
                     label: 'Beer',
                     icon: Icons.sports_bar,
                     selected: filters.servesBeer,
@@ -60,7 +60,7 @@ class FilterChipBar extends ConsumerWidget {
                     ),
                   ),
                   _FacetChip(
-                    key: const ValueKey('filter_wine'),
+                    key: const ValueKey('resultsFilterWineTap1'),
                     label: 'Wine',
                     icon: Icons.wine_bar,
                     selected: filters.servesWine,
@@ -69,7 +69,7 @@ class FilterChipBar extends ConsumerWidget {
                     ),
                   ),
                   _FacetChip(
-                    key: const ValueKey('filter_patio'),
+                    key: const ValueKey('resultsFilterPatioTap1'),
                     label: 'Patio',
                     icon: Icons.deck,
                     selected: filters.outdoorSeating,
@@ -78,7 +78,7 @@ class FilterChipBar extends ConsumerWidget {
                     ),
                   ),
                   _FacetChip(
-                    key: const ValueKey('filter_parking'),
+                    key: const ValueKey('resultsFilterParkingTap1'),
                     label: 'Parking',
                     icon: Icons.local_parking,
                     selected: filters.hasParking,
@@ -87,7 +87,7 @@ class FilterChipBar extends ConsumerWidget {
                     ),
                   ),
                   _FacetChip(
-                    key: const ValueKey('filter_group'),
+                    key: const ValueKey('resultsFilterGroupTap1'),
                     label: 'Group',
                     icon: Icons.groups,
                     selected: filters.goodForGroups,
@@ -96,7 +96,7 @@ class FilterChipBar extends ConsumerWidget {
                     ),
                   ),
                   _FacetChip(
-                    key: const ValueKey('filter_open'),
+                    key: const ValueKey('resultsFilterOpenTap1'),
                     label: 'Open',
                     icon: Icons.schedule,
                     selected: filters.openNow,
@@ -104,7 +104,7 @@ class FilterChipBar extends ConsumerWidget {
                         notifier.update((f) => f.copyWith(openNow: !f.openNow)),
                   ),
                   _FacetChip(
-                    key: const ValueKey('filter_rating'),
+                    key: const ValueKey('resultsFilterRatingTap1'),
                     label: '4.0+',
                     icon: Icons.star,
                     selected: filters.minRating != null,
@@ -116,7 +116,7 @@ class FilterChipBar extends ConsumerWidget {
                   ),
                   for (final level in const [1, 2, 3])
                     _FacetChip(
-                      key: ValueKey('filter_price_$level'),
+                      key: ValueKey('resultsPriceChip_$level'),
                       label: r'$' * level,
                       selected: filters.priceLevels.contains(level),
                       onToggle: () => notifier.togglePriceLevel(level),
@@ -132,7 +132,7 @@ class FilterChipBar extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: ActionChip(
-                key: const ValueKey('filter_clear_all'),
+                key: const ValueKey('resultsClearAllTap1'),
                 avatar: Icon(
                   Icons.filter_alt_off,
                   size: 18,
@@ -154,7 +154,7 @@ class FilterChipBar extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: ActionChip(
-                key: const ValueKey('filter_save_spot'),
+                key: const ValueKey('resultsSaveSpotTap1'),
                 avatar: Icon(
                   Icons.star,
                   size: 18,

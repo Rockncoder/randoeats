@@ -38,34 +38,36 @@ void main() {
 
     testWidgets('tapping Beer toggles servesBeer', (tester) async {
       final container = await pump(tester);
-      await tester.tap(find.byKey(const ValueKey('filter_beer')));
+      await tester.tap(find.byKey(const ValueKey('resultsFilterBeerTap1')));
       await tester.pump();
       expect(container.read(activeFiltersProvider).servesBeer, isTrue);
-      await tester.tap(find.byKey(const ValueKey('filter_beer')));
+      await tester.tap(find.byKey(const ValueKey('resultsFilterBeerTap1')));
       await tester.pump();
       expect(container.read(activeFiltersProvider).servesBeer, isFalse);
     });
 
     testWidgets('tapping Mexican toggles the cuisine', (tester) async {
       final container = await pump(tester);
-      await tester.tap(find.byKey(const ValueKey('filter_cuisine_mexican')));
+      await tester.tap(
+        find.byKey(const ValueKey('resultsCuisineChip_mexican')),
+      );
       await tester.pump();
       expect(container.read(activeFiltersProvider).cuisines, {'mexican'});
     });
 
     testWidgets('tapping 4.0+ sets then clears minRating', (tester) async {
       final container = await pump(tester);
-      await tester.tap(find.byKey(const ValueKey('filter_rating')));
+      await tester.tap(find.byKey(const ValueKey('resultsFilterRatingTap1')));
       await tester.pump();
       expect(container.read(activeFiltersProvider).minRating, 4.0);
-      await tester.tap(find.byKey(const ValueKey('filter_rating')));
+      await tester.tap(find.byKey(const ValueKey('resultsFilterRatingTap1')));
       await tester.pump();
       expect(container.read(activeFiltersProvider).minRating, isNull);
     });
 
     testWidgets('tapping a price chip toggles the level', (tester) async {
       final container = await pump(tester);
-      await tester.tap(find.byKey(const ValueKey('filter_price_2')));
+      await tester.tap(find.byKey(const ValueKey('resultsPriceChip_2')));
       await tester.pump();
       expect(container.read(activeFiltersProvider).priceLevels, {2});
     });
@@ -74,14 +76,14 @@ void main() {
       final container = await pump(tester);
       container.read(activeFiltersProvider.notifier).toggleCuisine('mexican');
       await tester.pump();
-      expect(find.byKey(const ValueKey('filter_save_spot')), findsNothing);
+      expect(find.byKey(const ValueKey('resultsSaveSpotTap1')), findsNothing);
     });
 
     testWidgets('save-spot star is hidden when no filters are active', (
       tester,
     ) async {
       await pump(tester, onSaveSpot: () {});
-      expect(find.byKey(const ValueKey('filter_save_spot')), findsNothing);
+      expect(find.byKey(const ValueKey('resultsSaveSpotTap1')), findsNothing);
     });
 
     testWidgets('save-spot star appears and fires when filters active', (
@@ -89,13 +91,13 @@ void main() {
     ) async {
       var saved = false;
       final container = await pump(tester, onSaveSpot: () => saved = true);
-      expect(find.byKey(const ValueKey('filter_save_spot')), findsNothing);
+      expect(find.byKey(const ValueKey('resultsSaveSpotTap1')), findsNothing);
 
       container.read(activeFiltersProvider.notifier).toggleCuisine('mexican');
       await tester.pump();
 
-      expect(find.byKey(const ValueKey('filter_save_spot')), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('filter_save_spot')));
+      expect(find.byKey(const ValueKey('resultsSaveSpotTap1')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('resultsSaveSpotTap1')));
       await tester.pump();
       expect(saved, isTrue);
     });

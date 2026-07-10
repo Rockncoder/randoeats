@@ -52,7 +52,7 @@ class RegionChipBar extends ConsumerWidget {
                 padding: const EdgeInsets.only(left: 4, right: 16),
                 children: [
                   _ScopeChip(
-                    key: const ValueKey('region_chip_near_me'),
+                    key: const ValueKey('resultsRegionNearMeTap1'),
                     label: 'Near Me',
                     icon: Icons.my_location,
                     selected: active == null,
@@ -60,7 +60,7 @@ class RegionChipBar extends ConsumerWidget {
                   ),
                   for (final region in regions)
                     _ScopeChip(
-                      key: ValueKey('region_chip_${region.id}'),
+                      key: ValueKey('resultsRegionChip_${region.id}'),
                       label: region.name,
                       icon: Icons.place,
                       selected: active?.id == region.id,
@@ -74,7 +74,7 @@ class RegionChipBar extends ConsumerWidget {
                       onLongPress: () => _showRegionMenu(context, region),
                     ),
                   _ScopeChip(
-                    key: const ValueKey('region_chip_add'),
+                    key: const ValueKey('resultsRegionAddTap1'),
                     label: 'New Area',
                     icon: Icons.add,
                     selected: false,
@@ -97,13 +97,13 @@ class RegionChipBar extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              key: const ValueKey('region_menu_rename'),
+              key: const ValueKey('resultsRegionMenuRenameTap1'),
               leading: Icon(Icons.edit, color: GoogieColors.deepTeal),
               title: const Text('Rename'),
               onTap: () => Navigator.pop(sheetContext, _RegionAction.rename),
             ),
             ListTile(
-              key: const ValueKey('region_menu_delete'),
+              key: const ValueKey('resultsRegionMenuDeleteTap1'),
               leading: Icon(Icons.delete, color: GoogieColors.coral),
               title: const Text('Delete'),
               onTap: () => Navigator.pop(sheetContext, _RegionAction.delete),

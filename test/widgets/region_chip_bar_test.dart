@@ -55,7 +55,7 @@ void main() {
       await pumpBar(tester);
       final chip = tester.widget<ChoiceChip>(
         find.descendant(
-          of: find.byKey(const ValueKey('region_chip_near_me')),
+          of: find.byKey(const ValueKey('resultsRegionNearMeTap1')),
           matching: find.byType(ChoiceChip),
         ),
       );
@@ -64,7 +64,7 @@ void main() {
 
     testWidgets('tapping a region chip activates it', (tester) async {
       final container = await pumpBar(tester);
-      await tester.tap(find.byKey(const ValueKey('region_chip_r1')));
+      await tester.tap(find.byKey(const ValueKey('resultsRegionChip_r1')));
       await tester.pump();
       expect(container.read(activeRegionProvider)?.id, 'r1');
     });
@@ -92,7 +92,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byKey(const ValueKey('region_chip_s1')));
+      await tester.tap(find.byKey(const ValueKey('resultsRegionChip_s1')));
       await tester.pump();
       expect(container.read(activeRegionProvider)?.id, 's1');
       expect(container.read(activeFiltersProvider).servesBeer, isTrue);
@@ -104,7 +104,7 @@ void main() {
       container.read(activeRegionProvider.notifier).select(regions.first);
       await tester.pump();
 
-      await tester.tap(find.byKey(const ValueKey('region_chip_near_me')));
+      await tester.tap(find.byKey(const ValueKey('resultsRegionNearMeTap1')));
       await tester.pump();
       expect(container.read(activeRegionProvider), isNull);
     });
@@ -112,7 +112,7 @@ void main() {
     testWidgets('tapping New Area invokes onCreate', (tester) async {
       var created = false;
       await pumpBar(tester, onCreate: () => created = true);
-      await tester.tap(find.byKey(const ValueKey('region_chip_add')));
+      await tester.tap(find.byKey(const ValueKey('resultsRegionAddTap1')));
       await tester.pump();
       expect(created, isTrue);
     });
@@ -121,9 +121,13 @@ void main() {
       SavedRegion? deleted;
       await pumpBar(tester, onDelete: (r) => deleted = r);
 
-      await tester.longPress(find.byKey(const ValueKey('region_chip_r1')));
+      await tester.longPress(
+        find.byKey(const ValueKey('resultsRegionChip_r1')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('region_menu_delete')));
+      await tester.tap(
+        find.byKey(const ValueKey('resultsRegionMenuDeleteTap1')),
+      );
       await tester.pumpAndSettle();
 
       expect(deleted?.id, 'r1');
@@ -133,9 +137,13 @@ void main() {
       SavedRegion? renamed;
       await pumpBar(tester, onRename: (r) => renamed = r);
 
-      await tester.longPress(find.byKey(const ValueKey('region_chip_r2')));
+      await tester.longPress(
+        find.byKey(const ValueKey('resultsRegionChip_r2')),
+      );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('region_menu_rename')));
+      await tester.tap(
+        find.byKey(const ValueKey('resultsRegionMenuRenameTap1')),
+      );
       await tester.pumpAndSettle();
 
       expect(renamed?.id, 'r2');

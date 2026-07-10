@@ -51,7 +51,7 @@ class _AboutScreenState extends State<AboutScreen> {
       appBar: AppBar(
         title: const Text('About'),
         leading: IconButton(
-          key: const ValueKey('about_back'),
+          key: const ValueKey<String>('aboutBackBtn1'),
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
@@ -87,7 +87,7 @@ class _AboutScreenState extends State<AboutScreen> {
               const SizedBox(height: 16),
               Text(
                 _version == null ? 'Version …' : 'Version $_version',
-                key: const ValueKey('about_version'),
+                key: const ValueKey<String>('aboutVersionText1'),
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: GoogieColors.deepTeal,
                   fontWeight: FontWeight.bold,

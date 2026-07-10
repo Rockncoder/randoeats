@@ -150,6 +150,7 @@ class _RestaurantDirectionsSheetState extends State<RestaurantDirectionsSheet> {
     final theme = Theme.of(context);
 
     return SizedBox(
+      key: const ValueKey('restaurantDetailDirectionsSheet1'),
       height: 0.85 * MediaQuery.of(context).size.height,
       child: Column(
         children: [
@@ -166,7 +167,7 @@ class _RestaurantDirectionsSheetState extends State<RestaurantDirectionsSheet> {
                   ),
                 ),
                 IconButton(
-                  key: const ValueKey('directions_close'),
+                  key: const ValueKey('restaurantDetailCloseBtn1'),
                   icon: const Icon(Icons.close),
                   tooltip: 'Close',
                   onPressed: () => Navigator.pop(context),
@@ -174,7 +175,12 @@ class _RestaurantDirectionsSheetState extends State<RestaurantDirectionsSheet> {
               ],
             ),
           ),
-          Expanded(child: WebViewWidget(controller: _controller)),
+          Expanded(
+            child: WebViewWidget(
+              key: const ValueKey('restaurantDetailDirectionsMap1'),
+              controller: _controller,
+            ),
+          ),
           SafeArea(
             top: false,
             child: Padding(
@@ -182,7 +188,7 @@ class _RestaurantDirectionsSheetState extends State<RestaurantDirectionsSheet> {
               child: SizedBox(
                 width: double.infinity,
                 child: TextButton.icon(
-                  key: const ValueKey('directions_open_external'),
+                  key: const ValueKey('restaurantDetailOpenExternalBtn1'),
                   onPressed: _openInGoogleMaps,
                   icon: const Icon(Icons.open_in_new),
                   label: const Text('Open in Google Maps'),
