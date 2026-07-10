@@ -75,8 +75,26 @@ list/carousel.
 
 | Widget | Old key | New key |
 |---|---|---|
-| Switch (calm mode) | `setting_calm_mode` | `settingsCalmModeToggle1` |
 | GestureDetector (theme swatch, loop) | `theme_swatch_${appTheme.id}` | `settingsThemeSwatch_${appTheme.id}` |
+| GestureDetector (distance unit — miles) | — | `settingsUnitMilesTap1` |
+| GestureDetector (distance unit — km) | — | `settingsUnitKilometersTap1` |
+| Slider (search radius) | — | `settingsSearchRadiusSlider1` |
+| Slider (max results) | — | `settingsMaxResultsSlider1` |
+| Slider (hide days) | — | `settingsHideDaysSlider1` |
+| Switch (open only) | — | `settingsOpenOnlyToggle1` |
+| Switch (calm mode) | `setting_calm_mode` | `settingsCalmModeToggle1` |
+| GestureDetector (category chip, loop) | — | `settingsCategoryChip_${category.code}` |
+| OutlinedButton (clear visit history) | — | `settingsClearVisitHistoryBtn1` |
+| OutlinedButton (clear recent picks) | — | `settingsClearRecentPicksBtn1` |
+| OutlinedButton (clear all data) | — | `settingsClearAllDataBtn1` |
+| TextButton (visit-history dialog cancel/confirm) | — | `settingsClearVisitHistory{Cancel,Confirm}Btn1` |
+| TextButton (recent-picks dialog cancel/confirm) | — | `settingsClearRecentPicks{Cancel,Confirm}Btn1` |
+| TextButton (all-data dialog cancel/confirm) | — | `settingsClearAllData{Cancel,Confirm}Btn1` |
+
+> `Slider` uses the suffix `Slider` (an extension of the type table below,
+> which has no entry for sliders). Settings widgets built by the shared
+> helpers (`_buildUnitOption`, `_buildCategoryChip`, `_buildActionButton`) are
+> keyed by threading a `Key?` argument through the helper to each call site.
 
 ### regionDraw (`RegionDrawScreen`)
 
@@ -167,10 +185,9 @@ list/carousel.
 
 ## Known gaps (follow-up)
 
-- **Settings** sliders, action buttons, unit toggles, and category chips are
-  built by shared helper methods called multiple times; keying inside would
-  create duplicate keys. Full coverage needs the helpers parameterized with a
-  per-call key.
-- **Quick-tune `Slider`** — no `Slider` suffix defined in the convention.
+- **Quick-tune `Slider`** (results quick-tune sheet) — not yet keyed.
 - **`restaurant_map_sheet.dart`** (`restaurant_map_close`) — orphaned (the
   directions sheet replaced it), left on its old key; out of screen scope.
+
+_(The settings helper-method coverage gap was resolved — see the settings
+table above.)_

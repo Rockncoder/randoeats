@@ -129,6 +129,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Search Radius',
             subtitle: _formatDistance(_settings.searchRadiusMeters),
             child: Slider(
+              key: const ValueKey<String>('settingsSearchRadiusSlider1'),
               value: _settings.searchRadiusMeters.toDouble(),
               min: UserSettings.minSearchRadius.toDouble(),
               max: UserSettings.maxSearchRadius.toDouble(),
@@ -149,6 +150,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: 'Maximum Results',
             subtitle: '${_settings.maxResults} restaurants',
             child: Slider(
+              key: const ValueKey<String>('settingsMaxResultsSlider1'),
               value: _settings.maxResults.toDouble(),
               min: UserSettings.minMaxResults.toDouble(),
               max: UserSettings.maxMaxResults.toDouble(),
@@ -172,6 +174,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ? 'Only showing open restaurants'
                 : 'Showing all restaurants',
             child: Switch(
+              key: const ValueKey<String>('settingsOpenOnlyToggle1'),
               value: _settings.includeOpenOnly,
               activeTrackColor: GoogieColors.turquoise,
               onChanged: (value) {
@@ -230,6 +233,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             description:
                 'Restaurants you pick will be hidden for this many days.',
             child: Slider(
+              key: const ValueKey<String>('settingsHideDaysSlider1'),
               value: _settings.hideDaysAfterPick.toDouble(),
               min: UserSettings.minHideDays.toDouble(),
               max: UserSettings.maxHideDays.toDouble(),
@@ -251,6 +255,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _buildActionButton(
             theme,
+            key: const ValueKey<String>('settingsClearVisitHistoryBtn1'),
             title: 'Clear Visit History',
             subtitle: 'Reset all visit counts to zero',
             icon: Icons.history,
@@ -260,6 +265,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _buildActionButton(
             theme,
+            key: const ValueKey<String>('settingsClearRecentPicksBtn1'),
             title: 'Clear Recent Picks',
             subtitle: 'Show all previously picked restaurants again',
             icon: Icons.refresh,
@@ -269,6 +275,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           _buildActionButton(
             theme,
+            key: const ValueKey<String>('settingsClearAllDataBtn1'),
             title: 'Clear All Data',
             subtitle: 'Reset everything including ratings',
             icon: Icons.delete_forever,
@@ -377,6 +384,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Expanded(
             child: _buildUnitOption(
               theme,
+              key: const ValueKey<String>('settingsUnitMilesTap1'),
               label: 'Miles',
               isSelected: _settings.distanceUnit == DistanceUnit.miles,
               onTap: () => _updateSettings(
@@ -387,6 +395,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Expanded(
             child: _buildUnitOption(
               theme,
+              key: const ValueKey<String>('settingsUnitKilometersTap1'),
               label: 'Kilometers',
               isSelected: _settings.distanceUnit == DistanceUnit.kilometers,
               onTap: () => _updateSettings(
@@ -404,8 +413,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    Key? key,
   }) {
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -436,6 +447,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         final isBanned = _settings.bannedCategories.contains(entry.key);
         return _buildCategoryChip(
           theme,
+          key: ValueKey<String>('settingsCategoryChip_${entry.key}'),
           label: entry.value,
           isBanned: isBanned,
           onTap: () => _toggleCategory(entry.key),
@@ -449,8 +461,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String label,
     required bool isBanned,
     required VoidCallback onTap,
+    Key? key,
   }) {
     return GestureDetector(
+      key: key,
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -562,9 +576,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required IconData icon,
     required VoidCallback onPressed,
     Color? color,
+    Key? key,
   }) {
     final buttonColor = color ?? GoogieColors.turquoise;
     return OutlinedButton(
+      key: key,
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: buttonColor,
@@ -618,10 +634,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         actions: [
           TextButton(
+            key: const ValueKey<String>('settingsClearVisitHistoryCancelBtn1'),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('CANCEL'),
           ),
           TextButton(
+            key: const ValueKey<String>(
+              'settingsClearVisitHistoryConfirmBtn1',
+            ),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'CLEAR',
@@ -655,10 +675,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         actions: [
           TextButton(
+            key: const ValueKey<String>('settingsClearRecentPicksCancelBtn1'),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('CANCEL'),
           ),
           TextButton(
+            key: const ValueKey<String>('settingsClearRecentPicksConfirmBtn1'),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'CLEAR',
@@ -692,10 +714,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         actions: [
           TextButton(
+            key: const ValueKey<String>('settingsClearAllDataCancelBtn1'),
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('CANCEL'),
           ),
           TextButton(
+            key: const ValueKey<String>('settingsClearAllDataConfirmBtn1'),
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'DELETE ALL',
