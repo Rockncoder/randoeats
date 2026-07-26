@@ -1,13 +1,6 @@
 name: Build and Distribute
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'lib/**'
-      - 'pubspec.yaml'
-      - 'fastlane/**'
-      - '.github/workflows/distribute.yml'
   workflow_dispatch:
     inputs:
       platform:
