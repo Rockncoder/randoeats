@@ -1,5 +1,7 @@
 # Build output
 build/
+# Symlink to build/compile_commands.json for clangd — machine-local, regenerate via cmake
+compile_commands.json
 
 # Runtime config holds the API key — never commit it.
 config.json
