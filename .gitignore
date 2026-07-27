@@ -158,3 +158,6 @@ AppIcons.zip
 # Local-only keys & service accounts
 .keys/
 ios/Flutter/Secrets.xcconfig
+
+# Aider chat history / cache (aider itself asks to add these on every run)
+.aider*
