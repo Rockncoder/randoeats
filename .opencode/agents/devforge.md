@@ -1,6 +1,6 @@
 ---
 description: Everyday implementation agent for randoeats — writes code and tests, does not redesign architecture.
-model: ollama/gpt-oss:20b
+model: ollama/qwen3-coder:30b
 temperature: 0.1
 mode: primary
 ---
