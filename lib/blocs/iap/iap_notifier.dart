@@ -85,4 +85,9 @@ class IapNotifier extends Notifier<IapState> {
     await _purchaseSubscription?.cancel();
     await _iapService.dispose();
   }
+
+  /// Resets the IAP state to not purchased.
+  void resetForNewSession() {
+    state = const IapNotPurchased();
+  }
 }
