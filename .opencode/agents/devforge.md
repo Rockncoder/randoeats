@@ -58,3 +58,17 @@ skip the analyzer and the tests for files you changed.
 Small diffs. One concern per change. Don't refactor unrelated code while
 fixing or adding a feature. Match existing naming and null-safety style in
 the surrounding file.
+
+## Adding tests to a large existing test file
+
+If the relevant test file is large and has several nested `group()`/`setUp()`
+blocks (roughly 150+ lines or 3+ nested groups), don't insert a new
+`group()` into it via a surgical edit — it's easy to anchor the edit on the
+wrong occurrence of a similar-looking line (e.g. a generic `});`) and land
+the new block outside the scope where shared fixtures/mocks are defined,
+producing "undefined name" errors that are tedious to self-correct from.
+Prefer adding a new sibling test file instead, e.g.
+`test/blocs/iap/iap_notifier_dismiss_error_test.dart` next to
+`test/blocs/iap/iap_notifier_test.dart` — construct its own
+`ProviderContainer`/mocks locally. This is a normal, acceptable pattern in
+this codebase; it isn't a fallback to apologize for.
