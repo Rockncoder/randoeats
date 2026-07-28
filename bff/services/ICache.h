@@ -19,4 +19,7 @@ class ICache {
   /// Stores [value] under [key] for [ttlSeconds].
   virtual void set(const std::string& key, const std::string& value,
                    int ttlSeconds) = 0;
+
+  /// Clears all entries from the cache.
+  virtual void clear() = 0;
 };

@@ -21,6 +21,7 @@ class InMemoryCache : public ICache {
   std::optional<std::string> get(const std::string& key) override;
   void set(const std::string& key, const std::string& value,
            int ttlSeconds) override;
+  void clear() override;
 
  private:
   struct Entry {

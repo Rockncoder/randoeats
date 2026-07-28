@@ -37,6 +37,12 @@ void InMemoryCache::set(const std::string& key, const std::string& value,
   evictIfNeeded();
 }
 
+void InMemoryCache::clear() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  map_.clear();
+  lru_.clear();
+}
+
 void InMemoryCache::touch(Entry& entry, const std::string& key) {
   // Move this key to the front (most-recently-used) of the LRU list.
   lru_.erase(entry.lruIt);
