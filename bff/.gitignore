@@ -2,6 +2,8 @@
 build/
 # Symlink to build/compile_commands.json for clangd — machine-local, regenerate via cmake
 compile_commands.json
+# clangd's own index cache
+.cache/
 
 # Runtime config holds the API key — never commit it.
 config.json
