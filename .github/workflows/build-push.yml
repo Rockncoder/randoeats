@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build image (Buildah)
-        uses: redhat-actions/buildah-build@v2
+        uses: redhat-actions/buildah-build@v3
         with:
           image: ${{ env.IMAGE }}
           tags: latest ${{ github.sha }}
