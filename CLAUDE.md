@@ -28,9 +28,11 @@
 | **CLI Tools** | VGV CLI | `very_good create flutter_app` |
 | **Local Storage** | Hive | Fast, lightweight, no native dependencies |
 | **Maps** | google_maps_flutter | Platform maps integration |
-| **Places API** | google_places_flutter (or http) | Restaurant discovery |
+| **Places API** | `dio` → RandoEats BFF | Restaurant discovery — not google_places_flutter, not package:http |
 | **Location** | geolocator | Cross-platform location |
 | **Flavors** | staging, production | Two flavors only (no development) |
+
+**BFF status:** `bff/` is a real, actively-maintained Drogon C++ backend-for-frontend that proxies the Google Places API — not unwired, not dead. It's built and deployed via CI (`.github/workflows/build-push.yml`, `deploy.yml`) to the shared `tekadept-bff` host as the `randoeats-bff` container, with recent feature commits (#72, #74, #76). `lib/services/places_service.dart`'s `_baseUrl` defaults to `https://api.randoeats.com/api/v1/restaurants` (the BFF, overridable via `--dart-define=RANDOEATS_API_URL=...`), and `Restaurant.fromBff` (`lib/models/restaurant.dart:75`) is the live parser for its `/nearby` response, called from `places_service.dart:127` — it is not dead code.
 
 ---
 
@@ -51,7 +53,7 @@ dart format --set-exit-if-changed .
 flutter test
 ```
 
-### 3. Coverage ≥ 25% (CI gate)
+### 3. Coverage ≥ 60% (CI gate)
 
 ```bash
 flutter test --coverage
@@ -59,7 +61,24 @@ flutter test --coverage
 lcov --list coverage/lcov.info
 ```
 
-**Note:** CI currently enforces 25% minimum (`min_coverage: 25` in `.github/workflows/main.yaml`). Target is higher but not yet enforced.
+**Note:** CI enforces 60% minimum (`min_coverage: 60` in `.github/workflows/main.yaml`). Raised from 40% on 2026-07-26; actual coverage at the time of the raise was 55.8%, so CI on `main` will fail until coverage catches up — that's intentional, not a bug.
+
+### 4. Complexity (DevForge)
+
+Run this on any directory you've changed this session — not the whole repo — and report what it finds:
+
+```bash
+devforge metrics analyze <changed dir> \
+  --cyclomatic-complexity=10 \
+  --maximum-nesting-level=4 \
+  --source-lines-of-code=50 \
+  --number-of-parameters=5 \
+  --number-of-methods=10
+```
+
+Thresholds: cyclomatic complexity ≤ 10, nesting depth ≤ 4, function length ≤ 50 source lines, parameters ≤ 5, methods per class ≤ 10. **Cognitive complexity is not enforced** — the installed `metrics` CLI (check with `devforge metrics analyze --help`) has no `--cognitive-complexity` flag; cyclomatic complexity is the only complexity metric it supports.
+
+The pre-existing repo-wide baseline (33 violations across 22 files, measured 2026-07-24) is tracked separately — do not opportunistically fix violations outside the directories you actually changed.
 
 ---
 
