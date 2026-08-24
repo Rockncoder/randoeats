@@ -1,0 +1,245 @@
+= Template Migration Notes — randoeats
+:toc: left
+:toclevels: 2
+
+[.lead]
+What the `chore/template-migration` branch changed, what moved where, where the
+pre-existing documentation disagreed with the code, and what was deliberately
+left broken. This file is a record of the migration, not a living document —
+once its contents have been read and acted on, it can be deleted.
+
+Migration performed 2026-08-18 against `tekadept-template` @ `main`. This is
+the second project migrated; the first was shuffle_up.
+
+== Scope
+
+Added: the template docs skeleton, retroactive ADRs, `BACKLOG.adoc`, a
+`justfile` implementing the uniform command contract, and
+`.github/workflows/check.yml`.
+
+Not touched: application source, tests, generated code, `pubspec.yaml`,
+`analysis_options.yaml`, the existing CI workflows, `.gitignore`, and
+`AGENTS.md`. No refactoring was performed and no analyzer finding was fixed.
+
+== The headline finding: this repo is the drift case study
+
+`docs/development-system.adoc` justifies generating `CLAUDE.md` by citing a real
+failure — "an AI context file once claimed a project used BLoC while the code
+had moved to Riverpod". *That failure is this repository*, and the migration
+found the full chain:
+
+. `docs/legacy/TEKADEPT_ARCHITECTURE_SPEC.md` (org-wide, dated January 2026)
+  says `| **State Management** | BLoC/Cubit | Preferred pattern |`.
+. The project's `CLAUDE.md` copied that row verbatim into its own tech-stack
+  table, and went further — documenting a "BLoC Pattern" section with
+  `SettingsCubit extends Cubit` and `DiscoveryBloc extends Bloc` code examples
+  that describe classes which do not exist.
+. The code went to Riverpod. `flutter_bloc` is not a dependency;
+  `flutter_riverpod ^3.3.2` is. All 17 files that import a state library import
+  Riverpod; zero import bloc. `lib/blocs/discovery/discovery_notifier.dart`
+  contains `class DiscoveryNotifier extends Notifier<DiscoveryState>`.
+. Nobody fixed `CLAUDE.md`. Instead `AGENTS.md` was written, which says plainly:
+  "this repo's `CLAUDE.md` has a documented history of drifting from reality...
+  Trust this file and the actual code over `CLAUDE.md` where they disagree."
+. So the repository ended with *two* hand-written AI-context files, one wrong,
+  one correcting it, and a note asking future editors to keep the correction in
+  sync with the thing it corrects.
+
+The good news: `tekadept-template`'s `docs/conventions.adoc` already specifies
+Riverpod, so the new standard resolves the root cause. The org spec is the stale
+document and should be retired (see `BACKLOG.adoc`).
+
+The new `CLAUDE.md` written here is a hand-written *stopgap* and is therefore
+subject to exactly the same failure mode. Running
+`tekadept-sync-ai-config` is the first item in `BACKLOG.adoc` for a reason.
+
+== Other places the docs disagreed with the code
+
+Per the migration rules the code is the source of truth. Nothing was silently
+corrected; each discrepancy is recorded here.
+
+`lib/repositories/` does not exist::
+The old `CLAUDE.md` project-structure tree lists
+`lib/repositories/restaurant_repository.dart`, `rating_repository.dart`, and
+`settings_repository.dart`. There is no `lib/repositories/` directory at all.
+
+`lib/blocs/` subdirectories are wrong::
+The old tree lists `blocs/discovery/`, `blocs/settings/`, `blocs/rating/`. The
+actual contents are `blocs/discovery/` and `blocs/iap/`.
+
+IAP is implemented::
+The old `CLAUDE.md` Phase 4 lists "IAP (no in-app purchase implementation)" as
+not started. `lib/services/iap_service.dart` and `lib/blocs/iap/` both exist,
+and the most recent commits touch `IapNotifier`.
+
+Code stats are stale::
+The old `CLAUDE.md` claims "50 Dart files in lib/, ~5,350 LOC, 8 test files".
+There are 32 test files.
+
+`docs/legacy/MVP_PLAN.md` is entirely unticked::
+Every Phase 1 and Phase 2 checkbox is unchecked — Googie theme, data models,
+Hive storage, location service, home screen, Places service, discovery, results,
+detail, rating, recent picks — all of which are demonstrably implemented. The
+document was never updated after the work landed. Items it lists as open but
+that the code shows are done were *not* copied into `BACKLOG.adoc`.
+
+Coverage floor::
+The old `CLAUDE.md` describes a 60% CI minimum raised from 40% on 2026-07-26,
+and notes CI would fail until coverage caught up. `main.yaml` confirms
+`min_coverage: 60`. That part is accurate.
+
+Complexity gate::
+The old `CLAUDE.md` documents a `devforge metrics analyze` invocation with
+thresholds and a 33-violation baseline. No complexity gate exists in any
+workflow under `.github/workflows/`, so this is guidance, not an enforced gate.
+
+Layering::
+`docs/conventions.adoc` (copied unchanged from the template) mandates
+`presentation/ -> application/ -> domain/ <- data/`. This project does not use
+that structure. Described in `docs/architecture.adoc`, recorded in
+`BACKLOG.adoc`; no code was moved.
+
+== Files moved
+
+All moves used `git mv` so history is preserved.
+
+[cols="2,2,3"]
+|===
+| From | To | Why
+
+| `docs/SPECIFICATION.md`
+| `docs/specs/specification.md`
+| The product spec.
+
+| `docs/SLOT_MACHINE_SPEC.md`, `docs/SPOTS_SPEC.md`, `docs/WIDGET_KEYS.md`
+| `docs/specs/`
+| Feature specs and the automation widget-key reference.
+
+| `docs/DESIGN_SYSTEM.md`
+| `docs/specs/design-system.md`
+| The Googie design language — a standing spec.
+
+| `docs/MVP_PLAN.md`, `docs/BACKEND_PROXY_PLAN.md`
+| `docs/legacy/`
+| Planning documents. `BACKEND_PROXY_PLAN.md` informed ADR-0003; `MVP_PLAN.md` is stale (above).
+
+| `docs/FASTLANE_FIREBASE_SETUP.md`, `docs/WEB_SETUP.md`
+| `docs/legacy/`
+| Operational runbooks. The template has no slot for these.
+
+| `RANDOEATS_PROJECT.md`
+| `docs/legacy/`
+| A 514-line consolidated concept-through-BFF reference, last updated June 2026.
+
+| `CLAUDE_CODE_PLACES_API_MIGRATION.md`, `CLAUDE_CODE_PROMPT_SLOT_MACHINE.md`, `CLAUDE_CODE_PROMPT_SLOT_MACHINE_V2.md`, `CLAUDE_CODE_PROMPT_SMALLER_CARDS.md`, `CLAUDE_CODE_PROMPT_REDUCE_LIST_PADDING.md`, `CLAUDE_FASTLANE_SETUP.md`
+| `docs/legacy/`
+| One-off agent instruction documents — the ancestors of what `docs/packets/` now formalises. Kept for reference; they are spent work packets.
+
+| `TEKADEPT_ARCHITECTURE_SPEC.md`
+| `docs/legacy/`
+| Org-wide standard (Jan 2026) that happened to live in this project. Superseded by `tekadept-template`; the origin of the BLoC drift.
+
+| `CLAUDE.md`
+| `docs/legacy-CLAUDE.md`
+| Preserved per the migration brief; replaced at root by the generated-marker version.
+|===
+
+`docs/legacy/` is not a template-defined directory. It was introduced rather
+than deleting fourteen files or forcing them into `specs/`, where they would
+misrepresent what a spec is.
+
+`AGENTS.md` was deliberately *left at the repository root*. The OpenCode
+`devforge` agent reads it from that path, so moving it would break a live tool.
+Folding it into the generated pipeline is a backlog item.
+
+Unlike shuffle_up, `CLAUDE.md` is *not* gitignored in this repo, so the
+template's generated-marker version commits cleanly and no `.gitignore`
+decision is pending.
+
+== Tooling: what supersedes what
+
+`randoeats` has no `scripts/` directory, so unlike shuffle_up there were no
+existing scripts to wrap — the `justfile` is the first command aggregation in
+this repo. Nothing was superseded.
+
+=== Deviations from the stock flutter overlay
+
+. `check` includes `bff-check`, because this is a mixed repo and the stock
+  overlays are single-stack. There is no `bff-test` ring because `bff/` has no
+  tests.
+. `analyze` uses `flutter analyze --fatal-infos --fatal-warnings` rather than
+  the overlay's `dart analyze --fatal-infos`, matching the gate CI already
+  applies.
+. `test` passes `--coverage` so the lcov output exists for inspection, but
+  there is *no* `coverage` recipe and no coverage gate — see below.
+. The BFF's sources live directly under `bff/` (`main.cc`, `controllers/`,
+  `services/`) with no `src/` directory, so the drogon overlay's hardcoded
+  `src include test` paths were replaced with the real ones.
+. No `gen` recipe: this project has no `build_runner` annotations and no
+  protobuf.
+
+=== `just check` is deliberately weaker than CI
+
+This is the one place the migration knowingly left a split verdict, and it is
+worth flagging explicitly.
+
+`.github/workflows/main.yaml` enforces a 60% coverage floor using the
+`very_good_coverage` GitHub Action. That action is not a local tool, and this
+project has no coverage-gate script for a `just` recipe to call — shuffle_up has
+`scripts/coverage.dart`, randoeats has nothing equivalent.
+
+The options were to invent a coverage gate (writing new tooling, outside the
+migration's scope) or to leave the ring absent and say so loudly. The second was
+chosen. `just check` is therefore *narrower* than CI here, which is the inverse
+of the shuffle_up outcome, where `check` was made stricter than the stock
+overlay to match CI. Porting `scripts/coverage.dart` is the second item in
+`BACKLOG.adoc`.
+
+== Left deliberately red
+
+Per the migration rules, a ring that cannot pass was wired correctly and left
+failing rather than weakened. A false green corrupts every future agent loop.
+
+* `just analyze` — `dart run custom_lint` fails; `custom_lint` is not a
+  dependency and the TekAdept layering-lint package does not exist yet.
+* `just bff-check` — `clang-format` and `clang-tidy` are not installed locally.
+
+Both are in `BACKLOG.adoc`.
+
+== Recommended changes to tekadept-template
+
+Not made here — this repo cannot change the template. Items marked *(again)*
+were also raised by the shuffle_up migration, which strengthens the case.
+
+* *(again)* *No guidance for mixed-stack repos.* Two of two projects migrated so
+  far pair a Flutter app with a Drogon service, and each invented its own
+  composition. Worse, the two differ: shuffle_up's server is at `server/src/`,
+  randoeats' BFF has no `src/` at all. A `mixed` overlay, or at minimum a
+  documented composition pattern with configurable source roots, would prevent
+  every project inventing its own.
+* *(again)* *The flutter overlay's `analyze` cannot pass anywhere.*
+  `dart run custom_lint` is in the contract but no TekAdept project declares
+  `custom_lint`, and the layering-lint package the template references does not
+  exist. Two for two.
+* *(again)* *No `.clang-format` / `.clang-tidy` guidance for a server nested in a
+  Flutter repo* — the drogon overlay assumes `src/ include/ test/` at the repo
+  root, which matched neither project.
+* *(again)* *No slot for operational runbooks.* `docs/legacy/` was invented in
+  both migrations to hold deployment, store-setup and credential guides. That is
+  a bad name for documents that are current, and the fact that two projects
+  independently needed the same non-existent directory says the template is
+  missing one. Suggest `docs/runbooks/`.
+* *The template has no coverage or complexity ring at all*, yet both migrated
+  projects gate on coverage in CI and shuffle_up gates on complexity. The
+  overlay should either include a coverage recipe with a documented ratcheting
+  script, or the template should say explicitly that coverage is a CI-only
+  concern. Right now each project decides, and the two projects decided
+  differently — which is precisely the per-project knowledge the uniform
+  contract exists to eliminate.
+* *`AGENTS.md` is not addressed by the template.* Tool-native AI configs are
+  supposed to be generated, but the template only names `CLAUDE.md`. OpenCode
+  reads `AGENTS.md` and at least one project maintains it by hand.
+* *The template should state where the org-wide standard lives.* This project
+  carried a 697-line `TEKADEPT_ARCHITECTURE_SPEC.md`, and its stale state
+  management row caused real drift. `tekadept-template` is now that document's
+  home; something should say so, and the old copies should be retired.
