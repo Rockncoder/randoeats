@@ -1,0 +1,72 @@
+= ADR-0003: A Drogon BFF proxies the Google Places API
+:status: Accepted
+
+// Retroactive ADR — written during the template migration. Reconstructed from
+// bff/, lib/services/places_service.dart, .github/workflows/build-push.yml and
+// deploy.yml, and the pre-existing docs/BACKEND_PROXY_PLAN.md.
+
+== Context
+
+Restaurant discovery needs the Google Places API. Calling it directly from the
+Flutter client is the obvious first implementation and is what the app
+originally did, but it puts the Places API key in the shipped artifact — in an
+APK, an IPA, and, worst of all, in JavaScript on the web build, where it is
+simply readable. Platform key restrictions narrow the blast radius but do not
+close it, and a leaked key on a billed API is a financial problem, not just a
+security one.
+
+Two secondary forces applied. Places API v1 responses are verbose and need the
+same normalisation on every platform, and repeated nearby searches over the
+same area are highly cacheable — but a client-side cache is per-device and
+per-install, so it saves nothing in aggregate.
+
+TekAdept already runs a shared Drogon host (`tekadept-bff`) with an established
+build-and-deploy path, so the marginal cost of one more small C++ service was
+low.
+
+== Decision
+
+All restaurant data flows through `randoeats_bff`, a Drogon C++ service in
+`bff/`. The BFF holds the Google Places API key and is the only party that
+talks to Google (`GooglePlacesClient` sets `X-Goog-Api-Key`). It normalises
+responses (`PlacesService`), caches them in memory (`ICache` /
+`InMemoryCache`), and records usage (`MetricsLogger`), exposing
+`/api/v1/restaurants` via `RestaurantController`.
+
+The client talks only to the BFF. `lib/services/places_service.dart` uses Dio
+against a base URL that defaults to
+`https://api.randoeats.com/api/v1/restaurants` and is overridable at build time
+with `--dart-define=RANDOEATS_API_URL=...`; `Restaurant.fromBff` parses the
+response.
+
+The service is built and deployed by CI (`build-push.yml`, `deploy.yml`) as a
+container onto the shared `tekadept-bff` host rather than onto its own box.
+
+We rejected calling Places directly from the client because of the key
+exposure, and rejected a serverless function because the shared Drogon host
+already existed and adding a second runtime and billing model for one endpoint
+was not worth it.
+
+== Consequences
+
+Easier: the Places key never ships to a user's device. Response shaping and
+caching are written once instead of once per platform, and the cache is shared
+across all users rather than per-install. Usage is measurable in one place.
+Swapping the upstream provider is a change inside one C++ service.
+
+Harder: the app now has a hard runtime dependency on a service TekAdept
+operates — if the BFF is down, discovery is down, whereas a direct client would
+have kept working. There is a second language and build system in the
+repository, and a deployment step between writing code and seeing it work.
+`--dart-define=RANDOEATS_API_URL` exists precisely because pointing the app at
+a local or staging BFF is otherwise awkward.
+
+New obligation: the app↔BFF boundary needs a committed contract, which it does
+not currently have — it is defined only by `RestaurantController` and
+`Restaurant.fromBff` agreeing by hand. The BFF also needs the same harness the
+Dart side has; today it has neither tests nor a sanitizer build. Both are in
+`BACKLOG.adoc`.
+
+== Status
+
+Accepted

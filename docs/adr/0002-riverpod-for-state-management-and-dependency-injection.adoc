@@ -1,0 +1,62 @@
+= ADR-0002: Riverpod for state management and dependency injection
+:status: Accepted
+
+// Retroactive ADR — written during the template migration to record a
+// decision already visible in the code. Reconstructed from pubspec.yaml,
+// lib/blocs/, lib/providers/, lib/bootstrap.dart and the pre-existing
+// AGENTS.md. It was not written at decision time; edit freely if the actual
+// reasoning differed.
+
+== Context
+
+randoeats needs feature state (the discovery flow, purchases) and a way to
+inject services (places, location, storage, analytics) that can be replaced by
+fakes in tests. `test/` mirrors `lib/` path-for-path and covers notifiers,
+services, screens, and widgets, so substitution has to be cheap and uniform.
+
+The project was scaffolded with the Very Good Ventures CLI, whose conventions
+and the surrounding TekAdept documentation both pointed at BLoC/Cubit — and
+the directory layout still reflects that starting point. At some point the
+implementation went to Riverpod instead, matching the other TekAdept Flutter
+apps, but the directory name was never changed.
+
+== Decision
+
+State management and dependency injection are both Riverpod
+(`flutter_riverpod` ^3.3.2). `flutter_bloc` is not a dependency and no BLoC or
+Cubit exists in the codebase.
+
+Each feature is three files under `lib/blocs/<feature>/`:
+
+* `<feature>_notifier.dart` — a `Notifier<FooState>` plus its `NotifierProvider`
+* `<feature>_state.dart` — an `Equatable` state class, typically with a status enum
+* `<feature>.dart` — a barrel export
+
+Services are plain classes constructed in `lib/bootstrap.dart` and injected via
+`ProviderScope` overrides declared in `lib/providers/service_providers.dart`.
+`lib/blocs/discovery/` is the reference implementation.
+
+The directory keeps the name `blocs/` for now. That is not an endorsement — it
+is untouched because renaming it is a refactor, and this decision is being
+recorded after the fact rather than made fresh.
+
+== Consequences
+
+Easier: one mechanism covers both state and injection, and every service has a
+substitution point for free, which is what makes the test suite's
+path-for-path mirroring of `lib/` practical.
+
+Harder: the `lib/blocs/` name actively misleads. It has already caused
+documented drift — `CLAUDE.md` states the project uses "BLoC/Cubit", and
+`AGENTS.md` was written in part to contradict it and to tell agents to trust
+the code instead. A directory name that lies is a standing tax on every person
+and model that opens the repository.
+
+New obligation: any new feature follows the notifier/state/barrel shape, and
+any new service is introduced as a provider with an override in `bootstrap()`
+rather than as a singleton. The directory should be renamed to something
+accurate, or this ADR superseded by one that consciously accepts the name.
+
+== Status
+
+Accepted

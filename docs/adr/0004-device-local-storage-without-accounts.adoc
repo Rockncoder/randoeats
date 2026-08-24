@@ -1,0 +1,62 @@
+= ADR-0004: Device-local storage with no user accounts
+:status: Accepted
+
+// Retroactive ADR — written during the template migration. Reconstructed from
+// lib/services/storage_service.dart, lib/models/, pubspec.yaml, and the
+// absence of any auth dependency or sign-in flow.
+
+== Context
+
+randoeats accumulates a small amount of personal state: thumbs-up and
+thumbs-down ratings, which places were picked recently and when, visited
+places, and settings (distance units, search radius, max results, banned
+categories). That state has to live somewhere.
+
+The product is a low-stakes decision aid — the user opens it when they cannot
+decide where to eat. Any sign-in step sits directly between the user and the
+one thing the app does, on a session that lasts a minute. The data is also
+individually worthless: a list of restaurants someone did not want is not worth
+building an account system to protect, nor worth the privacy disclosure burden
+of collecting it server-side.
+
+The BFF exists (ADR-0003), so a server-side store was available at low marginal
+cost — the constraint was product, not infrastructure.
+
+== Decision
+
+All user state is stored on the device in Hive boxes, managed by
+`lib/services/storage_service.dart`. There is no account, no sign-in, and no
+server-side user record. The BFF is stateless with respect to users; its only
+state is a disposable in-memory cache and a metrics log.
+
+Firebase is present for analytics and Crashlytics only — the analytics provider
+is typed `AnalyticsService?` and telemetry is optional. `firebase_auth` is not
+a dependency.
+
+We rejected accounts because the sign-in step would cost more sessions than the
+synced data would win back, and rejected anonymous server-side identifiers
+because they would create a personal-data store to disclose and secure in
+exchange for very little.
+
+== Consequences
+
+Easier: zero-friction first run — the app is usable in seconds with no
+onboarding. No credentials to store, no session handling, no password reset,
+no personal data on a server to secure or disclose. Reads and writes are local
+and fast, and the app works offline apart from discovery itself.
+
+Harder: nothing survives a reinstall or a device change. A user who switches
+phones silently loses every rating and pick, and there is no restore path — the
+data has no other copy. Ratings cannot inform anything cross-user, so
+recommendations can never improve from aggregate behaviour. Any future feature
+implying continuity across devices, or social features of any kind, contradicts
+this decision and needs a superseding ADR rather than a quiet addition.
+
+New obligation: because Hive is the only copy, schema changes need migration
+care — a broken adapter loses user data outright rather than falling back to a
+server copy. Adapter registration and box opening are centralised in
+`storage_service.dart` to keep that surface in one place.
+
+== Status
+
+Accepted
