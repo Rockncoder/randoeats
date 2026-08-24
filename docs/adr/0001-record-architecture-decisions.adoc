@@ -1,0 +1,50 @@
+= ADR-0001: Record architecture decisions as ADRs
+:status: Accepted
+
+== Context
+
+As a solo developer running many concurrent projects, augmented by AI tools that
+enter a repository with no memory of prior sessions, the "why did I do this?"
+problem is constant. Code shows what was decided; it does not show why, what
+alternatives were rejected, or what constraints applied at the time. Without a
+durable record, decisions get relitigated, or worse, intentional choices get
+"fixed" by an agent that doesn't know they were deliberate.
+
+== Decision
+
+We will record every architecturally significant decision as an Architecture
+Decision Record (ADR) in `docs/adr/`, using the format in
+`docs/adr/template.adoc`: Context, Decision, Consequences, Status. ADRs are
+numbered sequentially (`0001`, `0002`, ...) and are append-only — a decision
+already marked `Accepted` is never edited to change its substance. If a later
+decision changes course, a new ADR is written and the old one's status is
+updated to `Superseded by ADR-NNNN`.
+
+An "architecturally significant" decision is one that would be expensive to
+reverse, affects more than one module, or establishes a convention other code
+is expected to follow (a layering rule, a dependency choice, a contract
+format, a testing doctrine).
+
+== Consequences
+
+Easier: any collaborator — human or AI — can read `docs/adr/` in a few
+minutes and understand the load-bearing decisions in a project without
+re-deriving them from code or asking the person who wrote it. Rejected
+alternatives stay visible, so they don't get re-proposed and re-rejected
+every few months.
+
+Harder: writing an ADR is an extra step at decision time, and it is tempting
+to skip for "small" decisions. The discipline only pays off if it's applied
+consistently — an ADR directory with three entries covering a project's
+first month and nothing since is worse than none, because it implies
+completeness it doesn't have.
+
+New obligation: the Definition of Done (`docs/development-system.adoc`)
+requires an ADR whenever an architectural choice is made, and
+`tekadept-sync-ai-config` reads ADR summaries into the generated `CLAUDE.md`,
+so ADRs are not just an archive — they are load-bearing input to every AI
+session that follows.
+
+== Status
+
+Accepted

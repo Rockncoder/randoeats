@@ -1,0 +1,80 @@
+= Spec: <feature name>
+:status: Draft
+
+// GUIDANCE — delete this comment block before filling in a real spec.
+//
+// A spec is one page. It is the input to test design: the frontier model
+// (or you) reads this and writes the failing tests that become a work
+// packet. If a section here can't be turned into an assertion, it's not
+// specific enough yet.
+//
+// File naming: docs/specs/<kebab-case-feature-name>.adoc
+
+== Problem
+
+// GUIDANCE: What's broken, missing, or costly today? One or two sentences,
+// written from the user's or system's point of view — not "we should add
+// X" but "without X, Y happens."
+//
+// Example:
+// "Players can pause the game, but there is no way to resume from the
+// exact board state — quitting mid-game silently discards progress."
+
+<problem statement>
+
+== User story
+
+// GUIDANCE: Standard "As a / I want / so that" form. Keep it to the actor
+// that actually cares — a player, a caller of an API, a future maintainer.
+//
+// Example:
+// "As a player, I want the game to remember my board state when I close
+// the app, so that I don't lose a session I can't finish in one sitting."
+
+As a <actor>, I want <capability>, so that <benefit>.
+
+== Acceptance criteria
+
+// GUIDANCE: A numbered list of concrete, testable statements. Each one
+// should map to roughly one test. Prefer Given/When/Then phrasing when it
+// clarifies state transitions; plain assertions are fine when the
+// criterion is simple.
+//
+// Example:
+// 1. Given a game in progress, when the app is backgrounded, then the
+//    board state is persisted within 500ms.
+// 2. Given a persisted board state, when the app is relaunched, then the
+//    board is restored exactly, including the RNG seed for any pending
+//    piece.
+// 3. Given no persisted state, when the app launches, then a new game
+//    starts as it does today.
+
+. <criterion>
+. <criterion>
+
+== Out of scope
+
+// GUIDANCE: MANDATORY. This is the defense against scope creep, which is
+// the dominant schedule risk for a solo developer. List things a reader
+// might reasonably assume are included, and say explicitly they are not.
+// "Nothing" is not an acceptable answer for a feature big enough to need a
+// spec.
+//
+// Example:
+// "Cloud sync of saved games. Multiple save slots. Restoring a save from a
+// different app version (version-mismatch handling is a separate spec)."
+
+<explicitly excluded items>
+
+== Open questions
+
+// GUIDANCE: Anything genuinely undecided that blocks or shapes
+// implementation. It's fine to ship a spec with open questions if they
+// don't block starting work — flag which ones do.
+//
+// Example:
+// "Should a corrupted save file fall back to a new game silently, or
+// surface an error to the player? Blocks packet 2 (load path), not
+// packet 1 (save path)."
+
+<open questions, and whether they block work>

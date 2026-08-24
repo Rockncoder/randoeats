@@ -1,0 +1,78 @@
+= Escalation: <packet title>
+:status: Open
+
+// GUIDANCE — delete this comment block before filling in a real escalation.
+//
+// An escalation fires when the local loop hits its iteration cap (~6
+// attempts) without reaching green. It goes to a frontier-model session
+// framed as DIAGNOSE, NOT FIX. The usual diagnosis is an underspecified
+// packet or a wrong test; the usual remedy is a revised packet sent back
+// to the local loop.
+//
+// THE ANTI-PATTERN TO AVOID: writing the fix directly in this escalation
+// and merging it. That bypasses the feedback loop that improves packet
+// quality and quietly collapses the division of labor back into burning
+// frontier tokens on implementation. An escalation response is a revised
+// packet (or a corrected test, or an ADR), not a diff.
+//
+// File naming: docs/packets/escalations/NNNN-kebab-case-title.adoc,
+// referencing the packet it escalates from.
+
+== Packet reference
+
+// GUIDANCE: Path to the packet that failed.
+//
+// Example: "docs/packets/0004-board-state-persistence.adoc"
+
+<path to originating packet>
+
+== Attempts
+
+// GUIDANCE: How many iterations ran, and a one-line summary of what
+// changed between attempts, if that pattern is informative (e.g. "each
+// attempt fixed one failure and introduced another" is a strong signal of
+// an underspecified interface).
+//
+// Example:
+// "6 attempts. Attempts 1-3 fixed the save-path tests but kept breaking
+// the load-path tests, and vice versa for 4-6 — the two tests appear to
+// assert incompatible serialization formats."
+
+<attempt count and pattern summary>
+
+== Final diff summary
+
+// GUIDANCE: A short description of the state the code was left in, not
+// the full diff (that's in the branch/commit). Enough for a reviewer to
+// orient without re-reading every line.
+//
+// Example:
+// "board_state_repository.dart implements save() using JSON; the failing
+// load() test expects a binary format via BoardState.fromBytes(), which
+// doesn't exist in domain/board_state.dart."
+
+<summary>
+
+== Failing output
+
+// GUIDANCE: The actual `just check` failure output (or the relevant
+// excerpt) from the final attempt. Verbatim is more useful than
+// paraphrased.
+
+[source]
+----
+<test/analyzer output>
+----
+
+== Suspected cause
+
+// GUIDANCE: Your best guess, stated as a guess. This is a diagnosis aid,
+// not a conclusion — the frontier reviewer may disagree.
+//
+// Example:
+// "The two provided tests were likely written against two different
+// revisions of the interface — the load test expects a method the save
+// test never calls. Packet's Interfaces section only specified save(),
+// not the serialization format load() should assume."
+
+<suspected root cause>
