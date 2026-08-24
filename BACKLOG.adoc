@@ -1,0 +1,103 @@
+= Backlog
+:toc: left
+
+[.lead]
+The roadmap, as a document that travels with the repo. Bugs are events and
+live in GitHub Issues, where they link to commits and close automatically —
+this file is for the roadmap only: things that are planned but not yet
+tracked as discrete, closeable work items.
+
+// Seeded during the template migration (see MIGRATION-NOTES.adoc) from
+// docs/legacy/MVP_PLAN.md, docs/legacy-CLAUDE.md's phase list, and
+// docs/legacy/BACKEND_PROXY_PLAN.md, plus every convention gap and every red
+// `just check` ring found during the migration. Both source documents were
+// stale — items they listed as open but that the code shows are DONE were
+// dropped rather than copied. See MIGRATION-NOTES.adoc for which.
+
+== Now
+
+* Resolve the AI-context drift properly: run `tekadept-sync-ai-config` to
+  generate `CLAUDE.md` from `docs/conventions.adoc` and the ADRs, replacing the
+  hand-written stopgap. This repo is the case study for why the file must be
+  generated — see MIGRATION-NOTES.adoc.
+* Close the gap between `just check` and CI: `.github/workflows/main.yaml`
+  enforces a 60% coverage floor with no local equivalent, so a green local
+  verdict does not imply a green CI. Port shuffle_up's `scripts/coverage.dart`
+  (a ratcheting gate that excludes generated code) and add a `coverage` recipe.
+
+== Next
+
+=== Harness gaps found during the template migration
+
+* `just analyze` is red: `dart run custom_lint` fails because `custom_lint` is
+  not a dependency here and the TekAdept layering-lint package does not exist
+  yet. Either add the dependency and the rule package, or supersede the
+  contract with an ADR — do not delete the line to go green.
+* `just bff-check` is red: `clang-format` and `clang-tidy` are not installed on
+  the development machine (`brew install llvm`). Once installed, expect a first
+  wave of formatting diffs across `bff/` since it has never been clang-formatted.
+* `bff/` has no `.clang-format` or `.clang-tidy` config committed, so even with
+  the binaries installed the recipes run against compiler defaults rather than
+  the TekAdept style.
+* The BFF has no tests and no sanitizer build, so the entire C++ side sits
+  outside the harness. `docs/development-system.adoc` calls the ASan/UBSan test
+  build the single most valuable feedback signal in a C++ loop; this project has
+  none of it.
+* `bff/compile_commands.json`, `bff/metrics.jsonl`, `bff/uploads/` and
+  `bff/build/` are present in the working tree; check whether any of them should
+  be gitignored rather than tracked.
+
+=== Convention gaps
+
+* Rename `lib/blocs/` — it contains no BLoC code, only Riverpod notifiers. The
+  misleading name has already caused documented AI-context drift and is the
+  reason `AGENTS.md` exists. Either rename it (a refactor, deliberately not done
+  during the migration) or supersede ADR-0002 with an ADR that consciously
+  accepts the name.
+* No committed contract for the app↔BFF boundary, which `docs/conventions.adoc`
+  requires. The interface exists only as `RestaurantController` and
+  `Restaurant.fromBff` agreeing by hand. See ADR-0003.
+* `google_maps_flutter` is used directly in screen code rather than behind a
+  project-owned adapter, diverging from the ports-and-adapters rule.
+* `lib/` does not use the canonical four-layer structure. Adopt it, or write an
+  ADR accepting this project's structure as a documented exception.
+* Fold `AGENTS.md` into the generated AI-context pipeline. It is currently the
+  most accurate AI-facing document in the repo and is entirely hand-written,
+  which makes it the next candidate to drift.
+* Retire `docs/legacy/TEKADEPT_ARCHITECTURE_SPEC.md`. It is an org-wide standard
+  document that lives in a single project repo, and its "State Management |
+  BLoC/Cubit" row is the original source of this repo's documentation drift.
+  `tekadept-template`'s `docs/conventions.adoc` supersedes it.
+
+=== Product work
+
+* Favourites screen — thumbs-up places. Confirmed absent from `lib/screens/`.
+* Sound effects (retro beeps). No audio dependency present.
+* Ads integration — `google_mobile_ads` is a dependency and referenced in one
+  file, but there is no ad presentation in the app.
+* Store readiness: iOS and Android build verification, web deployment to
+  randoeats.com, and App Store / Play Store submission.
+* Error, empty, and loading states with themed Googie messaging, per
+  `docs/legacy/MVP_PLAN.md` Phase 3.
+
+== Later
+
+* Raise the coverage floor once a local ratcheting gate exists.
+* Add a complexity ceiling. shuffle_up enforces McCabe ≤ 20 via
+  `scripts/complexity.dart`; this project has no complexity gate in CI at all,
+  and `docs/legacy-CLAUDE.md` referenced a `devforge metrics` invocation with a
+  33-violation baseline measured 2026-07-24 that is not enforced anywhere.
+* Bring the Maestro flows in `.maestro/` into CI.
+* Refresh or delete `docs/legacy/MVP_PLAN.md` — every Phase 1 and Phase 2 item
+  is still unchecked despite being implemented, so the document now
+  misinforms.
+
+== Icebox
+
+* Cross-device sync of ratings and picks. Contradicts ADR-0004 (no accounts,
+  device-local storage only) and would need a superseding ADR plus a
+  personal-data store to secure and disclose.
+* Aggregate/social recommendations built on rating data — impossible while
+  ratings never leave the device, same ADR-0004 constraint.
+* Persist the BFF cache (currently `InMemoryCache`, lost on restart) if Places
+  quota cost ever justifies it.
