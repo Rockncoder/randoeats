@@ -4,6 +4,13 @@ analyzer:
     - lib/l10n/gen/*
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    # Build output is not source. Excluded pre-emptively: when a project
+    # builds iOS with Swift Package Manager, SPM vendors third-party package
+    # sources into build/ios/SourcePackages/ and the analyzer walks them. In
+    # fitcards that produced ~12,800 issues locally that CI never saw, because
+    # Linux CI does not build iOS. An analyzer verdict that depends on what you
+    # last built locally is not a verdict.
+    - build/**
 linter:
   rules:
     public_member_api_docs: false
