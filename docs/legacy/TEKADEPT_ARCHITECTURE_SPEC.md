@@ -6,6 +6,31 @@
 
 ---
 
+> ## ⚠️ Partially superseded — state management
+>
+> **The "State Management | BLoC/Cubit | Preferred pattern" row in the
+> Technology Stack table below is obsolete.** The TekAdept standard is
+> **Riverpod using the code-generation syntax** (`@riverpod` with
+> `riverpod_annotation` / `riverpod_generator`).
+>
+> See **ADR-0002: Riverpod with code generation as the state-management
+> standard** in `tekadept-template/docs/adr/`, which supersedes that row and
+> records why BLoC/Cubit, `provider`, GetX, and the manual Riverpod syntax
+> were each rejected.
+>
+> This is not a hypothetical correction. The stale row was copied from this
+> document into `randoeats`' `CLAUDE.md`, which then documented `Cubit` and
+> `Bloc` classes that never existed in the code — the drift incident that
+> `tekadept-template/docs/development-system.adoc` cites as the reason AI
+> context files must be generated rather than hand-written.
+>
+> The rest of this document has **not** been reviewed against current
+> practice and should be treated as a January 2026 snapshot, not as current
+> standard. `tekadept-template` is now the home of TekAdept conventions;
+> where the two disagree, the template and its ADRs win.
+
+---
+
 ## Table of Contents
 
 1. [Philosophy](#philosophy)
@@ -73,7 +98,7 @@
 |-----------|------------|-------|
 | **Mobile** | Flutter | iOS + Android from single codebase |
 | **Web** | Flutter Web | Customer-facing and admin dashboards |
-| **State Management** | BLoC/Cubit | Preferred pattern |
+| **State Management** | ~~BLoC/Cubit~~ **SUPERSEDED — see ADR-0002** | Riverpod with codegen is the standard; see note at the top of this document |
 | **CLI Tools** | Very Good Ventures (VGV) CLI | `very_good create` for new apps |
 
 ### Infrastructure
