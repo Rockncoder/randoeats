@@ -45,9 +45,40 @@ found the full chain:
   one correcting it, and a note asking future editors to keep the correction in
   sync with the thing it corrects.
 
-The good news: `tekadept-template`'s `docs/conventions.adoc` already specifies
-Riverpod, so the new standard resolves the root cause. The org spec is the stale
-document and should be retired (see `BACKLOG.adoc`).
+*Resolved upstream since this file was first written.* At migration time
+`tekadept-template`'s `docs/conventions.adoc` only *implied* Riverpod — the
+word appeared as a noun inside the layering rules, with no rationale and no
+statement that anything had been rejected. An implication cannot supersede the
+org spec, which stated BLoC/Cubit outright, so the contradiction survived.
+
+That gap is now closed at the source:
+
+* *`tekadept-template` ADR-0002* — "Riverpod with code generation as the
+  state-management standard" — decides the question explicitly, records why
+  BLoC/Cubit, `provider`, GetX and the manual Riverpod syntax were each
+  rejected, and states that it supersedes the
+  `| State Management | BLoC/Cubit | Preferred pattern |` row in
+  `TEKADEPT_ARCHITECTURE_SPEC.md`.
+* `tekadept-template`'s `docs/conventions.adoc` gained a
+  `== State management: Riverpod` section stating the rule where the other
+  conventions live, and citing this project's `lib/blocs/discovery/` as the
+  reference implementation for the notifier/state/barrel shape.
+* `docs/legacy/TEKADEPT_ARCHITECTURE_SPEC.md` in this repo now carries a
+  superseded banner pointing at that ADR, and its stale table row is struck
+  through.
+
+CAUTION — three ADR-0002s:: `tekadept-template` ADR-0002, this project's
+ADR-0002, and `shuffle_up`'s ADR-0002 are all about Riverpod and have nearly
+identical titles. Always qualify which repository's ADR-0002 is meant. The
+template's is the org-wide standard; this project's records what this codebase
+actually does.
+
+Note that this project does *not* conform to the template's standard: ADR-0002
+there mandates the `@riverpod` codegen syntax, and this codebase uses the
+manual `Notifier` + `NotifierProvider` form throughout. The template's
+conventions section says explicitly to copy this project's structure, not its
+provider declarations. Converting is a deliberate piece of work, not a
+migration side effect.
 
 The new `CLAUDE.md` written here is a hand-written *stopgap* and is therefore
 subject to exactly the same failure mode. Running
@@ -221,6 +252,15 @@ were also raised by the shuffle_up migration, which strengthens the case.
   `dart run custom_lint` is in the contract but no TekAdept project declares
   `custom_lint`, and the layering-lint package the template references does not
   exist. Two for two.
++
+*Fixed upstream, not yet adopted here.* The template's flutter overlay has since
+dropped `dart run custom_lint` and replaced it with a `layering` recipe — a grep
+enforcing the forbidden-import rule — wired into `analyze`; `conventions.adoc`
+no longer claims a lint that was never written, and the `custom_lint` rule is
+filed in the template's own `BACKLOG.adoc`. *This repository still carries the
+pre-fix copy*: its `justfile` is a copy of the overlay, not a link to it, so
+`just analyze` here is still red for the original reason. Re-syncing the
+overlay is now a backlog item for this project.
 * *(again)* *No `.clang-format` / `.clang-tidy` guidance for a server nested in a
   Flutter repo* — the drogon overlay assumes `src/ include/ test/` at the repo
   root, which matched neither project.
@@ -243,3 +283,14 @@ were also raised by the shuffle_up migration, which strengthens the case.
   carried a 697-line `TEKADEPT_ARCHITECTURE_SPEC.md`, and its stale state
   management row caused real drift. `tekadept-template` is now that document's
   home; something should say so, and the old copies should be retired.
++
+*Partially done.* `tekadept-template` ADR-0002 supersedes that document's state
+management row specifically, and the copy in `docs/legacy/` now says so. The
+broader point stands: nothing yet declares `tekadept-template` the general
+successor to that spec, and its other 690 lines have never been reviewed
+against current practice.
+* *State management was never actually decided.* — *Done.* Raised by this
+  migration and resolved: `tekadept-template` ADR-0002 now chooses Riverpod
+  with codegen, and `docs/conventions.adoc` has a `== State management:
+  Riverpod` section. Recorded here because the finding originated in this
+  repo's drift, which the ADR cites as its motivating evidence.
