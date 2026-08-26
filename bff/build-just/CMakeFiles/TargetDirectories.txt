@@ -1,3 +1,0 @@
-/Users/troymiles/Developer/TekAdept/randoeats/bff/build-just/CMakeFiles/randoeats_bff.dir
-/Users/troymiles/Developer/TekAdept/randoeats/bff/build-just/CMakeFiles/edit_cache.dir
-/Users/troymiles/Developer/TekAdept/randoeats/bff/build-just/CMakeFiles/rebuild_cache.dir

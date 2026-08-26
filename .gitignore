@@ -161,3 +161,6 @@ ios/Flutter/Secrets.xcconfig
 
 # Aider chat history / cache (aider itself asks to add these on every run)
 .aider*
+
+# CMake build trees for the Drogon BFF, including the one the justfile creates.
+bff/build*/
