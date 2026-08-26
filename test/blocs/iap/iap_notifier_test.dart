@@ -309,18 +309,18 @@ void main() {
     group('resetForNewSession', () {
       test('resets state to IapNotPurchased', () async {
         final container = buildContainer();
-        
+
         // Initialize and change state
         await container.read(iapProvider.notifier).initialize();
         purchaseStreamController.add(true);
         await Future<void>.delayed(Duration.zero);
-        
+
         // Verify we're in purchased state
         expect(container.read(iapProvider), isA<IapPurchased>());
-        
+
         // Reset the state
         container.read(iapProvider.notifier).resetForNewSession();
-        
+
         // Verify it's reset to not purchased
         expect(container.read(iapProvider), isA<IapNotPurchased>());
       });
