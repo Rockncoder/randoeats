@@ -1,0 +1,87 @@
+= Packet: <short title>
+:status: Ready
+
+// GUIDANCE — delete this comment block before filling in a real packet.
+//
+// A packet is the API between the frontier tier and the local tier. It is
+// sized to 30-90 minutes of local-loop work; if a feature needs more, write
+// several ordered packets, not one big one. The local model (qwen3-coder /
+// DevForge) consumes this document directly and should never need to ask
+// "where does this go?" or "what should this be called?" — those decisions
+// belong here, made up front.
+//
+// File naming: docs/packets/NNNN-kebab-case-title.adoc
+
+== Objective
+
+// GUIDANCE: One sentence. What does this packet accomplish?
+//
+// Example:
+// "Persist and restore board state across app backgrounding."
+
+<one sentence>
+
+== Files to touch
+
+// GUIDANCE: Explicit paths, not descriptions. Naming the file removes the
+// weakest skill of a smaller model — deciding where new code belongs.
+// Mark new files as (new).
+//
+// Example:
+// - lib/domain/board_state.dart (new)
+// - lib/data/board_state_repository.dart (new)
+// - lib/application/board_state_provider.dart
+// - test/domain/board_state_test.dart (read-only, already written)
+
+- <path> (new|edit)
+
+== Interfaces
+
+// GUIDANCE: Function and class signatures, decided up front. The frontier
+// model designs the seams; the local model fills the bodies. Include
+// enough of the type signature that there's no ambiguity about inputs,
+// outputs, or error handling.
+//
+// Example:
+// [source,dart]
+// ----
+// abstract class BoardStateRepository {
+//   Future<void> save(BoardState state);
+//   Future<BoardState?> load();
+// }
+// ----
+
+[source]
+----
+<signatures>
+----
+
+== Tests provided
+
+// GUIDANCE: Already written, already failing, and READ-ONLY to the local
+// loop — DevForge rejects any diff touching test/ during a fix loop.
+// List the test file paths; the tests themselves live in the files, not
+// duplicated here.
+//
+// Example:
+// "test/domain/board_state_test.dart — 4 cases, currently failing with
+// 'BoardState is not defined'."
+
+<test file paths and a one-line description of what they cover>
+
+== Constraints
+
+// GUIDANCE: Relevant ADR numbers, layering rules, banned approaches —
+// anything that would otherwise only live in the local model's head.
+//
+// Example:
+// "Must go through the domain/data layering (ADR-0003) — no direct
+// SharedPreferences calls outside data/. Do not add a new external
+// dependency; use the existing key-value adapter in
+// lib/data/adapters/kv_store.dart."
+
+<constraints>
+
+== Done when
+
+`just check` is green. Nothing else.

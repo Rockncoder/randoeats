@@ -1,0 +1,105 @@
+= Agent Loop: Roles and Rules
+:toc: left
+:toclevels: 2
+:sectnums:
+
+[.lead]
+How the two AI tiers divide labor and hand off work. This is the operational
+companion to xref:development-system.adoc[]'s "Two-tier AI workflow" and
+"Loop orchestration" sections — read those for the reasoning; this document
+states the rules a session should actually follow.
+
+== The two tiers
+
+*Frontier models* (Claude Fable/Opus) — used sparingly, for work where being
+wrong is expensive and no automated verdict exists: architecture, ADRs,
+feature specs, test design, escalated debugging, and review of finished
+diffs for qualities a passing test cannot measure (coupling, naming, ADR
+compliance).
+
+*Local model* (qwen3-coder via Ollama/DevForge) — used constantly, for all
+implementation: the test-to-green grind, refactors, boilerplate. Anything
+`just check` can grade.
+
+The dividing rule: *if the harness can grade it, it goes local; frontier
+models are reserved for questions with no exit code.*
+
+== Frontier-model outputs
+
+A frontier-model session's output is one of: a *packet*
+(`docs/packets/`), an *ADR* (`docs/adr/`), a *spec* (`docs/specs/`), or a
+*review* of a finished diff. A frontier session should not produce
+implementation code merged directly into the project — see
+<<escalation-is-diagnose-not-fix>> for why this rule holds even under
+pressure, on escalation.
+
+== The work packet
+
+The packet is the handoff artifact between tiers — the API the local loop
+consumes directly. It contains: Objective, Files to touch, Interfaces,
+Tests provided, Constraints, and Done when. See
+`docs/packets/template.adoc` for the annotated form.
+
+A packet is sized to 30-90 minutes of local-loop work. A feature needing
+more becomes several ordered packets, not one large one — this keeps the
+local model inside its competence window and keeps the iteration cap
+(below) meaningful rather than something to be raised.
+
+== Two mechanical rules
+
+=== Tests are read-only to the fixer
+
+The local loop (DevForge) rejects any diff that touches `test/` (or
+`docs/adr/`, or `docs/specs/`) during a fix loop. An agent that can rewrite
+the tests it's being graded against will, sooner or later, rewrite a test
+to bless a bug instead of fixing the bug. Changing a test is a deliberate
+human (or frontier-reviewed) act, never a side effect of the fix loop.
+
+=== Iteration cap with escalation
+
+The local loop gets roughly six attempts to reach a green `just check`. On
+cap-out, the loop stops and escalates rather than continuing to churn. An
+uncapped loop either burns cycles indefinitely or starts gaming its own
+verdict (e.g. weakening an assertion until it passes, if given the
+opportunity).
+
+[[escalation-is-diagnose-not-fix]]
+== Escalation: diagnose, not fix
+
+When the local loop caps out, DevForge bundles the packet, the diff, and
+the failing output into an escalation report
+(`docs/packets/escalation-template.adoc`). That report goes to a
+frontier-model session framed as *diagnosis*, not *repair*. The usual
+diagnosis is an underspecified packet or a wrong test; the usual remedy is
+a revised packet sent back to the local loop.
+
+*The anti-pattern to avoid:* the frontier model writing the fix directly on
+escalation and merging it. Done once under deadline pressure it's
+forgivable; done habitually, it bypasses the feedback loop that improves
+packet quality, and the division of labor quietly collapses back into
+burning frontier tokens on implementation that the local tier should be
+doing. If you notice this happening repeatedly for the same class of
+packet, the fix is a better packet template or interface convention, not a
+standing exception.
+
+== Loop orchestration
+
+The loop itself (DevForge) is an explicit state machine — `LOAD_PACKET`,
+`GENERATE`, `VERIFY`, `PATCH`, `DONE`, `ESCALATE` — with a JSON checkpoint
+so a crashed run resumes rather than restarts, and a hard recursion cap
+enforced by the engine. It is deliberately *not* built on a graph
+framework (see xref:development-system.adoc[] for why) — the orchestrator
+is the least load-bearing layer in this system. What actually prevents
+runaway or self-defeating loops is the unambiguous harness verdict
+(`just check`), read-only tests, the iteration cap, and small packets.
+Those hold regardless of what drives the loop.
+
+== Machine-enforced, not remembered
+
+These rules are encoded in the generated AI configs, not left to be
+remembered: the local model's generated config forbids touching tests and
+mandates the escalation format; the frontier model's generated context
+states that its outputs are packets, ADRs, specs, and reviews. The
+division of labor is machine-enforced convention — see
+xref:development-system.adoc[]'s note on generated AI context for why that
+matters.

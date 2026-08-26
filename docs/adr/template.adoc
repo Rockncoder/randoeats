@@ -1,0 +1,68 @@
+= ADR-NNNN: <short, specific title>
+:status: Proposed
+
+// GUIDANCE — delete this comment block before filling in a real ADR.
+//
+// An ADR is a half-page. If you're writing more than a page, the decision
+// is probably several decisions — split it.
+//
+// ADRs are APPEND-ONLY. Never edit a Status: Accepted ADR to change its
+// decision. If circumstances change, write a new ADR and set this one's
+// status to `Superseded by ADR-NNNN`. The history of *wrong* decisions and
+// why they seemed right at the time is exactly what future-you (or the
+// frontier model reviewing a diff) needs to avoid relitigating settled
+// questions or "fixing" something that was intentional.
+//
+// File naming: docs/adr/NNNN-kebab-case-title.adoc, numbered sequentially,
+// zero-padded to 4 digits. Never reuse or renumber.
+
+== Context
+
+// GUIDANCE: What forces are at play? What constraint, requirement, or
+// problem made a decision necessary? State the situation as it was at the
+// time, including alternatives that were on the table. Two or three
+// sentences is normal.
+//
+// Example:
+// "The mobile app and the BFF are developed independently. Without a
+// committed contract, a Dart client change and a Drogon endpoint change can
+// drift out of sync silently, and the failure only surfaces at runtime on
+// a device."
+
+<one or two paragraphs describing the situation and the forces in tension>
+
+== Decision
+
+// GUIDANCE: State the decision as a single, unambiguous sentence, then
+// elaborate only if needed. Say what was chosen AND, briefly, what was
+// rejected and why — that's the part that prevents someone from
+// re-proposing the rejected alternative in six months.
+//
+// Example:
+// "The app <-> BFF contract is defined as an OpenAPI 3.1 YAML file
+// committed to docs/contracts/, authored before either side is
+// implemented. The Dart client is generated from it via openapi-generator.
+// We rejected hand-written clients because they silently drift from the
+// server; we rejected gRPC because the mobile team's tooling favors REST."
+
+<the decision, stated plainly>
+
+== Consequences
+
+// GUIDANCE: What becomes easier? What becomes harder? What new obligations
+// does this decision create (a lint to write, a CI step to add, a doc to
+// keep in sync)? Be honest about the downsides — an ADR that only lists
+// benefits isn't trustworthy.
+//
+// Example:
+// "Easier: either side can be rewritten without coordinating a release.
+// Contract drift is caught at generation time, not runtime. Harder: adding
+// a field now requires updating the YAML first, which is an extra step for
+// small changes. New obligation: CI must fail if the generated client is
+// stale relative to the committed YAML."
+
+<positive and negative consequences, and any new obligations this creates>
+
+== Status
+
+Proposed | Accepted | Superseded by ADR-NNNN

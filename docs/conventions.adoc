@@ -1,0 +1,187 @@
+= Coding Conventions
+:toc: left
+:toclevels: 2
+:sectnums:
+
+[.lead]
+The coding standards and layering rules for every TekAdept project. This file
+is the single source of truth for conventions — `CLAUDE.md` and all other
+generated AI configs are derived from it via `tekadept-sync-ai-config`
+(see xref:development-system.adoc[]). Do not duplicate these rules into
+per-project docs; link here instead.
+
+== Flutter layering
+
+Flutter projects use four layers, with dependencies pointing strictly inward:
+
+[source]
+----
+presentation/ -> application/ -> domain/ <- data/
+----
+
+* `domain/` — pure Dart. Entities, value objects, business rules. No
+  Flutter, no Riverpod, no third-party SDKs. This is the code that would
+  survive a full UI or backend rewrite unchanged.
+* `data/` — repositories and adapters that implement domain interfaces
+  against real external systems (network, disk, platform channels). See
+  <<ports-and-adapters>>.
+* `application/` — orchestration: Riverpod providers, use cases, state
+  notifiers. This is the only layer allowed to depend on both `domain/`
+  and `data/`.
+* `presentation/` — widgets and screens. Touches **Riverpod providers
+  only** — never a repository or data source directly. The providers are
+  the seams of the application; presentation code that reaches past them
+  couples the UI to implementation details it has no business knowing
+  about.
+
+=== Forbidden-import rule
+
+`presentation/` importing anything from `data/`, and anything importing
+`presentation/` from `domain/`, is a build failure, not a style note. This
+is enforced by a `custom_lint` rule (`tekadept_layering_lint`) and backstopped
+by a CI grep, so that violating the rule is mechanically difficult rather
+than a matter of remembering. A rule tooling doesn't enforce is a
+suggestion, and suggestions decay.
+
+== Contract-first APIs
+
+Any boundary between a mobile app and a C++/Drogon backend-for-frontend is
+defined as an OpenAPI 3.1 YAML file, committed to `docs/contracts/` *before*
+either side is implemented. The Dart client is generated from it — never
+hand-written. The contract is the stable surface: either side can be
+rewritten freely as long as the contract holds, and CI fails if the
+generated client is stale relative to the committed spec.
+
+[[ports-and-adapters]]
+== Ports and adapters for everything external
+
+Every external dependency — a Google API, an ML runtime, a game engine, a
+payment provider — is wrapped behind an interface the project owns,
+typically living in `data/adapters/<dependency>/`. The wrapper is an
+anti-corruption layer: external vocabulary, error types, and quirks stop at
+the boundary; the rest of the codebase speaks only the project's own domain
+language. When the external service changes or gets replaced, the blast
+radius is one adapter, not a grep-and-replace across the codebase.
+
+This applies to Godot itself for C++ game logic — see
+<<two-layer-gdextension>>.
+
+== Typed GDScript is mandatory
+
+All GDScript is statically typed — variables, function parameters, and
+return types. `# gdlint: disable` for missing types is not permitted.
+Untyped GDScript turns what should be a `gdlint`/`--check-only` failure
+(loop-visible, sub-second) into a runtime surprise three scenes later.
+
+[[two-layer-gdextension]]
+=== The two-layer GDExtension pattern
+
+C++ game code is split into two layers:
+
+* A *pure logic core* (`core/`) — plain C++, no Godot types, no engine in
+  the loop. Carries the actual game rules: scoring, chain-reaction logic,
+  puzzle state. Tested with GoogleTest and `-fsanitize=address,undefined`
+  at full native speed.
+* A thin *binding layer* (`bindings/`) — the GDExtension classes that
+  expose the core to Godot. Kept too thin to need much testing; if binding
+  logic starts to accumulate branches or state, that's a signal it belongs
+  in the core instead.
+
+== Physics testing doctrine
+
+Physics engines are only semi-deterministic across engine versions and
+platforms. A flaky physics test is worse than no test, because an agent
+loop will "fix" code that isn't broken in response to noise.
+
+* Test physics *setup*, not physics *outcome*: collision layers, masses,
+  joint configuration, spawn positions — the things you configured, not the
+  trajectory the engine computes from them.
+* Express any outcome assertion as a tolerant invariant ("the stack topples
+  within five seconds"), never an exact trajectory or exact final position.
+* Every physics test scene uses a fixed timestep and a seeded RNG.
+* Anything that needs an exact numeric assertion belongs in the pure C++
+  core (<<two-layer-gdextension>>), where every bit is controlled and no
+  engine nondeterminism is in play.
+
+== Codegen rules
+
+* Never hand-edit a generated file: `*.g.dart`, `*.freezed.dart`, any file
+  under a `generated/` directory, or the OpenAPI-generated Dart client.
+  Hand edits to generated files are silently discarded on the next
+  generation and produce diffs no one can review meaningfully.
+* Run `just gen` after touching any file with a `@JsonSerializable`,
+  `@freezed`, or similar code-generating annotation, and commit the
+  regenerated output alongside the source change in the same commit.
+* CI treats a stale generated file (regenerating produces a diff) as a
+  failure.
+
+== Definition of done
+
+A change is done when:
+
+. A spec exists (`docs/specs/`).
+. `just check` is green.
+. An ADR is written if an architectural choice was made (`docs/adr/`).
+. The AI context has been regenerated (`tekadept-sync-ai-config`, so
+  `CLAUDE.md` reflects the change).
+
+See xref:development-system.adoc[] for the full reasoning behind each rule
+in this document.
+
+== Project-specific notes
+
+// Appended during the template migration. Everything above this line is the
+// shared TekAdept standard, copied unchanged from tekadept-template — do not
+// edit it here. This section records only where randoeats legitimately
+// deviates. See MIGRATION-NOTES.adoc for the full migration record.
+
+=== `lib/blocs/` contains no BLoC code
+
+The directory name is a leftover from the project's Very Good Ventures
+scaffold, when the org standard still called for BLoC/Cubit. `flutter_bloc` is
+not a dependency and there is no Bloc or Cubit anywhere in the codebase —
+every file under `lib/blocs/` is a Riverpod `Notifier`. See ADR-0002.
+
+Each feature is three files: `<feature>_notifier.dart` (a `Notifier<FooState>`
+plus its `NotifierProvider`), `<feature>_state.dart` (an `Equatable` state
+class, usually with a status enum), and `<feature>.dart` (a barrel export).
+`lib/blocs/discovery/` is the reference implementation.
+
+Do not "restore" BLoC on the strength of the directory name, and do not rename
+the directory as a side effect of other work — the rename is tracked in
+`BACKLOG.adoc`.
+
+=== Layering differs from the shared rule
+
+The `presentation/ -> application/ -> domain/ <- data/` structure mandated
+above is not what this project uses. Its actual structure — `app/`, `screens/`,
+`blocs/`, `providers/`, `services/`, `models/`, `widgets/`, `config/` — is
+documented in `docs/architecture.adoc`. The seam the rule protects is
+honoured: services are injected through `ProviderScope` overrides declared in
+`lib/providers/service_providers.dart`.
+
+=== `just check` includes the BFF, and is not equivalent to CI
+
+This repository is mixed: a Flutter app at the root and a Drogon BFF under
+`bff/`. The BFF's rings are exposed as `bff-*` recipes and composed into
+`check`. There is no `bff-test` ring because `bff/` has no test suite.
+
+Separately, `just check` is *weaker* than CI: `.github/workflows/main.yaml`
+enforces a 60% coverage floor through the `very_good_coverage` action, and
+this project has no local coverage-gate script for `just` to call. A green
+`just check` therefore does not imply a green CI. Closing that gap is a
+backlog item.
+
+=== The app↔BFF boundary is not contract-first
+
+The contract-first rule above is not satisfied. The interface is defined only
+by `RestaurantController` on the server side and `Restaurant.fromBff` on the
+client side agreeing by hand. See ADR-0003.
+
+=== `AGENTS.md` is a second AI-context file
+
+`AGENTS.md` at the repository root is read by the OpenCode `devforge` agent and
+is currently the most accurate AI-facing description of the project. It is
+hand-written, which makes it exactly the kind of duplicated document the
+generated-context rule exists to prevent. It was left in place because a tool
+consumes it; folding it into the generated pipeline is a backlog item.
