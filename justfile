@@ -86,18 +86,20 @@ bff-format:
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+    FMT="${CLANG_FORMAT:-clang-format}"
     find bff/controllers bff/services bff/main.cc -type f \
       \( -name '*.cc' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -print0 \
-      | xargs -0 clang-format -i
+      | xargs -0 "$FMT" -i
 
 # Read-only C++ formatting check.
 bff-format-check:
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+    FMT="${CLANG_FORMAT:-clang-format}"
     find bff/controllers bff/services bff/main.cc -type f \
       \( -name '*.cc' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' \) -print0 \
-      | xargs -0 clang-format --dry-run --Werror
+      | xargs -0 "$FMT" --dry-run --Werror
 
 # RATCHETING GATE, not a pass/fail lint. The BFF carries 112 findings that
 # predate its lint configuration; failing on all of them would leave `just
