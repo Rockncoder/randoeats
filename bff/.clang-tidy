@@ -1,0 +1,118 @@
+---
+# Checks tuned for the two-layer GDExtension / Drogon service split
+# described in docs/conventions.adoc: the pure-logic core carries most of
+# the correctness burden, so bugprone/performance/portability checks are
+# on at full strength; readability checks are on but not fatal on their
+# own (they don't block `just check` unless promoted via WarningsAsErrors).
+# On the disabled checks: the first four are noise for this kind of service.
+# The last two are disabled because they are WRONG here, not merely noisy —
+# both were measured against shuffle_up's relay, the first TekAdept service to
+# run clang-tidy at all.
+#
+# `portability-avoid-pragma-once` wants include guards instead of `#pragma
+# once`. Every project-owned header at TekAdept uses `#pragma once` — 73 of 73
+# across six services — as does Drogon itself, and every compiler these
+# services target supports it. "Fixing" this would convert working, consistent
+# headers to a more verbose idiom nothing here uses.
+#
+# `readability-convert-member-functions-to-static` produced 34 findings on that
+# relay, and acting on ANY of them is harmful:
+#
+#   - On Drogon controllers the handlers are bound by member-function pointer
+#     (`ADD_METHOD_TO(FallbackController::serveRoot, "/", Get)`). Making them
+#     static would break routing.
+#   - On the plain classes it flagged methods that demonstrably use non-static
+#     members — `createTable` takes `std::lock_guard` on the instance's
+#     `mutex_` and mutates `tables_`. Those cannot be static at all.
+#
+# Running `clang-tidy --fix` for this check did not merely produce bad advice:
+# it emitted `static` on the out-of-class definitions in the .cpp files, which
+# is invalid C++, and broke the build with "'static' can only be specified
+# inside the class definition".
+#
+# `cppcoreguidelines-pro-bounds-avoid-unchecked-container-access` fires on every
+# `Json::Value` object construction — `response["type"] = "table_created";` —
+# which is JsonCpp's only idiom for creating a key. All 73 findings on
+# shuffle_up's relay were of this form. There is no bounds-safe alternative:
+# `.at()` THROWS when a key is absent, which is precisely the case when you are
+# inserting one. Any Drogon service that builds JSON responses will hit this,
+# so it is disabled estate-wide rather than suppressed per call site.
+#
+# CAVEAT, and it matters: this check is correct about `std::map::operator[]`,
+# which silently default-inserts on a missing key. Disabling it hides that too.
+# shuffle_up's MetricsController had exactly one such case — a `/proc/meminfo`
+# lookup that reported 0 for absent fields instead of flagging them — found by
+# this check before it was disabled, and fixed separately. When writing map
+# lookups, reach for `.find()`/`.count()` deliberately; the linter is no longer
+# watching.
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  google-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -portability-avoid-pragma-once,
+  -readability-convert-member-functions-to-static,
+  -cppcoreguidelines-pro-bounds-avoid-unchecked-container-access
+
+WarningsAsErrors: >
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  performance-*
+
+# Which headers clang-tidy reports on.
+#
+# This MUST match the project's actual source roots, and TekAdept services do
+# not share one layout:
+#
+#   shuffle_up/server    src/
+#   fitcards/server      src/, tests/
+#   icebreaker/server    controllers/, models/, services/, config/
+#   randoeats/bff        controllers/, services/  (no src/ at all)
+#
+# The previous value here was '(src|include)/.*', which matches nothing on
+# half of those — and a header filter that matches nothing produces a clean
+# run, not an error. That is the worst failure mode a lint config has.
+#
+# The alternation below covers every layout in use. Note this is POSIX ERE via
+# llvm::Regex: there is NO lookahead, so dependency trees cannot be excluded by
+# negation inside this pattern.
+HeaderFilterRegex: '(src|include|controllers|models|services|filters|config|tests)/.*'
+
+# Excluding dependency headers needs its own key, and it is NOT optional.
+#
+# Passing clang-tidy an explicit list of the project's own source files is not
+# enough: that controls which translation units are analyzed, not which headers
+# produce diagnostics. A .cpp of ours that includes a fetched header still
+# reports findings from inside it. Measured on shuffle_up's relay before this
+# key existed: 472 findings, of which 267 came from _deps/sentry-src — and one
+# of those was promoted to an error by WarningsAsErrors below, so `analyze`
+# could never pass no matter what the project's own code looked like.
+#
+# Requires clang-tidy 19 or newer (--exclude-header-filter).
+ExcludeHeaderFilterRegex: '.*/(_deps|build|build-[^/]*|node_modules|\.cache)/.*'
+
+FormatStyle: file
+
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: _
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+...
