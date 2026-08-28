@@ -1,10 +1,38 @@
 # Spec: Responsive multi-reel slot machine + wide-screen hardening
 
-**Status:** Proposed
-**Depends on:** merged map-region feature; complements `docs/SPOTS_SPEC.md`
-**Branch (when built):** `feature/multi-reel-slot-machine` (off `main`)
+**Status:** Implemented — shipped 2026-06-16 in `bb36eaf` (PR #33)
+**Depends on:** merged map-region feature (PR #30); complements `docs/specs/spots.md`
+**Verified:** 2026-08-28 against the working tree — see Reconciliation below
 
 ---
+
+## Reconciliation (2026-08-28)
+
+This spec was written on 2026-06-16 (`212b5dd`) and implemented the same day by
+`bb36eaf` "feat(results): responsive multi-reel slot machine (#33)". It carried
+**Status: Proposed** for two months after shipping; the header above is
+corrected. The status was never updated because `docs/specs/` was created
+wholesale by the template migration (`eeca327`), which moved these files without
+re-reading them.
+
+Every acceptance criterion below was verified present in the working tree:
+
+- Measured responsive columns — `ReelLayout.columnsForWidth`
+  (`lib/widgets/reel_layout.dart:14`), driven by `LayoutBuilder`, clamped to
+  `[1, maxColumns]`. Not device-model branching, as the spec required.
+- Staggered left-to-right stop — `_stagger` / `_baseSpin + _stagger * c`
+  (`lib/widgets/multi_reel_slot_machine.dart:60,133`).
+- Highlight -> expand -> Detail handoff, with an assistive-technology
+  announcement (`multi_reel_slot_machine.dart:146,163`).
+- Calm Mode — plumbed end to end: `UserSettings.calmMode`
+  (`lib/models/user_settings.dart:103`), persisted via Hive, exposed as
+  `settingsCalmModeToggle1` (`lib/screens/settings/settings_screen.dart:197`).
+
+**Stale content below:** section "Context & goals" still describes the
+single-reel `slot_machine_list.dart` as the present-day UX. That file still
+exists in the tree but is no longer the pick surface. The body has been left
+as written — it is the spec as approved, not a description of today.
+
 
 ## Context & goals
 
