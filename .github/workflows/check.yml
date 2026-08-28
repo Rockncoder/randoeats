@@ -67,12 +67,15 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          # DrogonConfig.cmake does a find_dependency(Jsoncpp), so a consumer
-          # build needs the jsoncpp headers even when Drogon itself comes from
-          # apt. Installing libdrogon-dev alone gets as far as
-          # "Could NOT find Jsoncpp" at find_package(Drogon) time.
+          # DrogonConfig.cmake re-runs find_dependency() for everything the
+          # distro package was BUILT with -- jsoncpp, then MySQL, then the rest
+          # of the database clients -- so a consumer build needs all of their
+          # dev headers even though this BFF uses none of them. Installing
+          # libdrogon-dev alone fails at find_package(Drogon) with
+          # "Could NOT find Jsoncpp", then "Cannot find MySQL", and so on.
           if sudo apt-get install -y libdrogon-dev libjsoncpp-dev uuid-dev \
-               zlib1g-dev libssl-dev; then
+               zlib1g-dev libssl-dev default-libmysqlclient-dev libpq-dev \
+               libsqlite3-dev libhiredis-dev libbrotli-dev; then
             echo "Drogon installed from apt"
           else
             echo "libdrogon-dev unavailable on this image; building from source"
