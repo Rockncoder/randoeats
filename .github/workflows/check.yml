@@ -10,6 +10,11 @@
 # which is not a dependency of this project yet. It is committed in its correct
 # form rather than weakened to go green; see MIGRATION-NOTES.adoc.
 #
+# `just check` now includes the BFF unit tests (spec 001), so the runner needs
+# Drogon itself, not just LLVM. Before that step existed the C++ rings failed
+# with "Could not find a package configuration file provided by Drogon" — the
+# lint gate was never actually running in CI.
+#
 # It deliberately overlaps with .github/workflows/main.yaml for now. main.yaml
 # remains the gate that protects `main` — and note that main.yaml is currently
 # STRICTER, because it enforces a coverage floor that `just check` has no local
@@ -53,6 +58,29 @@ jobs:
           clang-tidy-19 --version | head -1
 
 
+      # `just check` builds and runs the BFF unit tests, so Drogon must be
+      # present. Prefer the distro package; fall back to a pinned source build
+      # if it is unavailable on the runner image. Failing loudly either way is
+      # the point — a missing Drogon previously made the whole C++ side a
+      # silent no-op in CI.
+      - name: Install Drogon
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          if sudo apt-get install -y libdrogon-dev; then
+            echo "Drogon installed from apt"
+          else
+            echo "libdrogon-dev unavailable on this image; building from source"
+            sudo apt-get install -y libjsoncpp-dev uuid-dev zlib1g-dev libssl-dev
+            git clone --depth 1 --branch v1.9.12 \
+              https://github.com/drogonframework/drogon /tmp/drogon
+            git -C /tmp/drogon submodule update --init --recursive
+            cmake -S /tmp/drogon -B /tmp/drogon/build \
+              -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF -DBUILD_CTL=OFF
+            cmake --build /tmp/drogon/build -j"$(nproc)"
+            sudo cmake --install /tmp/drogon/build
+          fi
+
       - name: Install just
         uses: extractions/setup-just@v2
 
@@ -64,3 +92,8 @@ jobs:
           CLANG_TIDY: clang-tidy-19
           CLANG_FORMAT: clang-format-19
         run: just check
+
+      # The sanitizer ring is kept out of `just check` because it rebuilds
+      # instrumented and roughly doubles the wall time. CI is where it runs.
+      - name: just bff-test-asan
+        run: just bff-test-asan
