@@ -1,10 +1,45 @@
 # Spec: Spots — one-tap saved places + filters
 
-**Status:** Proposed (follow-up to PR #30, the map-region-selection feature)
+**Status:** Implemented with one deviation — shipped 2026-06-16 in `4714ea2` (PR #34)
 **Author:** TekAdept
-**Depends on:** the saved-region / region-draw work in `feature/map-region-selection`
+**Depends on:** the saved-region / region-draw work from PR #30 (`c9cafdb`)
+**Verified:** 2026-08-28 against the working tree — see Reconciliation below
 
 ---
+
+## Reconciliation (2026-08-28)
+
+Written 2026-06-16 alongside PR #30 (`c9cafdb`) and implemented the same day by
+`4714ea2` "feat: Spots — saved place + filters, one-tap recall (#34)". It
+carried **Status: Proposed** for two months after shipping.
+
+Shipped, verified in the working tree:
+
+- `SpotFilters` model (`lib/models/spot_filters.dart`), Hive-persisted via
+  `SpotFiltersAdapter` (`lib/services/storage_service.dart:82`).
+- `activeFiltersProvider` with `set` / `clear` / `toggleCuisine` /
+  `togglePriceLevel` (`lib/providers/active_filters_provider.dart`).
+- The filter chip bar (`lib/widgets/filter_chip_bar.dart`).
+
+**Implementation shape differs from §1.** The spec's table implies a new `Spot`
+entity bundling where + what + name. No `Spot` class exists. The bundle was
+implemented by adding an optional `SpotFilters? filters` field to the existing
+`SavedRegion` (`lib/models/saved_region.dart:66`), which already carried `name`,
+`points` and `createdAt`. Same three halves, one record. This is a better
+outcome than the spec described, not a gap — noted so the next reader does not
+go looking for a class that was never written.
+
+**DEVIATION — not implemented.** Under "Design principles", the spec states the
+existing "mood" text input is **replaced** by cuisine chips. It was not. The
+mood `TextField` is still live: `_moodController`
+(`lib/screens/home/home_screen.dart:23`) renders at
+`home_screen.dart:197` and still feeds `discovery.start(mood: ...)` at
+`home_screen.dart:66-70`, with `mood` retained on `DiscoveryState`
+(`lib/blocs/discovery/discovery_state.dart:51`). Cuisine chips were added
+*alongside* the free-text input rather than replacing it, so the "no typing"
+principle is not met on the home screen. Either finish the removal or amend
+this spec — it should not stay silently contradicted.
+
 
 ## Context & goals
 

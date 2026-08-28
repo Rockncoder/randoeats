@@ -1,0 +1,295 @@
+= Feature Inventory (reconstructed)
+:toc: left
+:toclevels: 2
+
+[.lead]
+What rand-o-eats does, what it is made of, and when each piece arrived —
+reconstructed from `git log` (302 commits, 2026-01-07 .. 2026-08-26) and read
+against the working tree on 2026-08-28. Nothing here is taken from `CLAUDE.md`,
+`AGENTS.md`, or the existing specs; those are what this document exists to
+check.
+
+IMPORTANT: This is a point-in-time reconstruction, not a generated file. It was
+true of the tree at commit `fc6b43f` on 2026-08-28 and will drift as the code
+moves. It is deliberately *not* a source of truth: `docs/adr/` holds decisions,
+`docs/specs/` holds specs, the code holds behavior. Re-verify a claim against
+its cited commit or file before relying on it, and correct this document in the
+same change that invalidates it.
+
+== How to read this
+
+Every claim carries its evidence. Where the evidence runs out, the document says
+so rather than smoothing the gap over — a confident reconstruction from thin
+evidence is how this repo ended up asserting BLoC/Cubit for months.
+
+*Evidence tags*
+
+* *SOURCED* — a commit hash or a file in the tree proves it.
+* *INFERRED* — a reading of the evidence, not a record of it.
+* *NEEDS SOURCE* — the WHAT is known, the WHY is not recoverable from history.
+
+*Status vocabulary*
+
+* *Shipped* — reachable by a user, working.
+* *Shipped, deviates from spec* — reachable, but contradicts a written spec.
+* *Built, unreachable* — code exists and is tested, but no UI path reaches it.
+* *Vestigial* — still runs, superseded in intent, never removed.
+
+The capability grouping in <<user>> is INFERRED — git can prove when a path
+first appeared, but not that four directories add up to one thing a user would
+name. The commits, dates and file references inside each entry are SOURCED.
+
+NOTE: History is effectively linear — only 7 merge commits, 6 of them
+dependabot. Feature work was squash-merged, so PR numbers survive in the commit
+subjects (`(#30)`, `(#33)`, ...) and are the best cross-reference to GitHub for
+rationale the commits themselves do not carry.
+
+== Timeline
+
+[cols="1,1,4"]
+|===
+|Period |Commits |What was happening
+
+|2026-01 |106 |Initial build. App shell, Googie styling, Discovery flow,
+Results, Detail, Hive storage, models, slot-machine animation,
+Fastlane/Firebase App Distribution. Cloudflare Pages infrastructure in the
+initial commit.
+
+|2026-02 |32 |Test suite, IAP service, store metadata, Maestro smoke test,
+Firebase Analytics observer, SSH-based Fastlane Match + screenshot generation.
+
+|2026-03 |3 |Quiet.
+
+|2026-05 |41 |Structural refactor — bootstrap/router aligned to `shuffle_up`
+patterns, `lib/providers/` introduced, counter demo removed. The Bloc/Cubit ->
+Riverpod migration lands here (`c1db1c8`).
+
+|2026-06 |74 |The largest feature month: map region selection (#30), responsive
+multi-reel slot machine (#33), Spots (#34), Material 3 Expressive UI overhaul +
+seasonal themes (#45), version scheme + About (#54), in-app splash (#57), and
+the C++/Drogon BFF (#71).
+
+|2026-07 |28 |BFF productionisation — shared-BFF deploy pipeline (#73), Caddy
+access logging, restaurant lookups routed through the BFF (#75) — plus the
+`<screen><type><n>` widget-key convention sweep (#81, #82, #83).
+
+|2026-08 |18 |TekAdept template migration: docs skeleton, three retroactive
+ADRs, `architecture.adoc` reconstructed from code, generated-marker
+`CLAUDE.md`, the `just` command contract, BFF clang-format/clang-tidy adoption.
+|===
+
+[[user]]
+== What a user can do
+
+=== 1. Pick somewhere to eat (the core loop)
+
+*Shipped.* The reason the app exists. The user lands on Home, optionally types a
+"mood", taps the big button; the app queries restaurants and runs a slot-machine
+spin that lands on one winner, which opens Detail.
+
+* Home shell — `a66236a` 2026-01-08
+* Results — `c11ad64` 2026-01-08, 23 commits, the most-churned screen
+* Single-reel spin + celebration — `907768c` 2026-01-09
+  (`slot_machine_list.dart`, `winner_celebration.dart`)
+* Responsive multi-reel spin — `bb36eaf` 2026-06-16 (#33): 1 reel on a phone up
+  to 3 on a tablet, staggered stop, highlight -> expand -> Detail
+* State: `lib/blocs/discovery/` — `9ff5b60` 2026-01-08, *born as a real BLoC*
+  ("feat: add Discovery BLoC") and converted in `c1db1c8`. The directory name
+  was accurate when chosen; `CLAUDE.md` calls it a scaffold leftover, which is
+  wrong. SOURCED.
+
+`slot_machine_list.dart` is *Vestigial* — still in the tree, not the pick
+surface since #33.
+
+=== 2. Choosing where to look
+
+*Shipped.* Three ways to scope the search: *Near Me (GPS)* via
+`location_service.dart` from the January build-out; *draw a region on a map*
+(`c9cafdb` 2026-06-16, #30, `lib/screens/region_draw/`, persisted as
+`SavedRegion`); and *one-tap region chips* (`region_chip_bar.dart`, same
+commit).
+
+=== 3. Spots — saved place + filters, recalled in one tap
+
+*Shipped, deviates from spec.* A Spot bundles where (a polygon or GPS) + what (a
+filter set) + a name, saved and recalled from the chip bar. `4714ea2`
+2026-06-16 (#34).
+
+Implemented as `SavedRegion.filters` (`lib/models/saved_region.dart:66`) rather
+than the distinct `Spot` entity `docs/specs/spots.md` §1 implies — same three
+halves, one Hive record. Deviation: that spec requires the free-text "mood"
+input to be *replaced* by cuisine chips. It was not — see <<mood>>.
+
+=== 4. Filters / "Quick tune"
+
+*Shipped.* A bottom sheet on Results: search radius, price level, "Serves"
+(beer / wine), open-now only. `activeFiltersProvider` + `SpotFilters` +
+`filter_chip_bar.dart` from `4714ea2` (#34); beer and open-now controls from
+`7ccf4eb` 2026-07-10.
+
+=== 5. Restaurant detail
+
+*Shipped.* Open/Closed state, opening hours incl. "Today", Parking / Beer / Wine
+chips, Directions (`restaurant_directions_sheet.dart`), an in-sheet map
+(`restaurant_map_sheet.dart`), and phone dialling. `ae95613` 2026-01-08;
+parking chip `c427308` 2026-06-18 (#52).
+
+=== 6. Rate and remember
+
+*Shipped.* Thumbs up / thumbs down (`RatingType`), a "Not For Me" dismissal,
+per-place visit counts, and a recent-picks list that suppresses a place for a
+configurable number of days after it is picked.
+
+* Visit tracking + configurable discovery settings — `79ae64f` 2026-01-08
+* Hive storage service — `753113b` 2026-01-08, the first of 21 commits under
+  `lib/services/`
+* Models: `user_rating`, `visited_place`, `recent_pick`
+
+All device-local, no account, no sync — ADR-0004.
+
+=== 7. Appearance and personalization
+
+*Shipped.* Six named themes under Settings > "Pick a season": Light, Dark,
+Spring (default), Summer, Autumn, Winter — each a `GoogiePalette` behind an
+`AppTheme` enum (`lib/config/theme.dart:315`). Plus distance units (mi/km).
+Seasonal themes + M3 Expressive overhaul `ef2430c` 2026-06-18 (#45); Summer
+differentiated `f35a5c4` 2026-06-18 (#49).
+
+=== 8. Banned categories
+
+*Shipped.* 26 tappable cuisine/category chips in Settings, defined as
+`restaurantCategories` (`lib/screens/settings/settings_screen.dart:11`):
+Mexican, Chinese, Italian, Japanese, Thai, Indian, Vietnamese, Korean,
+American, Pizza, Burgers, Seafood, Steak, Sushi, Mediterranean, Greek, French,
+BBQ, Cafe, Fast Food, Fine Dining, Breakfast, Brunch, Sandwiches, Ice Cream,
+Bakery. Each maps to a Google Places type (`mexican_restaurant`, `steak_house`,
+...). Excluded from picks via `UserSettings.bannedCategories`.
+
+=== 9. Data management
+
+*Shipped.* Three destructive actions, each behind a confirm dialog: Clear Visit
+History, Clear Recent Picks, Clear All Data.
+
+=== 10. Accessibility
+
+*Shipped.* Calm Mode (skip the spin, reveal the winner directly) wired from
+`UserSettings.calmMode` (`lib/models/user_settings.dart:103`) through Hive to
+`settingsCalmModeToggle1` (`settings_screen.dart:197`); a live-region
+announcement of the winner; and the `<screen><type><n>` widget-key convention
+across every interactive widget (#81, #82, #83, 2026-07-10), which also backs
+widget tests and marionette automation.
+
+[[monetization]]
+=== 11. Monetization — BUILT, UNREACHABLE
+
+*Built, unreachable.* The largest gap between plumbing and product in the
+codebase, and invisible at the directory level: `lib/blocs/iap/` looks like a
+healthy feature until the user path is traced and dead-ends.
+
+What exists (SOURCED):
+
+* `google_mobile_ads: ^7.0.0` in `pubspec.yaml`
+* `MobileAds.instance.initialize()` at startup on non-web
+  (`lib/bootstrap.dart:74`)
+* A complete IAP stack: `iap_service.dart` selling product id
+  `randoeats_ad_removal`, `IapNotifier` with `purchase()` / `restore()` /
+  `resetForNewSession()`, `IapState`, a Hive-persisted purchase flag, and tests
+* Store metadata — all of it arriving in one commit, `ea8c9bd` 2026-03-02, the
+  thinnest commit trail of any feature in the repo
+
+What does not exist (SOURCED — verified by exhaustive grep over `lib/`):
+
+* *No ad is ever rendered.* No `BannerAd`, `AdWidget`, `InterstitialAd`,
+  `AdSize`, `loadAd` or `adUnitId` anywhere. The SDK is initialized, then unused.
+* *No purchase UI.* Nothing under `lib/screens/` or `lib/widgets/` references
+  `iapProvider`. No paywall, no "Remove Ads" control, no restore control. The
+  only consumer of the IAP state is the IAP notifier itself.
+
+The app ships an ad SDK that displays nothing and an in-app purchase to remove
+ads that cannot be bought and would change nothing. Both halves inert since
+March. Needs a product decision — finish or strip — and an ADR either way, since
+receipt validation interacts with ADR-0004's no-server-side-user-data stance.
+
+[[mood]]
+=== 12. The "mood" text input
+
+*Vestigial / contradicts spec.* Home still renders a free-text "What sustenance
+do you require?" field (`_moodController`, `home_screen.dart:23,197`) feeding
+`discovery.start(mood: ...)` (`home_screen.dart:66-70`), with `mood` retained on
+`DiscoveryState` (`discovery_state.dart:51`).
+
+`docs/specs/spots.md` states this input is replaced by cuisine chips, and that
+the governing principle is "minimum taps, no typing". Chips were added alongside
+it instead. Either finish the removal or amend the spec.
+
+=== 13. Platform and release surfaces
+
+*Shipped.* iOS, Android and Web; `staging` and `production` flavors only. In-app
+splash with a large logo (`38d808e`, #57); an About page showing a patch=build
+version scheme (`6e83aa6`, #54); Firebase Analytics + Crashlytics; and
+restaurant data served through the Drogon BFF rather than a client-side Places
+key (`38bf33f` 2026-07-09, #75 — ADR-0003).
+
+== Supporting areas with no user-facing surface
+
+All SOURCED — introducing commit verified with `git log --reverse` on the path.
+
+[cols="2,3,3"]
+|===
+|Area |Introduced by |Notes
+
+|`lib/providers/` |`5ab816c` 2026-05-08 |Created by the "align bootstrap and
+router with shuffle_up patterns" refactor, *not* by a feature. The DI approach
+was imported, not designed here.
+
+|`bff/` |`773411d` 2026-06-25 (#71) |C++/Drogon BFF, 10 commits. Holds the
+Places key. ADR-0003.
+
+|`deploy/` |`5c961ef` 2026-07-08 (#73) |Shared-BFF deploy pipeline; Caddy access
+log added in `0a6c5a5`.
+
+|`fastlane/` |`b6e04a1` 2026-01-07 |27 commits — heavily iterated.
+
+|`.github/` |initial commit |57 commits, the single most-churned path in the
+repo.
+
+|`integration_test/` |`d97193d` 2026-02-21 |Arrived attached to screenshot
+generation, not as a testing initiative.
+
+|`.maestro/` |`7d691aa` 2026-02-20 |Smoke test, alongside the Firebase Analytics
+observer.
+
+|`scripts/` |`40a207c` 2026-08-26 |Added by the template migration.
+
+|`infrastructure/` |initial commit |Cloudflare Pages. Untouched since
+2026-01-07.
+|===
+
+== Decision points with no ADR
+
+Candidates for retroactive ADRs. The commits establish WHAT and WHEN; none
+record the alternatives rejected, which is the part an ADR exists to carry.
+
+* *Monetization* — `ea8c9bd` 2026-03-02. No ADR, no rationale in the commit
+  body, and the feature is unreachable (<<monetization>>). Highest-value ADR to
+  write, because it needs a decision rather than just a record. NEEDS SOURCE.
+* *Bloc/Cubit -> Riverpod* — `c1db1c8` (2026-05). Already covered after the fact
+  by ADR-0002. SOURCED.
+* *Theme system* — seasonal themes in #45 (`ef2430c`), Summer differentiated in
+  #49 (`f35a5c4`). Why six swappable palettes rather than one is unrecorded.
+  NEEDS SOURCE.
+* *Widget-key convention* — swept in #81/#82/#83. `docs/specs/widget-keys.md`
+  documents the convention as a reference; the decision to adopt it is
+  unrecorded. NEEDS SOURCE.
+* *BFF caching and cost control* — `9fa33f1` "bff: add ICache::clear() and
+  InMemoryCache implementation". ADR-0003 covers BFF-as-proxy but not the
+  caching or cost-cap design. NEEDS SOURCE.
+* *Hosting and deploy topology* — #73 shared-BFF pipeline + Caddy. No ADR.
+  NEEDS SOURCE.
+* *Two-tier agent loop / local model choice* — `32a1ed5` "switch to
+  qwen3-coder:30b after D4 model bakeoff", and `123b2a4` reverting `5b82a5e`'s
+  sibling-test-file guidance for a clean model comparison. `docs/agent-loop.adoc`
+  describes the loop; the model selection has no ADR and the bakeoff results are
+  not in the repo. SOURCED as an event, NEEDS SOURCE for the rationale.
+* *Flavors (staging/production only)* — no single introducing commit found;
+  present from early. INFERRED.
