@@ -67,7 +67,12 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          if sudo apt-get install -y libdrogon-dev; then
+          # DrogonConfig.cmake does a find_dependency(Jsoncpp), so a consumer
+          # build needs the jsoncpp headers even when Drogon itself comes from
+          # apt. Installing libdrogon-dev alone gets as far as
+          # "Could NOT find Jsoncpp" at find_package(Drogon) time.
+          if sudo apt-get install -y libdrogon-dev libjsoncpp-dev uuid-dev \
+               zlib1g-dev libssl-dev; then
             echo "Drogon installed from apt"
           else
             echo "libdrogon-dev unavailable on this image; building from source"
