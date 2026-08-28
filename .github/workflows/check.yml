@@ -59,35 +59,51 @@ jobs:
 
 
       # `just check` builds and runs the BFF unit tests, so Drogon must be
-      # present. Prefer the distro package; fall back to a pinned source build
-      # if it is unavailable on the runner image. Failing loudly either way is
-      # the point — a missing Drogon previously made the whole C++ side a
-      # silent no-op in CI.
-      - name: Install Drogon
+      # present. Before this existed the C++ rings failed with "Could not find a
+      # package configuration file provided by Drogon" -- the lint gate was
+      # never actually running in CI.
+      #
+      # Built from source rather than installed from apt. Ubuntu's
+      # libdrogon-dev is built WITH the database backends, so DrogonConfig.cmake
+      # re-runs find_dependency() for jsoncpp, MySQL, PostgreSQL and SQLite --
+      # and a consumer build then fails on each in turn, for features this BFF
+      # does not use. (Ubuntu ships MariaDB, whose headers Drogon's FindMySQL
+      # does not accept, so that chain does not terminate cleanly.) A pinned
+      # source build with the backends off removes the whole class of failure
+      # and is cached, so it costs one slow run and then nothing.
+      #
+      # NOTE: BUILD_REDIS is OFF here. Spec 002 (durable cache) needs Drogon's
+      # Redis client -- turn it back on in the same change that implements it.
+      - name: Install Drogon build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libjsoncpp-dev uuid-dev zlib1g-dev libssl-dev
+
+      - name: Cache Drogon
+        id: cache-drogon
+        uses: actions/cache@v4
+        with:
+          path: ~/drogon-install
+          key: drogon-1.9.12-nodb-${{ runner.os }}
+
+      - name: Build Drogon
+        if: steps.cache-drogon.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
-          sudo apt-get update
-          # DrogonConfig.cmake re-runs find_dependency() for everything the
-          # distro package was BUILT with -- jsoncpp, then MySQL, then the rest
-          # of the database clients -- so a consumer build needs all of their
-          # dev headers even though this BFF uses none of them. Installing
-          # libdrogon-dev alone fails at find_package(Drogon) with
-          # "Could NOT find Jsoncpp", then "Cannot find MySQL", and so on.
-          if sudo apt-get install -y libdrogon-dev libjsoncpp-dev uuid-dev \
-               zlib1g-dev libssl-dev default-libmysqlclient-dev libpq-dev \
-               libsqlite3-dev libhiredis-dev libbrotli-dev; then
-            echo "Drogon installed from apt"
-          else
-            echo "libdrogon-dev unavailable on this image; building from source"
-            sudo apt-get install -y libjsoncpp-dev uuid-dev zlib1g-dev libssl-dev
-            git clone --depth 1 --branch v1.9.12 \
-              https://github.com/drogonframework/drogon /tmp/drogon
-            git -C /tmp/drogon submodule update --init --recursive
-            cmake -S /tmp/drogon -B /tmp/drogon/build \
-              -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=OFF -DBUILD_CTL=OFF
-            cmake --build /tmp/drogon/build -j"$(nproc)"
-            sudo cmake --install /tmp/drogon/build
-          fi
+          git clone --depth 1 --branch v1.9.12 \
+            https://github.com/drogonframework/drogon /tmp/drogon
+          git -C /tmp/drogon submodule update --init --recursive
+          cmake -S /tmp/drogon -B /tmp/drogon/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$HOME/drogon-install" \
+            -DBUILD_EXAMPLES=OFF -DBUILD_CTL=OFF -DBUILD_ORM=OFF \
+            -DBUILD_POSTGRESQL=OFF -DBUILD_MYSQL=OFF -DBUILD_SQLITE=OFF \
+            -DBUILD_REDIS=OFF
+          cmake --build /tmp/drogon/build -j"$(nproc)"
+          cmake --install /tmp/drogon/build
+
+      - name: Expose Drogon to CMake
+        run: echo "CMAKE_PREFIX_PATH=$HOME/drogon-install" >> "$GITHUB_ENV"
 
       - name: Install just
         uses: extractions/setup-just@v2
