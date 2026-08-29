@@ -72,6 +72,30 @@ tracked as discrete, closeable work items.
   BLoC/Cubit" row is the original source of this repo's documentation drift.
   `tekadept-template`'s `docs/conventions.adoc` supersedes it.
 
+=== Launch prep (owner actions)
+
+// Recovered 2026-08-29 from the abandoned `chore/planning-docs-and-config`
+// branch (MY_TODOS.md, 2026-07-09) before deleting it. That file's other items
+// were verified DONE against the code and dropped rather than copied: the
+// Google Maps key is injected by deploy-web.yml, Firebase/Crashlytics are
+// initialised in lib/bootstrap.dart, and the Android signing secrets are in
+// place. Only what could not be verified as done is kept here.
+//
+// These are account/console tasks, not repo work, which is why they are here
+// rather than in GitHub Issues.
+
+* Publish a privacy policy and a support page. *Location data disclosure is
+  required* by both stores, so this gates submission, not just polish.
+* Create the store listings: App Store Connect (`com.tekadept.randoeats`) and
+  Google Play Console — content rating questionnaire, screenshots for
+  iPhone/iPad/Android, description and keywords.
+* Run `fastlane match adhoc` and `fastlane match appstore` for iOS signing.
+* Point `randoeats.com` at the web build. `api.randoeats.com` already resolves
+  to the BFF; the apex for the Flutter web app is unconfirmed.
+* AdMob console app and real ad unit IDs — *blocked on issue #87*, which asks
+  whether monetization is finished or stripped. Do not do this until that is
+  decided.
+
 === Product work
 
 * Favourites screen — thumbs-up places. Confirmed absent from `lib/screens/`.
