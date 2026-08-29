@@ -11,7 +11,8 @@ WORKDIR /src
 COPY CMakeLists.txt main.cc ./
 COPY controllers/ controllers/
 COPY services/ services/
-RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
+# This context has no tests/ -- the image ships the binary only.
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF && \
     cmake --build build -j"$(nproc)"
 
 FROM drogonframework/drogon:latest AS runtime

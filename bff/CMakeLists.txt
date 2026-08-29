@@ -28,6 +28,14 @@ target_link_libraries(randoeats_bff_lib PUBLIC Drogon::Drogon)
 add_executable(randoeats_bff main.cc)
 target_link_libraries(randoeats_bff PRIVATE randoeats_bff_lib)
 
+# The deployable image's build context copies only CMakeLists.txt, main.cc,
+# controllers/ and services/ -- it has no tests/ directory, and no reason to
+# build tests. Default ON so a normal checkout gets the suite; bff/Dockerfile
+# passes -DBUILD_TESTS=OFF.
+option(BUILD_TESTS "Build the unit tests" ON)
+
+if(BUILD_TESTS)
+
 enable_testing()
 
 add_executable(randoeats_bff_tests
@@ -49,3 +57,5 @@ if(ENABLE_SANITIZERS)
 endif()
 
 add_test(NAME randoeats_bff_tests COMMAND randoeats_bff_tests)
+
+endif()
