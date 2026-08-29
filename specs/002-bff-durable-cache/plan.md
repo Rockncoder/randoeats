@@ -80,7 +80,7 @@ docs/adr/0006-*.adoc      # NEW: depending on a shared database server
    because the cache is down (FR-005), but the degradation must be visible.
 
 6. **Do not reach for Drogon's ORM model layer.** One table, three statements —
-   `DbClient` with parameterised SQL is simpler than generated models and keeps
+   `DbClient` with parameterized SQL is simpler than generated models and keeps
    the dependency surface small.
 
 ## Complexity Tracking
