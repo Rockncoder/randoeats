@@ -9,7 +9,7 @@
 
 ## Phase 2: Foundational
 
-- [ ] **T002** Extend `ICache` so an expired-but-present value is retrievable distinctly from an absent one. Today `get` returns `nullopt` for both, which makes stale-serve impossible. Update `InMemoryCache` and `RedisCache`. (Plan decision 2)
+- [ ] **T002** Extend `ICache` so an expired-but-present value is retrievable distinctly from an absent one. Today `get` returns `nullopt` for both, which makes stale-serve impossible. Update `InMemoryCache` and `PostgresCache`. (Plan decision 2)
 - [ ] **T003** `IBudget` + `BudgetTracker`: consume/peek against a rolling window, persisted so a restart does not reset the budget. (FR-001, FR-005)
 - [ ] **T004** `RateLimiter`: per-client counts over a short window. (FR-004)
 - [ ] **T005** Extract the forwarded client address in `RestaurantController`, not the socket peer — behind Caddy the peer is always localhost. (Spec edge case)

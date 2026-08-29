@@ -10,7 +10,7 @@
 The other three BFF features (durable cache, cost caps, metrics) all change
 behavior that only a test can grade. `docs/agent-loop.adoc` is explicit that an
 unambiguous harness verdict is what keeps an agent loop from gaming itself.
-Building caps or a Redis cache on top of an ungraded C++ surface would mean
+Building caps or a durable cache on top of an ungraded C++ surface would mean
 shipping changes whose correctness nothing checks.
 
 ## User Scenarios & Testing *(mandatory)*
