@@ -13,7 +13,7 @@
 /// Thread-safe, TTL + LRU bounded in-memory cache.
 ///
 /// Bounded at [maxEntries] (config `cache_max_entries`) with least-recently-used
-/// eviction so it can't exhaust memory on the 1 GB Nanode. Drogon serves
+/// eviction so it can't exhaust memory on the shared host. Drogon serves
 /// requests on multiple threads, so every operation is guarded by a mutex.
 class InMemoryCache : public ICache {
   public:
