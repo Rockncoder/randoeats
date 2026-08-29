@@ -72,8 +72,12 @@ jobs:
       # source build with the backends off removes the whole class of failure
       # and is cached, so it costs one slow run and then nothing.
       #
-      # NOTE: BUILD_REDIS is OFF here. Spec 002 (durable cache) needs Drogon's
-      # Redis client -- turn it back on in the same change that implements it.
+      # NOTE: the ORM and every database backend are OFF here. Spec 002
+      # (durable cache) targets the PostgreSQL already running on the host and
+      # needs Drogon's orm::DbClient, so -DBUILD_ORM=ON -DBUILD_POSTGRESQL=ON
+      # must be set in the same change that implements it -- otherwise the
+      # Postgres path works in the production image and is untestable in CI,
+      # which is the worst of both.
       - name: Install Drogon build dependencies
         run: |
           sudo apt-get update

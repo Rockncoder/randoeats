@@ -5,7 +5,12 @@
 
 /// Cache abstraction so the service layer never depends on a concrete store.
 /// The current implementation is [InMemoryCache]; this interface exists so a
-/// Redis-backed cache can be dropped in later without touching PlacesService.
+/// persistent cache can be dropped in later without touching PlacesService.
+///
+/// An earlier version of this comment named Redis specifically, and that name
+/// was taken as a decision it was never meant to be. See
+/// specs/002-bff-durable-cache/: the durable backend is the PostgreSQL already
+/// running on the host, because nothing here needs a second datastore.
 ///
 /// Values are pre-serialized, normalized JSON strings (what the client should
 /// receive), so a cache HIT can be returned verbatim with no re-parsing.
