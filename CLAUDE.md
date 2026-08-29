@@ -116,7 +116,7 @@ same change if conventions or ADRs moved — there is no generator yet (#92).
 
 **The backlog is GitHub Issues, not a file.** `BACKLOG.adoc` was retired in
 ADR-0005 and is now a pointer containing no items. Wanted work is an issue,
-prioritised with `priority:now` / `priority:next` / `priority:later`; work
+prioritized with `priority:now` / `priority:next` / `priority:later`; work
 decided against is filed and closed as `wontfix` so the reasoning stays
 searchable.
 
