@@ -106,7 +106,7 @@ jobs:
         run: echo "CMAKE_PREFIX_PATH=$HOME/drogon-install" >> "$GITHUB_ENV"
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v4
 
       - name: Install dependencies
         run: flutter pub get
