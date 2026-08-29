@@ -13,9 +13,16 @@ find_package(Drogon CONFIG REQUIRED)
 # build lives in its own build directory (see `just bff-test-asan`).
 option(ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 
-# Everything except main(), so the test binary can link the real code. The
-# shipped executable's contents are unchanged: it is this library plus main.cc.
-add_library(randoeats_bff_lib STATIC
+# Everything except main(), so the test binary can link the real code.
+#
+# OBJECT, not STATIC. Drogon controllers self-register through static
+# initialisers in their translation unit. In a STATIC library the linker drops
+# any object file the executable does not reference a symbol from -- main.cc
+# never names RestaurantController -- so the registration disappears and Drogon
+# answers 404 on every controller route while /api/v1/health (registered
+# directly in main.cc) keeps working. That shipped to production on 2026-08-29.
+# An OBJECT library links every object into the consumer, preserving them.
+add_library(randoeats_bff_lib OBJECT
   controllers/RestaurantController.cc
   services/GooglePlacesClient.cc
   services/PlacesService.cc
@@ -57,5 +64,11 @@ if(ENABLE_SANITIZERS)
 endif()
 
 add_test(NAME randoeats_bff_tests COMMAND randoeats_bff_tests)
+
+# Runs against the built executable, which the unit suite cannot do: it is the
+# only thing that proves the controllers survived the link. See the header of
+# smoke_routes.sh for the production outage that motivated it.
+add_test(NAME randoeats_bff_routes
+         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke_routes.sh $<TARGET_FILE:randoeats_bff>)
 
 endif()
