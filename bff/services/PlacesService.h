@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GooglePlacesClient.h"
 #include "ICache.h"
+#include "IPlacesUpstream.h"
 
 #include <drogon/drogon.h>
 
@@ -43,7 +43,7 @@ struct NearbyQuery {
 /// normalization to the stable client contract. Never returns raw Google JSON.
 class PlacesService {
   public:
-    PlacesService(std::shared_ptr<GooglePlacesClient> client,
+    PlacesService(std::shared_ptr<IPlacesUpstream> client,
                   std::shared_ptr<ICache> cache,
                   int nearbyTtl,
                   int detailsTtl);
@@ -58,7 +58,7 @@ class PlacesService {
     static Json::Value normalize(const Json::Value& place);
     static std::string serialize(const Json::Value& value);
 
-    std::shared_ptr<GooglePlacesClient> client_;
+    std::shared_ptr<IPlacesUpstream> client_;
     std::shared_ptr<ICache> cache_;
     int nearbyTtl_;
     int detailsTtl_;

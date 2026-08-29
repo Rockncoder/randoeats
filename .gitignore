@@ -140,7 +140,14 @@ fastlane/test_output
 .firebase/
 
 # Claude Code
-.claude/
+# The user's global gitignore excludes **/.claude/ everywhere. Re-include the
+# directory here (repo .gitignore outranks the global excludes file) so the
+# Spec Kit skills can be versioned -- the workflow has to be reproducible on
+# another machine, not local-only. Everything else under .claude/, including
+# settings.local.json, stays ignored.
+!.claude/
+.claude/*
+!.claude/skills/
 
 # Asset archives
 AppIcons.zip

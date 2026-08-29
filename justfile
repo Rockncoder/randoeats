@@ -13,6 +13,8 @@
 # as its description, so each block below ends with a one-line summary.
 
 BUILD_DIR := "bff/build-just"
+TEST_BUILD_DIR := "bff/build-test"
+ASAN_BUILD_DIR := "bff/build-asan"
 
 default:
     @just --list
@@ -78,8 +80,11 @@ nuke:
 # is no src/ directory, so the stock drogon overlay's paths do not apply.
 # ---------------------------------------------------------------------------
 
-# Read-only verdict for the BFF. No test ring: bff/ has no test suite.
-bff-check: bff-format-check bff-analyze
+# Read-only verdict for the BFF: formatting, clang-tidy ratchet, and the unit
+# tests. The sanitizer ring (bff-test-asan) is deliberately NOT here -- it
+# rebuilds instrumented and roughly doubles the wall time, so it runs in CI and
+# on demand rather than on every local check.
+bff-check: bff-format-check bff-analyze bff-test
 
 # Auto-fix C++ formatting in the BFF. Mutates the tree.
 bff-format:
@@ -127,6 +132,19 @@ bff-build:
     cmake -S bff -B {{BUILD_DIR}} -DCMAKE_BUILD_TYPE=Debug
     cmake --build {{BUILD_DIR}} -j
 
-# Wipe the BFF build directory.
+# Build and run the BFF unit tests.
+bff-test:
+    cmake -S bff -B {{TEST_BUILD_DIR}} -DCMAKE_BUILD_TYPE=Debug
+    cmake --build {{TEST_BUILD_DIR}} -j
+    ctest --test-dir {{TEST_BUILD_DIR}} --output-on-failure
+
+# The same tests built with AddressSanitizer + UndefinedBehaviorSanitizer.
+# Its own build tree so the instrumented objects never mix with the plain ones.
+bff-test-asan:
+    cmake -S bff -B {{ASAN_BUILD_DIR}} -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON
+    cmake --build {{ASAN_BUILD_DIR}} -j
+    ctest --test-dir {{ASAN_BUILD_DIR}} --output-on-failure
+
+# Wipe the BFF build directories.
 bff-nuke:
-    rm -rf {{BUILD_DIR}}
+    rm -rf {{BUILD_DIR}} {{TEST_BUILD_DIR}} {{ASAN_BUILD_DIR}}

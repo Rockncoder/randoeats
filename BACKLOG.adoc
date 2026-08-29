@@ -39,10 +39,13 @@ tracked as discrete, closeable work items.
 * `bff/` has no `.clang-format` or `.clang-tidy` config committed, so even with
   the binaries installed the recipes run against compiler defaults rather than
   the TekAdept style.
-* The BFF has no tests and no sanitizer build, so the entire C++ side sits
-  outside the harness. `docs/development-system.adoc` calls the ASan/UBSan test
-  build the single most valuable feedback signal in a C++ loop; this project has
-  none of it.
+* [RESOLVED 2026-08-28] The BFF had no tests and no sanitizer build, so the
+  entire C++ side sat outside the harness. Addressed by
+  `specs/001-bff-test-harness/`: `just bff-test` and `just bff-test-asan` now
+  exist, `bff-check` runs the suite, and CI installs Drogon so the C++ rings
+  actually execute rather than erroring out. Remaining BFF gaps are specced but
+  unbuilt — see `specs/002-bff-durable-cache/`, `specs/003-bff-cost-caps/` and
+  `specs/004-bff-cache-metrics/`.
 * `bff/compile_commands.json`, `bff/metrics.jsonl`, `bff/uploads/` and
   `bff/build/` are present in the working tree; check whether any of them should
   be gitignored rather than tracked.

@@ -50,7 +50,7 @@ bool hasParking(const Json::Value& place) {
 
 }  // namespace
 
-PlacesService::PlacesService(std::shared_ptr<GooglePlacesClient> client,
+PlacesService::PlacesService(std::shared_ptr<IPlacesUpstream> client,
                              std::shared_ptr<ICache> cache,
                              int nearbyTtl,
                              int detailsTtl)

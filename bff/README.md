@@ -106,6 +106,28 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
+## Tests
+
+```bash
+just bff-test        # build + run the unit suite (CTest)
+just bff-test-asan   # the same tests under AddressSanitizer + UBSan
+just bff-check       # format + clang-tidy ratchet + bff-test
+```
+
+`just check` includes `bff-check`, so a failing BFF test fails the whole
+verdict. The sanitizer ring is deliberately **not** in `just check` — it
+rebuilds instrumented and roughly doubles the wall time — so it runs in CI and
+on demand.
+
+Layout: `bff/tests/`, linked against `randoeats_bff_lib` (every source except
+`main.cc`). `FakePlacesUpstream` is a scripted `IPlacesUpstream` that records
+call counts, so a test can assert the thing that costs money — that Google was
+**not** called. No test performs network I/O or needs a real API key.
+
+`InMemoryCache` takes an injectable clock so TTL expiry is exercised without
+waiting out a real 3600-second TTL. Production always uses the default steady
+clock.
+
 ## Logging & rotation
 
 `MetricsLogger` keeps the log file open, so logrotate must use `copytruncate`.

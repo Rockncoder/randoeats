@@ -1,7 +1,11 @@
 #include "InMemoryCache.h"
 
-InMemoryCache::InMemoryCache(std::size_t maxEntries)
-    : maxEntries_(maxEntries == 0 ? 1 : maxEntries) {}
+InMemoryCache::InMemoryCache(std::size_t maxEntries, Clock clock)
+    : maxEntries_(maxEntries == 0 ? 1 : maxEntries), clock_(std::move(clock)) {}
+
+std::chrono::steady_clock::time_point InMemoryCache::defaultClock() {
+    return std::chrono::steady_clock::now();
+}
 
 std::optional<std::string> InMemoryCache::get(const std::string& key) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -9,7 +13,7 @@ std::optional<std::string> InMemoryCache::get(const std::string& key) {
     if (it == map_.end())
         return std::nullopt;
 
-    if (std::chrono::steady_clock::now() >= it->second.expiry) {
+    if (clock_() >= it->second.expiry) {
         lru_.erase(it->second.lruIt);
         map_.erase(it);
         return std::nullopt;
@@ -21,7 +25,7 @@ std::optional<std::string> InMemoryCache::get(const std::string& key) {
 
 void InMemoryCache::set(const std::string& key, const std::string& value, int ttlSeconds) {
     std::lock_guard<std::mutex> lock(mutex_);
-    const auto expiry = std::chrono::steady_clock::now() + std::chrono::seconds(ttlSeconds);
+    const auto expiry = clock_() + std::chrono::seconds(ttlSeconds);
 
     auto it = map_.find(key);
     if (it != map_.end()) {
