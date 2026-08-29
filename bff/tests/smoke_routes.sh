@@ -61,8 +61,23 @@ check_route() {
     fi
 }
 
+# The cache decision must be visible on the wire, not just in the metrics log.
+check_cache_header() {
+    local path="$1"
+    local hdr
+    hdr=$(curl -s -o /dev/null -m 20 -D - "http://127.0.0.1:$PORT$path" \
+          | tr -d '\r' | grep -i '^x-cache:' | head -1)
+    if [ -z "$hdr" ]; then
+        echo "FAIL: no X-Cache header on $path"
+        fail=1
+    else
+        echo "ok: cache decision exposed ($hdr)"
+    fi
+}
+
 check_route "/api/v1/health" "health"
 check_route "/api/v1/restaurants/nearby?lat=33.7&lng=-117.8&radius=1000&max_results=1" "nearby"
 check_route "/api/v1/restaurants/smoke-test-place-id" "details"
+check_cache_header "/api/v1/restaurants/nearby?lat=33.7&lng=-117.8&radius=1000&max_results=1"
 
 exit "$fail"
