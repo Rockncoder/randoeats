@@ -5,6 +5,27 @@
 **Status**: Draft
 **Input**: `MetricsLogger` writes `metrics.jsonl` and the Caddy vhost logs access specifically so HIT (~1ms) can be split from MISS (~100-300ms), but nothing turns either into a hit rate, a call count, or an estimated spend. Without those numbers, both TTLs and the caps in 003 can only be guessed at.
 
+## Update 2026-08-29 — the cache decision is now on the wire
+
+Since this spec was written, `RestaurantController` sets an **`X-Cache: HIT|MISS`**
+response header (added while fixing the route-registration outage). Previously
+HIT vs MISS was only inferable from response time in the Caddy access log
+(~1ms vs ~100-300ms), which is what the framing below assumes.
+
+Two consequences for this feature:
+
+- FR-001's aggregation gets a directly observable input instead of a latency
+  heuristic, and SC-001's cross-check against the access log becomes an exact
+  comparison rather than an approximate one.
+- The smoke test in `bff/tests/smoke_routes.sh` now asserts the header exists,
+  so the signal this feature depends on cannot silently disappear.
+
+Note also that `scripts/randoeats-cache-report.sh` already exists in the private
+`tekadept-bff` platform repo, alongside a monitoring dashboard. **Read it before
+implementing this spec** — part of the work may already be done there, and the
+right home for the reporting may be that dashboard rather than an endpoint on
+this BFF, since the dashboard already spans all four co-located tenants.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hit rate is a number I can read (Priority: P1)

@@ -31,6 +31,13 @@ HttpResponsePtr jsonResponse(const ServiceResult& result) {
     if (result.ttlSeconds > 0) {
         resp->addHeader("Cache-Control", "public, max-age=" + std::to_string(result.ttlSeconds));
     }
+    // Surface the cache decision the service already made. Without it, HIT vs
+    // MISS is only inferable from response time in the Caddy access log
+    // (~1ms vs ~100-300ms), which makes cache efficiency awkward to measure and
+    // impossible to assert in a test. See specs/004-bff-cache-metrics/.
+    if (!result.cache.empty()) {
+        resp->addHeader("X-Cache", result.cache);
+    }
     return resp;
 }
 
