@@ -1,0 +1,74 @@
+= ADR-0005: GitHub Issues as the single backlog, retiring BACKLOG.adoc
+:status: Accepted
+
+== Context
+
+The TekAdept template ships `BACKLOG.adoc`: a roadmap that travels with the
+repo, on the stated split that GitHub Issues hold discrete closeable work
+while the file holds "things that are planned but not yet tracked as discrete,
+closeable work items."
+
+That split did not survive contact with this project.
+
+*The distinction is mostly theoretical.* Reviewing the file's 28 items, nearly
+all of them were closeable: "add a coverage ratchet", "rename `lib/blocs/`",
+"publish a privacy policy", "bring Maestro into CI". Very little was genuinely
+roadmap-but-not-actionable. The category the file existed to hold was close to
+empty.
+
+*It duplicated Issues almost immediately.* Within four days of being written,
+`BACKLOG.adoc` contained an item duplicating issue #87 (ads integration), one
+duplicating `specs/002-bff-durable-cache/` (persist the BFF cache), one
+duplicating its own Launch-prep section (store readiness), and one contradicting
+a settled product decision (sound effects, which had been decided against).
+
+*It went stale faster than anyone would check it.* An audit on 2026-08-29 found
+that **all five** items in its "Harness gaps" section were obsolete: `just
+analyze` and `just bff-check` were described as red when both were green,
+`bff/.clang-format` and `bff/.clang-tidy` were described as missing when both
+were committed, and four files were described as wrongly tracked when all were
+already gitignored.
+
+This repository is the documented case study for what a second source of truth
+does — see the preamble of `CLAUDE.md` and `docs/legacy-CLAUDE.md`. A backlog
+file that drifts from the issue tracker is the same failure in a new place.
+
+== Decision
+
+*GitHub Issues are the single backlog.* Every piece of wanted work — features,
+bugs, chores, ideas — is an issue. Priority is expressed with labels
+(`priority:now`, `priority:next`, `priority:later`).
+
+Work that has been decided *against* is filed and immediately closed as
+`wontfix` with the reasoning, so the decision is searchable without occupying
+the open backlog. See issues #107 and #108, both closed against ADR-0004.
+
+`BACKLOG.adoc` is reduced to a pointer containing no items. A file with no
+content cannot drift, and it stops a future reader — human or agent — from
+concluding there is no roadmap and starting a new list.
+
+This diverges from `tekadept-template`. The divergence is recorded here rather
+than made silently, and the template should be revisited: if the same pattern
+holds in other projects, the template may be carrying a file that only ever
+becomes a second source of truth.
+
+== Consequences
+
+*Good.* One place to look. Issues carry state, labels, assignees, automatic
+closure from commits, and cross-links to PRs and specs, none of which an
+AsciiDoc file has. An issue is also the natural input to `/speckit-specify`,
+so the backlog feeds the spec workflow directly.
+
+*Cost.* The backlog is no longer readable from a clone with no network. For the
+two-tier agent workflow this matters slightly: the local tier reads the repo,
+and it can no longer read the roadmap. In practice the local tier works from
+packets and specs, not the backlog, so the loss is small.
+
+*Cost.* If the repository moves off GitHub, the backlog does not come with it.
+Accepted: the issue tracker is exportable, and the alternative demonstrably
+rots.
+
+*Not affected.* `docs/adr/` still holds decisions, `docs/specs/` still holds
+durable feature specs, `specs/NNN-*/` still holds Spec Kit working artifacts,
+and `docs/feature-inventory.adoc` still records what exists. None of those are
+backlogs.

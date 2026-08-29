@@ -148,8 +148,20 @@ class, usually with a status enum), and `<feature>.dart` (a barrel export).
 `lib/blocs/discovery/` is the reference implementation.
 
 Do not "restore" BLoC on the strength of the directory name, and do not rename
-the directory as a side effect of other work — the rename is tracked in
-`BACKLOG.adoc`.
+the directory as a side effect of other work — the rename is tracked as
+GitHub issue #95.
+
+=== The backlog is GitHub Issues, not a file
+
+This project retired `BACKLOG.adoc`. Every piece of wanted work is a GitHub
+issue, prioritised with `priority:now` / `priority:next` / `priority:later`
+labels; work decided against is filed and closed as `wontfix` so the reasoning
+stays searchable. `BACKLOG.adoc` remains only as a pointer containing no items.
+
+This diverges from `tekadept-template`, which ships a populated `BACKLOG.adoc`.
+See ADR-0005: the file duplicated the issue tracker within four days and every
+item in its "Harness gaps" section was obsolete within a week. If the same
+pattern shows up in other TekAdept projects, the template should drop it too.
 
 === Layering differs from the shared rule
 
@@ -169,8 +181,8 @@ This repository is mixed: a Flutter app at the root and a Drogon BFF under
 Separately, `just check` is *weaker* than CI: `.github/workflows/main.yaml`
 enforces a 60% coverage floor through the `very_good_coverage` action, and
 this project has no local coverage-gate script for `just` to call. A green
-`just check` therefore does not imply a green CI. Closing that gap is a
-backlog item.
+`just check` therefore does not imply a green CI. Closing that gap is GitHub
+issue #93.
 
 === The app↔BFF boundary is not contract-first
 
@@ -184,4 +196,4 @@ client side agreeing by hand. See ADR-0003.
 is currently the most accurate AI-facing description of the project. It is
 hand-written, which makes it exactly the kind of duplicated document the
 generated-context rule exists to prevent. It was left in place because a tool
-consumes it; folding it into the generated pipeline is a backlog item.
+consumes it; folding it into the generated pipeline is GitHub issue #99.
