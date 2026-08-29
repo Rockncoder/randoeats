@@ -53,7 +53,7 @@ cp config.example.json config.json
 |-----|---------|
 | `places_api_key` | Google Places API (New) key. **Restrict it by IP to the Linode.** |
 | `port` | Listen port (default 8848) |
-| `threads` | Drogon worker threads (1 is plenty on a Nanode) |
+| `threads` | Drogon worker threads (1 is plenty at this traffic) |
 | `cache_max_entries` | LRU bound (default 2000) — keeps RAM in check on the 1 GB box |
 | `nearby_ttl_seconds` / `details_ttl_seconds` | Cache TTLs (1h / 6h). Keep well under Google's 30-day caching limit. |
 | `metrics_log_path` | JSONL metrics file |
@@ -127,6 +127,26 @@ call counts, so a test can assert the thing that costs money — that Google was
 `InMemoryCache` takes an injectable clock so TTL expiry is exercised without
 waiting out a real 3600-second TTL. Production always uses the default steady
 clock.
+
+## Where this runs
+
+`randoeats-bff-prod` runs as a podman container on the **shared** TekAdept BFF
+host, alongside the other TekAdept BFF services, with Caddy as the sole public
+entry point. It is not a dedicated box: host port 8848 is reserved for randoeats
+specifically because ports must be unique across the tenants sharing that
+machine.
+
+The server inventory — addresses, sizes, what runs where — lives in the private
+`tekadept-bff` platform repo, not here. **This repository is public.**
+
+Two things that follow, and that the code used to get wrong:
+
+- The host is not memory-starved. An earlier comment in `services/InMemoryCache.h`
+  justified the entry cap by "the 1 GB Nanode"; the shared host has 4 GB, and all
+  co-located app containers together were using under 9 MB resident when measured
+  on 2026-08-29. The cap is still sensible, just not for that reason.
+- Port and hostname choices are platform-wide decisions, not local ones. Changing
+  8848 means changing the shared host's port map.
 
 ## Logging & rotation
 
