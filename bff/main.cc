@@ -1,4 +1,5 @@
 #include "services/AppContext.h"
+#include "services/CacheFactory.h"
 #include "services/GooglePlacesClient.h"
 #include "services/InMemoryCache.h"
 #include "services/MetricsLogger.h"
@@ -65,7 +66,6 @@ int main(int argc, char* argv[]) {
     }
     const int port = cfg.get("port", 8848).asInt();
     const int threads = cfg.get("threads", 1).asInt();
-    const auto maxEntries = static_cast<std::size_t>(cfg.get("cache_max_entries", 2000).asUInt());
     const int nearbyTtl = cfg.get("nearby_ttl_seconds", 3600).asInt();
     const int detailsTtl = cfg.get("details_ttl_seconds", 21600).asInt();
     const std::string metricsPath = cfg.get("metrics_log_path", "metrics.jsonl").asString();
@@ -73,7 +73,10 @@ int main(int argc, char* argv[]) {
     auto& ctx = AppContext::instance();
     ctx.metrics = std::make_shared<MetricsLogger>(metricsPath);
     ctx.google = std::make_shared<GooglePlacesClient>(apiKey);
-    auto cache = std::make_shared<InMemoryCache>(maxEntries);
+    // Backend from config; falls back to in-memory if a durable store is
+    // configured but unreachable, so the cache being down never stops startup.
+    // An unrecognized backend name throws -- a config mistake must be loud.
+    auto cache = createCache(cfg);
     ctx.places = std::make_shared<PlacesService>(ctx.google, cache, nearbyTtl, detailsTtl);
     for (const auto& origin : cfg["allowed_origins"]) {
         ctx.allowedOrigins.push_back(origin.asString());
