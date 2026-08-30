@@ -22,13 +22,35 @@ option(ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanit
 # answers 404 on every controller route while /api/v1/health (registered
 # directly in main.cc) keeps working. That shipped to production on 2026-08-29.
 # An OBJECT library links every object into the consumer, preserving them.
+# Does this Drogon have PostgreSQL support compiled in? The production image
+# (drogonframework/drogon) does; a stock Homebrew build does not. Detect rather
+# than assume, so a machine without it still builds and tests everything else --
+# and so selecting the postgres backend on such a build fails loudly instead of
+# silently falling back (see CacheFactory.cc).
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_LIBRARIES Drogon::Drogon)
+check_cxx_source_compiles("
+#include <drogon/orm/DbClient.h>
+int main() { auto c = drogon::orm::DbClient::newPgClient(\"\", 1); (void)c; return 0; }
+" RANDOEATS_HAS_POSTGRES)
+unset(CMAKE_REQUIRED_LIBRARIES)
+
 add_library(randoeats_bff_lib OBJECT
   controllers/RestaurantController.cc
   services/GooglePlacesClient.cc
   services/PlacesService.cc
   services/InMemoryCache.cc
+  services/CacheFactory.cc
   services/MetricsLogger.cc
 )
+
+if(RANDOEATS_HAS_POSTGRES)
+  target_sources(randoeats_bff_lib PRIVATE services/PostgresCache.cc)
+  target_compile_definitions(randoeats_bff_lib PUBLIC RANDOEATS_HAS_POSTGRES)
+  message(STATUS "randoeats: PostgreSQL cache backend ENABLED")
+else()
+  message(STATUS "randoeats: PostgreSQL cache backend DISABLED (Drogon built without it)")
+endif()
 target_include_directories(randoeats_bff_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(randoeats_bff_lib PUBLIC Drogon::Drogon)
 
@@ -64,6 +86,24 @@ if(ENABLE_SANITIZERS)
 endif()
 
 add_test(NAME randoeats_bff_tests COMMAND randoeats_bff_tests)
+
+# Postgres-backed cache tests. Registered only when a connection string is
+# provided, because they test SQL semantics against a real database and a fake
+# would only test the fake. CI always sets RANDOEATS_TEST_PG_CONN, so this path
+# is always graded somewhere -- it is never quietly skipped everywhere.
+if(RANDOEATS_HAS_POSTGRES AND DEFINED ENV{RANDOEATS_TEST_PG_CONN})
+  add_executable(randoeats_bff_pg_tests
+    tests/test_main.cc
+    tests/PostgresCacheTest.cc
+  )
+  target_link_libraries(randoeats_bff_pg_tests PRIVATE randoeats_bff_lib)
+  if(ENABLE_SANITIZERS)
+    target_compile_options(randoeats_bff_pg_tests PRIVATE ${SANITIZER_FLAGS})
+    target_link_options(randoeats_bff_pg_tests PRIVATE ${SANITIZER_FLAGS})
+  endif()
+  add_test(NAME randoeats_bff_pg_tests COMMAND randoeats_bff_pg_tests)
+  message(STATUS "randoeats: Postgres cache tests ENABLED")
+endif()
 
 # Runs against the built executable, which the unit suite cannot do: it is the
 # only thing that proves the controllers survived the link. See the header of

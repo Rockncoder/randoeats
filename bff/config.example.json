@@ -10,5 +10,12 @@
     "https://randoeats.com",
     "https://www.randoeats.com",
     "http://localhost:8080"
-  ]
+  ],
+  "cache_backend": "memory",
+  "postgres": {
+    "connection": "host=host.containers.internal port=5432 dbname=randoeats_prod user=randoeats password=CHANGE_ME",
+    "connections": 2,
+    "sweep_interval_seconds": 300,
+    "max_rows": 20000
+  }
 }
