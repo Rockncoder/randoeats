@@ -72,6 +72,15 @@ void main() {
       expect(container.read(activeFiltersProvider).priceLevels, {2});
     });
 
+    testWidgets('the fourth price level is offered and toggles', (
+      tester,
+    ) async {
+      final container = await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('resultsPriceChip_4')));
+      await tester.pump();
+      expect(container.read(activeFiltersProvider).priceLevels, {4});
+    });
+
     testWidgets('save-spot star is hidden without onSaveSpot', (tester) async {
       final container = await pump(tester);
       container.read(activeFiltersProvider.notifier).toggleCuisine('mexican');

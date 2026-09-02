@@ -114,7 +114,7 @@ class FilterChipBar extends ConsumerWidget {
                           : f.copyWith(minRating: 4),
                     ),
                   ),
-                  for (final level in const [1, 2, 3])
+                  for (final level in const [1, 2, 3, 4])
                     _FacetChip(
                       key: ValueKey('resultsPriceChip_$level'),
                       label: r'$' * level,

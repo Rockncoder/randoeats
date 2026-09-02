@@ -225,6 +225,9 @@ class DiscoveryNotifier extends Notifier<DiscoveryState> {
     if (filters.servesBeer) {
       result = result.where((r) => r.servesBeer ?? false).toList();
     }
+    if (filters.servesWine) {
+      result = result.where((r) => r.servesWine ?? false).toList();
+    }
     if (filters.outdoorSeating) {
       result = result.where((r) => r.outdoorSeating ?? false).toList();
     }
