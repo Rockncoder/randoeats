@@ -300,7 +300,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         return Wrap(
                           spacing: 8,
                           children: [
-                            for (final level in const [1, 2, 3])
+                            for (final level in const [1, 2, 3, 4])
                               ChoiceChip(
                                 key: ValueKey('resultsTunePriceChip_$level'),
                                 label: Text(r'$' * level),

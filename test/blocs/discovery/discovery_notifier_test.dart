@@ -536,6 +536,7 @@ void main() {
         isOpen: true,
         types: ['restaurant', 'mexican_restaurant'],
         servesBeer: true,
+        servesWine: true,
         outdoorSeating: true,
         goodForGroups: true,
         hasParking: true,
@@ -551,6 +552,7 @@ void main() {
         isOpen: true,
         types: ['restaurant', 'sushi_restaurant'],
         servesBeer: false,
+        servesWine: false,
         outdoorSeating: false,
       );
       const burgerBeer = Restaurant(
@@ -611,6 +613,14 @@ void main() {
         expect(await runWith(const SpotFilters(servesBeer: true)), {
           'beer_mex',
           'burger',
+        });
+      });
+
+      test('servesWine excludes both false and unknown', () async {
+        // burger leaves servesWine null. Unknown can not be confirmed, so it
+        // is excluded exactly as an explicit false is — matching servesBeer.
+        expect(await runWith(const SpotFilters(servesWine: true)), {
+          'beer_mex',
         });
       });
 
