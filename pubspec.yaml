@@ -1,6 +1,6 @@
 name: randoeats
 description: Your atomic-age appetite assistant
-version: 1.0.95+95
+version: 1.0.96+96
 publish_to: none
 
 environment:
