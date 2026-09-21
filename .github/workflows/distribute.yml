@@ -71,7 +71,7 @@ jobs:
   android:
     needs: increment-build
     if: github.event.inputs.platform != 'ios'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64]
 
     steps:
       - uses: actions/checkout@v6
@@ -84,28 +84,63 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
+      # This job runs on the Mac Mini self-hosted runner, which keeps its
+      # files between jobs, so Flutter comes from FVM (provisioned once)
+      # rather than subosito/flutter-action. FVM's global default on the Mini
+      # is an older SDK, so this repo's pinned version goes first on PATH;
+      # both fastlane lanes shell out to `flutter`. Homebrew's bin directory
+      # goes on PATH too, for fvm, ruby and bundle.
+      - name: Select Flutter ${{ env.FLUTTER_VERSION }}
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          fvm install "$FLUTTER_VERSION"
+          sdk="$HOME/fvm/versions/$FLUTTER_VERSION"
+          have="$("$sdk/bin/flutter" --version | head -1)"
+          echo "$have"
+          case "$have" in "Flutter $FLUTTER_VERSION"*) ;; *) echo "Flutter version mismatch"; exit 1 ;; esac
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          echo "$sdk/bin" >> "$GITHUB_PATH"
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
+      - name: Confirm later steps will use the pinned Flutter
+        run: |
+          got="$(command -v flutter)"
+          want="$HOME/fvm/versions/$FLUTTER_VERSION/bin/flutter"
+          echo "flutter resolves to $got"
+          [ "$got" = "$want" ] || { echo "expected $want"; exit 1; }
+
+      # Flutter prefers the JDK bundled with Android Studio over JAVA_HOME,
+      # and the Mini has Android Studio. Its 17.0.10 runtime crashes the
+      # Gradle daemon on Apple Silicon ("Field too big for insn" in the C1
+      # JIT compiler). Point Flutter at the Temurin 17 that setup-java
+      # installed instead; the hosted runners never had Android Studio, so
+      # this never came up there.
+      - name: Point Flutter at the JDK from setup-java
+        run: |
+          flutter config --jdk-dir "$JAVA_HOME"
+          flutter config --list | grep -i jdk
+
+      # Gems go in the runner's tool cache, not Homebrew's Ruby directory:
+      # RubyGems can't write there (its rdoc plugin file is a symlink into
+      # the Cellar), and the tool cache survives between jobs so later runs
+      # skip the download. Frozen, like the old bundler-cache setup, so the
+      # lockfile is never rewritten.
+      - name: Point Bundler at a directory the runner owns
+        run: |
+          echo "BUNDLE_PATH=$RUNNER_TOOL_CACHE/randoeats-bundle" >> "$GITHUB_ENV"
+          echo "BUNDLE_FROZEN=true" >> "$GITHUB_ENV"
+
+      - name: Install gems
+        run: bundle install
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Create Google Services JSON
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > android/app/google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
 
       - name: Create keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/randoeats-release.keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/randoeats-release.keystore
 
       - name: Create key.properties
         run: |
@@ -118,7 +153,7 @@ jobs:
 
       - name: Create service account file
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > firebase-service-account.json
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > firebase-service-account.json
 
       - name: Build and distribute
         env:
@@ -130,40 +165,70 @@ jobs:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
         run: bundle exec fastlane android distribute
 
+      # The runner keeps its files between jobs, unlike a throwaway VM, so
+      # the credential files written above must not be left behind.
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f android/app/google-services.json android/app/randoeats-release.keystore android/key.properties firebase-service-account.json
+
   # ============================================
   # iOS Build
   # ============================================
   ios:
     needs: increment-build
     if: github.event.inputs.platform != 'android'
-    runs-on: macos-15
+    runs-on: [self-hosted, macOS, ARM64]
 
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
+      # Runs on the Mac Mini self-hosted runner, not a GitHub-hosted macOS
+      # VM. See the android job for why Flutter comes from FVM and gems go in
+      # the runner's tool cache.
+      - name: Select Flutter ${{ env.FLUTTER_VERSION }}
+        run: |
+          export PATH="/opt/homebrew/bin:$PATH"
+          fvm install "$FLUTTER_VERSION"
+          sdk="$HOME/fvm/versions/$FLUTTER_VERSION"
+          have="$("$sdk/bin/flutter" --version | head -1)"
+          echo "$have"
+          case "$have" in "Flutter $FLUTTER_VERSION"*) ;; *) echo "Flutter version mismatch"; exit 1 ;; esac
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          echo "$sdk/bin" >> "$GITHUB_PATH"
 
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-          bundler-cache: true
+      - name: Confirm later steps will use the pinned Flutter
+        run: |
+          got="$(command -v flutter)"
+          want="$HOME/fvm/versions/$FLUTTER_VERSION/bin/flutter"
+          echo "flutter resolves to $got"
+          [ "$got" = "$want" ] || { echo "expected $want"; exit 1; }
+
+      - name: Point Bundler at a directory the runner owns
+        run: |
+          echo "BUNDLE_PATH=$RUNNER_TOOL_CACHE/randoeats-bundle" >> "$GITHUB_ENV"
+          echo "BUNDLE_FROZEN=true" >> "$GITHUB_ENV"
+
+      - name: Install gems
+        run: bundle install
 
       - name: Install dependencies
         run: flutter pub get
+
+      # A Flutter SDK that has never built for iOS has no iOS engine
+      # artifacts yet, and the Podfile's post-install hook fails without
+      # them ("Flutter.xcframework must exist"). The old hosted setup hid
+      # this. They cache in the SDK directory on the Mini, so only the first
+      # run downloads anything.
+      - name: Fetch Flutter's iOS artifacts
+        run: flutter precache --ios
 
       - name: Pod install (with repo update)
         run: cd ios && bundle exec pod install --repo-update
 
       - name: Create GoogleService-Info.plist
-        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 -d > ios/Runner/GoogleService-Info.plist
+        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > ios/Runner/GoogleService-Info.plist
 
       - name: Create Secrets.xcconfig (Google Maps SDK key)
         # GMSApiKey in Info.plist is $(MAPS_API_KEY) from this gitignored file;
@@ -173,12 +238,27 @@ jobs:
 
       - name: Create service account file
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > firebase-service-account.json
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 --decode > firebase-service-account.json
 
       - name: Setup SSH for Match
         uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.MATCH_GIT_PRIVATE_KEY }}
+
+      # The Fastfile calls setup_ci whenever CI is set, which creates a
+      # temporary keychain and makes it the user's DEFAULT keychain. On a
+      # throwaway VM that is invisible; on a machine that outlives the job it
+      # would leave the default pointing at a temp keychain. Remember the real
+      # default now and put it back afterwards.
+      #
+      # The Mini is shared with other repos' iOS jobs, which do the same swap
+      # under the same name (fastlane_tmp_keychain). Two of them running at
+      # once would collide, so don't dispatch iOS deploys for two repos
+      # together.
+      - name: Remember the default keychain
+        run: |
+          prev="$(security default-keychain -d user | tr -d ' "')"
+          echo "PREVIOUS_DEFAULT_KEYCHAIN=$prev" >> "$GITHUB_ENV"
 
       - name: Build and distribute
         env:
@@ -188,3 +268,17 @@ jobs:
           MATCH_GIT_PRIVATE_KEY: ${{ secrets.MATCH_GIT_PRIVATE_KEY }}
           GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
         run: bundle exec fastlane ios distribute
+
+      - name: Restore the default keychain
+        if: always()
+        run: |
+          if [ -n "${PREVIOUS_DEFAULT_KEYCHAIN:-}" ]; then
+            security default-keychain -d user -s "$PREVIOUS_DEFAULT_KEYCHAIN"
+          fi
+          security delete-keychain fastlane_tmp_keychain 2>/dev/null || true
+
+      # The runner keeps its files between jobs, unlike a throwaway VM, so
+      # the credential files written above must not be left behind.
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f ios/Runner/GoogleService-Info.plist ios/Flutter/Secrets.xcconfig firebase-service-account.json
