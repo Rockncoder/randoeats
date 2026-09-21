@@ -108,6 +108,17 @@ jobs:
           echo "flutter resolves to $got"
           [ "$got" = "$want" ] || { echo "expected $want"; exit 1; }
 
+      # Flutter prefers the JDK bundled with Android Studio over JAVA_HOME,
+      # and the Mini has Android Studio. Its 17.0.10 runtime crashes the
+      # Gradle daemon on Apple Silicon ("Field too big for insn" in the C1
+      # JIT compiler). Point Flutter at the Temurin 17 that setup-java
+      # installed instead; the hosted runners never had Android Studio, so
+      # this never came up there.
+      - name: Point Flutter at the JDK from setup-java
+        run: |
+          flutter config --jdk-dir "$JAVA_HOME"
+          flutter config --list | grep -i jdk
+
       # Gems go in the runner's tool cache, not Homebrew's Ruby directory:
       # RubyGems can't write there (its rdoc plugin file is a symlink into
       # the Cellar), and the tool cache survives between jobs so later runs
