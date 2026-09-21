@@ -205,6 +205,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # A Flutter SDK that has never built for iOS has no iOS engine
+      # artifacts yet, and the Podfile's post-install hook fails without
+      # them ("Flutter.xcframework must exist"). The old hosted setup hid
+      # this. They cache in the SDK directory on the Mini, so only the first
+      # run downloads anything.
+      - name: Fetch Flutter's iOS artifacts
+        run: flutter precache --ios
+
       - name: Pod install (with repo update)
         run: cd ios && bundle exec pod install --repo-update
 
