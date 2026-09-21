@@ -40,13 +40,21 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
 
-    # Enable location permission for permission_handler
     target.build_configurations.each do |config|
+      # Enable location permission for permission_handler
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
         'PERMISSION_LOCATION=1',
         'PERMISSION_LOCATION_WHENINUSE=1',
       ]
+
+      # Xcode 27 only supports iOS deployment targets 15.0 and up and fails
+      # the build ("Target Integrity") on any pod that declares less, and
+      # many still declare 9.0-14.0. Raise them to this app's own minimum,
+      # which is what the Podfile's platform line already requires.
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      end
     end
   end
 end
