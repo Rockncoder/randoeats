@@ -105,7 +105,7 @@ jobs:
 
       - name: Cache Drogon
         id: cache-drogon
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/drogon-install
           key: drogon-1.9.12-orm-pg-${{ runner.os }}
